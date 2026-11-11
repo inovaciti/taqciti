@@ -75,7 +75,7 @@ const TRABALHO = {
       versaoDaReuniao: `${REUNIAO.endedAt}:3`,
       instrucoes: 'meeting_analyst',
       cobertura: { lidos: 3, total: 3 },
-      lacunas: ['A captura reconectou 1 vez(es); falas durante a reconexão podem faltar.'],
+      lacunas: ['A captura reconectou 1 vez; falas durante a reconexão podem faltar.'],
       secoes: {
         visaoGeral: [{ texto: '[TESTE] Definição do escopo da fase 1', evidencias: [ev(0)] }],
         decisoes: [{ texto: '[TESTE] Fase 1 só com visualização', evidencias: [ev(0)] }],
@@ -122,7 +122,7 @@ const CONVERSA = {
           participantes: ['Júlia — teste'],
           opcoes: [{ inicio: '2026-10-02T17:00:00.000Z', fim: '2026-10-02T17:30:00.000Z', rotulo: 'sex., 02/10, 14:00' }],
         },
-        { tipo: 'estado_da_captura', reuniaoId: REUNIAO.id, titulo: REUNIAO.title, situacao: 'encerrada', avaliacao: 'com_ressalvas', sinais: ['A captura reconectou 1 vez(es); falas durante a reconexão podem faltar.'], intervalos: [], segmentos: 3 },
+        { tipo: 'estado_da_captura', reuniaoId: REUNIAO.id, titulo: REUNIAO.title, situacao: 'encerrada', avaliacao: 'com_ressalvas', sinais: ['A captura reconectou 1 vez; falas durante a reconexão podem faltar.'], intervalos: [], segmentos: 3 },
       ],
     },
   ],
@@ -195,8 +195,11 @@ const falhas = [];
       await page.goto(`${raiz}/src/home/index.html?secao=acompanhamento`);
       await page.getByRole('heading', { name: 'Acompanhamento' }).waitFor();
       await page.waitForTimeout(400);
-      verificacoes.acompanhamento_secoes = await page.locator('.tq-acompanhamento .tq-c h4').allInnerTexts();
+      // A página é em abas (Compromissos, Decisões, Achados): as seções são as
+      // abas, e "Marcar resolvido" só existe na de Achados.
+      verificacoes.acompanhamento_secoes = await page.locator('.tq-acomp-abas [role="tab"]').allInnerTexts();
       await page.screenshot({ path: path.join(saida, 'home-acompanhamento.png'), fullPage: true });
+      await page.getByRole('tab', { name: /Achados/ }).click();
       await page.getByRole('button', { name: 'Marcar resolvido' }).first().click();
       await page.getByLabel('O que resolveu?').fill('[TESTE] decisão: PDF na fase 2');
       await page.locator('.tq-c-motivo').getByRole('button', { name: 'Confirmar' }).click();

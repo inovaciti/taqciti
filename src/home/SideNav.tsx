@@ -160,7 +160,14 @@ export function SideNav({ ativa, aberta, onAbrir, onIr, atencao = {} }: Props) {
         aria-label={aberta ? 'Fechar navegação' : 'Abrir navegação'}
         aria-expanded={aberta}
         aria-controls="tq-nav"
-        onClick={() => onAbrir(!aberta)}
+        onClick={(e) => {
+          // Com mouse, o ponteiro só chega ao botão passando pela faixa, que já
+          // abriu a barra: alternar aqui FECHAVA o que a pessoa queria abrir.
+          // Mouse só abre (sair dela fecha). Teclado e toque, sem hover,
+          // continuam alternando.
+          const tipo = (e.nativeEvent as PointerEvent).pointerType;
+          onAbrir(tipo === 'mouse' || tipo === 'pen' ? true : !aberta);
+        }}
         onFocus={() => onAbrir(true)}
       />
 

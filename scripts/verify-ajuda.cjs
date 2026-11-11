@@ -156,11 +156,8 @@ const CONVERSA = {
       await colher(page, 'HOME · menu Conversas');
       await page.keyboard.press('Escape');
     });
-    await tentar('HOME: anexar', async () => {
-      await clicar(page, 'Anexar imagem ou documento');
-      await colher(page, 'HOME · anexar');
-      await page.keyboard.press('Escape');
-    });
+    // Sem passo de "anexar": o botão saiu, e a ajuda (entrada `anexar_arquivo`)
+    // diz que anexar está indisponível — não há o que colher na tela.
     await tentar('HOME: navegação', async () => {
       await clicar(page, 'Abrir navegação');
       await colher(page, 'HOME · navegação');

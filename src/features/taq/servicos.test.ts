@@ -67,7 +67,9 @@ describe('monitor de captura', () => {
       null,
     );
     expect(a.avaliacao).toBe('problemas_detectados');
-    expect(a.sinais.join(' ')).toMatch(/2 trecho\(s\) descartado/);
+    // Plural de verdade, no singular e no plural ("vez(es)" lia como formulário).
+    expect(a.sinais.join(' ')).toMatch(/2 trechos descartados/);
+    expect(a.sinais.join(' ')).toMatch(/reconectou 1 vez;/);
   });
 
   it('ao vivo: legenda ilegível vira problema; estado de OUTRA reunião não é usado', () => {

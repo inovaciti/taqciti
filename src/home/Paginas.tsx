@@ -593,9 +593,13 @@ function DetalheDaReuniao({
           ativa={cabemDuas || foco === 'transcricao'}
           empilhada={!cabemDuas}
         >
-          <div className="tq-coluna-topo">
-            <h2>Transcrição</h2>
-          </div>
+          {/* Em tela estreita a aba "Transcrição", logo acima, já diz o nome:
+              repetir o título embaixo dela era o mesmo rótulo duas vezes. */}
+          {cabemDuas && (
+            <div className="tq-coluna-topo">
+              <h2>Transcrição</h2>
+            </div>
+          )}
           {/* `scroll={false}`: quem rola é a coluna, e só ela. Uma caixa de
               rolagem a mais aqui dentro seria a caixa aninhada que engole a
               roda do mouse. */}

@@ -528,11 +528,9 @@ function PainelDoContexto({
 
 function PainelDoPadrao({
   c,
-  aoPersonalizar,
   aoFechar,
 }: {
   c: ContextoDoAssistente | null;
-  aoPersonalizar: () => void;
   aoFechar: () => void;
 }) {
   if (c)
@@ -541,12 +539,6 @@ function PainelDoPadrao({
         <Cabeca olho="Padrão do CITi" violeta cadeado titulo={c.nome} aoFechar={aoFechar} />
         <div className="tq-ed-corpo">
           <p className="tq-ed-citacao">{c.texto}</p>
-        </div>
-        <div className="tq-ed-rodape">
-          <button type="button" className="tq-prep-usar" onClick={aoPersonalizar}>
-            <Icon name="sliders" size={15} />
-            Personalizar a partir deste
-          </button>
         </div>
       </>
     );
@@ -566,12 +558,6 @@ function PainelDoPadrao({
             </li>
           ))}
         </ul>
-      </div>
-      <div className="tq-ed-rodape">
-        <button type="button" className="tq-prep-usar" onClick={aoPersonalizar}>
-          <Icon name="sliders" size={15} />
-          Personalizar a partir deste
-        </button>
       </div>
     </>
   );
@@ -683,10 +669,12 @@ export function OQueLevar({ conducao, emAndamento }: { conducao: Conducao; emAnd
   };
 
   const ligados = contextos.filter((c) => c.ligado).length;
+  // "3 de 8" sozinho não dizia de quê: são as vagas do mapa, levados e
+  // guardados juntos.
   const contagem = personalizado
     ? `${ligados} ${ligados === 1 ? 'contexto levado' : 'contextos levados'} · ${contextos.length - ligados} ${
         contextos.length - ligados === 1 ? 'guardado' : 'guardados'
-      } · busca ${r.buscaNaInternet ? 'ligada' : 'desligada'} · ${contextos.length} de ${MAX_CONTEXTOS}`
+      } · busca ${r.buscaNaInternet ? 'ligada' : 'desligada'} · ${contextos.length} de ${MAX_CONTEXTOS} vagas`
     : `${contextos.length} contextos · definido pelo CITi`;
 
   const emUso = emAndamento ? perfilEmUsoDaReuniao(conducao, emAndamento.reuniaoId) : null;
@@ -757,7 +745,7 @@ export function OQueLevar({ conducao, emAndamento }: { conducao: Conducao; emAnd
               aoFechar={() => setSelecao(null)}
             />
           ) : !personalizado ? (
-            <PainelDoPadrao c={doPadrao} aoPersonalizar={() => escolherBase('personalizado')} aoFechar={() => setSelecao(null)} />
+            <PainelDoPadrao c={doPadrao} aoFechar={() => setSelecao(null)} />
           ) : (
             <p className="tq-ed-vazio">Escolha um item do mapa.</p>
           )}
@@ -776,7 +764,11 @@ export function OQueLevar({ conducao, emAndamento }: { conducao: Conducao; emAnd
             {salvando ? 'Salvando…' : 'Usar este assistente'}
           </button>
         ) : (
-          <button type="button" className="tq-acao" onClick={() => escolherBase('personalizado')}>
+          // O único "Personalizar a partir deste". Havia outro no rodapé do
+          // painel, e a tela larga mostrava os dois ao mesmo tempo. Fica o
+          // daqui: está à vista com qualquer item escolhido no mapa, no mesmo
+          // lugar e com o mesmo peso do "Usar este assistente".
+          <button type="button" className="tq-prep-usar" onClick={() => escolherBase('personalizado')}>
             <Icon name="sliders" size={15} />
             Personalizar a partir deste
           </button>

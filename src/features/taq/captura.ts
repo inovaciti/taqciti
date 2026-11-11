@@ -51,6 +51,11 @@ export interface AvaliacaoDaCaptura {
   segmentos: number;
 }
 
+/** "1 vez", "2 vezes": plural de verdade. "vez(es)" lia como formulário. */
+function contar(n: number, um: string, varios: string): string {
+  return `${n} ${n === 1 ? um : varios}`;
+}
+
 function minutos(ms: number): string {
   const m = Math.round(ms / 60_000);
   return m <= 1 ? '1 min' : `${m} min`;
@@ -108,15 +113,15 @@ export function avaliarCaptura(
   }
   if (md.droppedSegments > 0) {
     problemas += 1;
-    sinais.push(`${md.droppedSegments} trecho(s) descartado(s) pela captura.`);
+    sinais.push(`${contar(md.droppedSegments, 'trecho descartado', 'trechos descartados')} pela captura.`);
   }
   if ((md.captureDegradedCount ?? 0) > 0) {
     ressalvas += 1;
-    sinais.push(`A leitura das legendas entrou em modo degradado ${md.captureDegradedCount} vez(es).`);
+    sinais.push(`A leitura das legendas entrou em modo degradado ${contar(md.captureDegradedCount ?? 0, 'vez', 'vezes')}.`);
   }
   if (md.reconnectCount > 0) {
     ressalvas += 1;
-    sinais.push(`A captura reconectou ${md.reconnectCount} vez(es); falas durante a reconexão podem faltar.`);
+    sinais.push(`A captura reconectou ${contar(md.reconnectCount, 'vez', 'vezes')}; falas durante a reconexão podem faltar.`);
   }
   if (md.wasDiscardedAndRestarted) {
     ressalvas += 1;
@@ -133,7 +138,7 @@ export function avaliarCaptura(
   }
   if (intervalos.length)
     sinais.push(
-      `${intervalos.length} intervalo(s) de 3 min ou mais sem fala transcrita — pode ser silêncio, não é necessariamente perda.`,
+      `${contar(intervalos.length, 'intervalo', 'intervalos')} de 3 min ou mais sem fala transcrita — pode ser silêncio, não é necessariamente perda.`,
     );
   if (!r.segments.length) {
     ressalvas += 1;

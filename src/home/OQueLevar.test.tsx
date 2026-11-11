@@ -76,6 +76,19 @@ it('sem nada salvo mostra o Padrão do CITi, só leitura, sem "Taq" no texto', a
   expect(host.textContent).not.toMatch(/Mente/);
 });
 
+/* Varredura de 11/11/2026: o painel e o rodapé mostravam, juntos, dois
+   "Personalizar a partir deste". Fica um só, no rodapé, à vista com qualquer
+   item do mapa escolhido. */
+it('no padrão há um único "Personalizar a partir deste", com ou sem item escolhido', async () => {
+  const quantos = () =>
+    [...host.querySelectorAll('button')].filter((b) => b.textContent?.includes('Personalizar a partir deste'))
+      .length;
+  await montar();
+  expect(quantos()).toBe(1);
+  await clicar(botao(PADRAO_DO_CITI.contextos[0]!.nome));
+  expect(quantos()).toBe(1);
+});
+
 it('personalizar dá uma cópia do padrão, e nada é salvo até "Usar este assistente"', async () => {
   await montar();
   await clicar(botao('Personalizar a partir deste'));

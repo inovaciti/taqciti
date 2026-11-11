@@ -2937,3 +2937,35 @@
 .tq-onda {
   height: 312px;
 }
+
+/*
+ * Os cartões do Taq rolam por cima dessa onda maior. O fundo deles, quase
+ * transparente (bom na HOME, onde a onda fica só no pé), deixava os pontos
+ * atravessarem as letras do cartão. Aqui o cartão leva o grafite da coluna por
+ * baixo do mesmo véu claro: a aparência é a mesma, sem a onda dentro do texto.
+ */
+.tq-side .tq-c {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.025)),
+    var(--s-fundo);
+}
+
+/*
+ * A pílula: ação que aparece SOZINHA, fora de uma fileira de controles
+ * ("Registrar esta reunião", "Tentar de novo", "Religar agora"). O botão da
+ * coluna é sem moldura e sem fundo em repouso (ver acima), o que funciona numa
+ * barra de botões; sozinho, centralizado na largura toda, ele parecia texto
+ * solto. A classe `tq-pilula` já estava nesses botões, mas a sidebar não tinha
+ * regra para ela.
+ */
+.tq-side .tq-acao.tq-pilula {
+  justify-self: start;
+  padding: 0 14px;
+  border: 1px solid var(--s-traco);
+  border-radius: 999px;
+  background: var(--s-placa);
+}
+
+.tq-side .tq-acao.tq-pilula:hover:not(:disabled) {
+  background: var(--s-placa-forte);
+}

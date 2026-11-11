@@ -145,7 +145,7 @@ async function escolherEscopo(valor: string) {
 
 it('mostra o PDF renderizado da revisão atual, a contagem de páginas e o aviso de perfil provisório', async () => {
   await abrir();
-  await esperar('3 página(s)');
+  await esperar('3 páginas');
   expect(renderizarArvore).toHaveBeenCalledWith(expect.objectContaining({ revisao: 1 }), 'editorial');
   expect(host.querySelector('iframe')!.getAttribute('src')).toBe('blob:previa');
   expect(host.textContent).toContain('padrão CITi provisório');
@@ -253,13 +253,13 @@ it('falha ao montar a prévia mostra a causa e permite tentar de novo', async ()
   await abrir();
   await esperar('erro (502)');
   await act(async () => botao('Tentar de novo').click());
-  await esperar('3 página(s)');
+  await esperar('3 páginas');
   expect(renderizarArvore).toHaveBeenCalledTimes(2);
 });
 
 it('Baixar Word pede o DOCX da versão na tela e avisa que o que for editado lá não volta', async () => {
   await abrir();
-  await esperar('3 página(s)');
+  await esperar('3 páginas');
   renderizarArvore.mockResolvedValueOnce({
     status: 'ok',
     dados: {
@@ -281,7 +281,7 @@ it('Baixar Word pede o DOCX da versão na tela e avisa que o que for editado lá
 
 it('falha ao gerar o Word aparece dita, e nada é baixado', async () => {
   await abrir();
-  await esperar('3 página(s)');
+  await esperar('3 páginas');
   renderizarArvore.mockResolvedValueOnce({ status: 'erro', codigo: 'indisponivel', message: 'O servidor respondeu com erro (502).' });
   await act(async () => botao('Baixar Word').click());
   await esperar('erro (502)');
