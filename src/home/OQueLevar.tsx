@@ -683,10 +683,12 @@ export function OQueLevar({ conducao, emAndamento }: { conducao: Conducao; emAnd
   };
 
   const ligados = contextos.filter((c) => c.ligado).length;
+  // "3 de 8" sozinho não dizia de quê: são as vagas do mapa, levados e
+  // guardados juntos.
   const contagem = personalizado
     ? `${ligados} ${ligados === 1 ? 'contexto levado' : 'contextos levados'} · ${contextos.length - ligados} ${
         contextos.length - ligados === 1 ? 'guardado' : 'guardados'
-      } · busca ${r.buscaNaInternet ? 'ligada' : 'desligada'} · ${contextos.length} de ${MAX_CONTEXTOS}`
+      } · busca ${r.buscaNaInternet ? 'ligada' : 'desligada'} · ${contextos.length} de ${MAX_CONTEXTOS} vagas`
     : `${contextos.length} contextos · definido pelo CITi`;
 
   const emUso = emAndamento ? perfilEmUsoDaReuniao(conducao, emAndamento.reuniaoId) : null;

@@ -318,7 +318,9 @@ export function DocumentoPersonalizado({ documento, registros, onVoltar, onIrPar
               <>
                 <iframe title={`PDF de ${versaoVista.arvore.titulo}`} src={previa.url} />
                 <p className="tq-meta">
-                  {previa.paginas ? `${previa.paginas} página(s) · ` : ''}
+                  {previa.paginas
+                    ? `${previa.paginas} ${previa.paginas === 1 ? 'página' : 'páginas'} · `
+                    : ''}
                   {previa.provisorio
                     ? 'padrão CITi provisório (ainda não validado por um responsável)'
                     : 'padrão CITi validado'}

@@ -47,7 +47,7 @@ export function Pergunta({ titulo, anterior = null, onAceitar, onContinuar, onRe
       {anterior && onContinuar && (
         <p className="tq-pergunta-texto">
           Esta sala já tem uma gravação: <strong>{anterior.title}</strong>, de {quando(anterior.endedAt)},
-          com {anterior.segmentos} fala(s). Dá para continuar nela, de onde parou.
+          com {anterior.segmentos} {anterior.segmentos === 1 ? 'fala' : 'falas'}. Dá para continuar nela, de onde parou.
         </p>
       )}
 
