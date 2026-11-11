@@ -173,6 +173,33 @@ describe('a barra lateral não recolhe ao navegar', () => {
     }
   });
 
+  /*
+   * O defeito da varredura: com mouse, chegar ao botão "Abrir navegação" já
+   * passa pela faixa e abre a barra; o clique, que alternava, a fechava em
+   * seguida. Clique de mouse só abre. Teclado (clique sem `pointerType`)
+   * continua alternando, para que dê para fechar sem ponteiro.
+   */
+  it('clique de mouse no botão da borda não fecha a barra que o hover abriu', async () => {
+    await montar();
+    await act(async () => {
+      window.dispatchEvent(
+        new PointerEvent('pointermove', { clientX: 10, clientY: 400, pointerType: 'mouse' }),
+      );
+    });
+    expect(q('.tq-home').classList.contains('nav-aberta')).toBe(true);
+
+    await act(async () => {
+      q('.tq-edge').dispatchEvent(
+        new PointerEvent('click', { bubbles: true, pointerType: 'mouse' }),
+      );
+    });
+    expect(q('.tq-home').classList.contains('nav-aberta')).toBe(true);
+
+    // Pelo teclado (Enter vira clique sem tipo de ponteiro), alterna.
+    await act(async () => q<HTMLButtonElement>('.tq-edge').click());
+    expect(q('.tq-home').classList.contains('nav-aberta')).toBe(false);
+  });
+
   /* E o contrário continua valendo: o ponteiro parado sobre a barra a segura,
      mesmo que algo desenhado por cima dispare um `pointerleave` nela. */
   it('não fecha enquanto o ponteiro está sobre a barra', async () => {
