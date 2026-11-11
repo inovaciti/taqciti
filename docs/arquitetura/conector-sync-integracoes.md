@@ -124,7 +124,7 @@ Pontos de projeto:
 | `/api/conector/token` | POST/GET/DELETE | cria (valor em claro UMA vez, rótulo até 80 caracteres, devolve a URL montada da origem da requisição), lista (sem token), revoga por `?id=` |
 | `/api/mcp/[token]`, `/api/mcp` | POST/GET/DELETE | MCP |
 
-CORS via `corsHeaders` de `lib/apiGuard`.
+CORS via `corsHeaders` de `lib/apiGuard.ts` (commit `365ef8c`): só a extensão lê a resposta. Sem configuração vale qualquer origem `chrome-extension://<id>`; `DOCCITI_ORIGENS_PERMITIDAS` restringe a origens exatas. Página web (inclusive o Meet) não recebe `Access-Control-Allow-Origin`. Requisição sem `Origin` (curl, scripts) não é afetada pelo CORS: a autenticação é que a recusa. O MCP (`/api/mcp`) é chamado pelo servidor da Claude ou do ChatGPT, sem `Origin`, e segue por token.
 
 ## 5. Sincronização
 
@@ -244,7 +244,7 @@ independente de driver (PGlite nos testes).
   valor em claro aparece uma vez; revogar apaga a linha e filtra por `pessoa_id` (404
   igual para id alheio ou inexistente). `pessoaDoToken` reconfere o e-mail da dona
   contra o domínio permitido a cada uso e atualiza `usado_em` sem bloquear. O token
-  expira por inatividade (90 dias) e há no máximo 5 ativos por pessoa (ver o item
+  expira por inatividade (90 dias) e por prazo absoluto (90 dias desde a criação, coluna `expira_em`), e há no máximo 3 ativos por pessoa (ver o item
   "Tokens do conector", mais abaixo nesta seção). O token vai no caminho da URL. **O log não o grava mais** (commit `09e99ab`, S5): `caminhoSemToken` troca
   `/api/mcp/<token>` por `/api/mcp/<redigido>` antes de a linha `[mcp]` ser escrita;
   registrar o pathname cru punha credenciais válidas nos Runtime Logs da Vercel, legíveis
@@ -280,9 +280,17 @@ independente de driver (PGlite nos testes).
   `diasDeInatividade()` (90 dias, `TAQCITI_TOKEN_INATIVO_DIAS`) deixa de valer. A
   consulta de `pessoaDoToken` compara `coalesce(usado_em, criado_em)` com o prazo, e cada
   uso o renova: quem usa o conector de verdade nunca chega perto, e a URL esquecida num
-  conector abandonado, num print ou num log antigo morre sozinha. Cada pessoa pode ter
-  no máximo `MAX_TOKENS_ATIVOS` = 5 tokens ativos; gerar o sexto devolve 409 pedindo
-  para revogar um que não usa. O token continua no caminho da URL (a especificação do
+  conector abandonado, num print ou num log antigo morre sozinha. **Desde o `365ef8c`** há
+  também um prazo ABSOLUTO: `DIAS_DE_VALIDADE` = 90 dias desde a criação (coluna
+  `token_do_conector.expira_em`, `not null`, em `esquema.sql`), porque uma URL vazada e
+  usada por outra pessoa nunca fica inativa. A regra de "token que vale" (não revogado,
+  dentro do prazo absoluto, usado dentro da inatividade) é uma só, `tokenValido`, usada para
+  aceitar o token, contar vaga e listar. Cada pessoa pode ter no máximo `MAX_TOKENS_ATIVOS`
+  = 3 tokens ativos (eram 5); gerar o quarto devolve 409 pedindo para revogar um que não
+  usa. Contar e criar são atômicos (`criarTokenDoConector`, transação com
+  `pg_advisory_xact_lock` por pessoa), então duas requisições simultâneas não passam do
+  teto. Quem já tinha mais de 3 mantém os seus; só não cria outro até revogar. O esquema
+  novo precisa estar aplicado antes do deploy (`server/docs/deploy.md`). O token continua no caminho da URL (a especificação do
   MCP prefere `Authorization: Bearer`; fica como dívida).
 - **O servidor MCP avisa que o acervo é dado, não instrução** (commit `bcb3355`, I4):
   `server/lib/conector/mcp.ts` acrescenta às instruções do servidor que o conteúdo
@@ -407,7 +415,8 @@ reproduzem o corpo vazio nem o tratamento de 401.
 | `TAQCITI_LIMITE_BANCO_MB` | servidor | disjuntor global (padrão 400) |
 | `DATABASE_CA` | servidor | PEM da CA da Supabase; liga a validação do certificado do banco (sem ela, aviso no log) |
 | `TAQCITI_EXIGIR_HD` | servidor | `sim` exige o claim `hd` no `id_token` |
-| `TAQCITI_TOKEN_INATIVO_DIAS` | servidor | dias sem uso até um token do conector deixar de valer (padrão 90; máximo de 5 tokens ativos por pessoa) |
+| `TAQCITI_TOKEN_INATIVO_DIAS` | servidor | dias sem uso até um token do conector deixar de valer (padrão 90; além disso, prazo absoluto de 90 dias desde a criação e máximo de 3 tokens ativos por pessoa, ambos fixos no código) |
+| `DOCCITI_ORIGENS_PERMITIDAS` | servidor | origens exatas que podem ler as respostas (CORS), separadas por vírgula; em produção, só a da extensão publicada. Sem ela, qualquer `chrome-extension://<id>` |
 | `DOCCITI_DATA_POLICY` | servidor | `private` ou `training`; obrigatória em produção desde o commit `bcb3355` (ver `servidor-documentos.md`, seção 8) |
 | `DOCCITI_CHAVE_LEGADA` | servidor | `recusar` desliga a ponte do segredo compartilhado nas rotas de IA |
 | `TAQCITI_IA_CHAMADAS_DIA`, `TAQCITI_IA_CARACTERES_DIA` | servidor | tetos diários por pessoa das rotas de IA (padrão 2.000 chamadas e 80 milhões de caracteres) |

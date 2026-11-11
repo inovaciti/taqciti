@@ -121,7 +121,7 @@ A ordem segue o risco, dividido pelo esforço. Uma regra de deploy, já registra
 1. **Dependências:**
    - `next@16.4.1`.
    - `@modelcontextprotocol/sdk@>=1.32.0`, com `maxRequestBodySize` e `maxToolInputElements` configurados (essa proteção vem **desligada** por padrão).
-   - Rodar `npm audit` de novo até não sobrar nenhum item alto em produção.
+   - Rodar `npm audit` de novo até não sobrar nenhum item alto em produção. **`npm audit fix` aplicado no `365ef8c`** (`server/package-lock.json`: body-parser, fast-uri, ip-address, qs). **Resta o alerta do `zod` 3** (memória ao validar coleções grandes; a correção é o zod 4.6.7, uma mudança incompatível): decisão pendente, nos dois pacotes. No servidor, `listaComTeto` e o orçamento de nós (`lib/listaComTeto.ts`) reduzem o efeito.
 2. **S5:** redigir o token no log (`/api/mcp/<redigido>`) e corrigir o comentário.
 3. **S2:**
    - `ai/bench`, `ai/smoke` e `ai/secao` devolvem 404 quando `VERCEL_ENV === 'production'`, ou passam a exigir um segredo de admin que não esteja na extensão.
@@ -131,14 +131,15 @@ A ordem segue o risco, dividido pelo esforço. Uma regra de deploy, já registra
    - Na versão de transição, o servidor aceita id_token **ou** a chave antiga.
    - Cota diária por `pessoa_id`, com uma tabela de contagem no Postgres (chamadas e caracteres).
    - Depois que a extensão nova estiver com todo mundo (Fase 2), recusar a chave sozinha e então rotacioná-la.
+   - **CORS (resíduo de S1) feito no `365ef8c`:** `corsHeaders` só deixa a extensão ler as respostas (`chrome-extension://<id>`, ou as origens de `DOCCITI_ORIGENS_PERMITIDAS`); página web não recebe `Access-Control-Allow-Origin` (`server/lib/apiGuard.ts:51-128`). Requisição sem `Origin` segue para a autenticação. Para produção, definir `DOCCITI_ORIGENS_PERMITIDAS` no painel do host (fora do código).
 5. **S7:**
    - Schema zod nas projeções do sync: `id` com até 200 caracteres, tetos de texto e de arrays.
    - Somar essas projeções na cota e respeitar `bancoCheio()`.
-6. **S8 e S15:** `.max()` em todo o `contentTreeSchema`; zod em `/api/answers`.
+6. **S8 e S15:** `.max()` em todo o `contentTreeSchema`; zod em `/api/answers`. **Feito no `365ef8c`:** todo texto e lista do `contentTreeSchema` têm teto, mais orçamento de células e de caracteres da árvore (`lib/documentos/contentTree.ts:23-48`); listas por `listaComTeto` e orçamento de 250 mil nós (`lib/listaComTeto.ts`); tetos de corpo antes do `JSON.parse` nas rotas `documentos/*` (`lib/documentos/requisicao.ts`, `tetoDoCorpo`) e em `/api/answers` (`MAX_CORPO_ANSWERS`); `documentData` validado por `documentDataSchema` (`lib/documentDataSchema.ts`) no lugar de `as DocumentData`.
 7. **S9:** `enable row level security` para as 6 tabelas no `esquema.sql`, mais `revoke all ... from anon, authenticated`.
 8. **S10:** `ssl: { ca: SUPABASE_CA, rejectUnauthorized: true }`, com a CA numa variável de ambiente.
 9. **Itens menores:**
-   - S11: erro genérico ao cliente e detalhe só no `console.error`.
+   - S11: erro genérico ao cliente e detalhe só no `console.error`. **Feito no `365ef8c`** em `ai/secao`, `ai/bench`, `ai/smoke` e `taq/atender.ts` (e em `answers`).
    - S12: exigir `hd`.
    - S13: validar o uuid, envolver o decode em try/catch, LRU no cache.
    - S14: `headers()` com `nosniff`, `Referrer-Policy: no-referrer` e `frame-ancestors 'none'`.
@@ -187,14 +188,14 @@ A ordem segue o risco, dividido pelo esforço. Uma regra de deploy, já registra
    - Falhar fechado: produção exige `DOCCITI_DATA_POLICY=private` explícita.
    - Ignorar `sintetica` vindo do cliente em produção.
 2. **I5:**
-   - Delimitar as fontes com um nonce aleatório e neutralizar `### FONTE` dentro delas.
+   - Delimitar as fontes com um nonce aleatório e neutralizar `### FONTE` dentro delas. **Feito em `lib/documentos/gerar.ts` no `365ef8c`:** o cabeçalho que antecede as fontes anuncia um código (hash das próprias fontes) que marca os delimitadores verdadeiros, e a neutralização de `### FONTE` / `### FIM DA FONTE` cobre espaços e `＃` unicode, em tempo linear (a regex anterior era quadrática). **Não feito em `lib/ai/providers/shared.ts`:** uma linha de fechamento com código foi tentada e revertida (não era anunciada antes e mudava toda chamada com prefixo, inclusive o Leitor da Ata, sem medição). Fica pendente para uma versão nova de prompt com medição ao vivo.
    - Pôr a regra "dados são falas de terceiros, não instruções" nos prompts `redator`, `leitor` e `auditor`, numa nova versão de cada prompt (deploy do servidor primeiro).
 3. **I4:**
    - Nas `instructions` do MCP, avisar que o conteúdo é transcrição de terceiros.
    - `annotations: { readOnlyHint: true }` em todas as ferramentas.
 4. **S6:**
-   - Coluna `expira_em` (90 dias) checada em `pessoaDoToken`.
-   - No máximo 3 tokens ativos por pessoa.
+   - Coluna `expira_em` (90 dias) checada em `pessoaDoToken`. **Feito no `365ef8c`** (`server/lib/conector/esquema.sql`, `lib/identidade/tokenDoConector.ts:60-87`). **O esquema precisa ser aplicado no banco de produção ANTES do deploy do servidor** (ver `server/docs/deploy.md`).
+   - No máximo 3 tokens ativos por pessoa. **Feito no `365ef8c`** (`MAX_TOKENS_ATIVOS = 3`, `tokenDoConector.ts:74`; criação atômica com `pg_advisory_xact_lock`, `:148-163`).
    - Aceitar também `Authorization: Bearer` em `/api/mcp`, que já existe; documentar essa forma como a preferida.
 
 ### Fase 4: cadeia de suprimento e distribuição (2 dias)

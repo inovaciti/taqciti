@@ -13,15 +13,23 @@ troca-se o valor, não o código.
 > Pontos que valem na Vercel hoje:
 >
 > - **`DATABASE_URL` tem que ser o endereço do _pooler_ da Supabase**, não o da
->   conexão direta. O texto de erro em `lib/conector/banco.ts` (quando a variável
->   falta) ainda cita o plugin de Postgres do Railway; é texto de código, a
->   corrigir numa mudança do servidor.
+>   conexão direta (o erro de `lib/conector/banco.ts` quando a variável falta já
+>   aponta para as variáveis do projeto na Vercel).
 > - **O teto de função vale** (`maxDuration`, seção 5) e a região `gru1` de
 >   `server/vercel.json` também (seção 8).
 > - **`DOCCITI_DATA_POLICY` é obrigatória em produção** (seção 4). Sem ela, as
 >   rotas de geração respondem 503. "Produção", para o código, é
 >   `VERCEL_ENV=production`: defina a variável no ambiente **Production** do
 >   projeto na Vercel (um deploy de *Preview* não é produção e não tem a trava).
+>
+> **ANTES de publicar este servidor: aplique `server/lib/conector/esquema.sql` no
+> banco de produção** (commit `365ef8c`). O esquema ganhou a coluna
+> `token_do_conector.expira_em` (prazo absoluto de 90 dias, `not null`, com
+> padrão calculado no `alter`). O código novo lê essa coluna: **sem ela, o conector
+> MCP e a página de tokens caem com erro de coluna inexistente**. Reaplicar o
+> arquivo é seguro (tudo é `if not exists`), e os tokens que já existem ganham 90
+> dias a partir do momento em que o esquema é aplicado, então nenhum conector é
+> derrubado na hora. A ordem é: esquema, depois deploy.
 >
 > **Para publicar** (manual): defina as variáveis da seção 2 no ambiente
 > Production, dispare o deploy de produção (no painel, *Redeploy* do último
@@ -88,7 +96,9 @@ de host para host.
 | `OPENAI_API_KEY` | só com o provedor OpenAI | Chave do provedor (`lib/ai/providers/openai.ts`). |
 | `DOCCITI_PROMPTS` | não | `anteriores` volta às versões de prompt anteriores sem deploy de código (`lib/prompts/index.ts`). |
 | `DOCUMENTOS_RACIOCINIO_GERACAO` / `DOCUMENTOS_RACIOCINIO_EDICAO` | não | Esforço de raciocínio (`low`, `medium`, `high`) ao gerar e ao editar documento personalizado. Padrões `medium` e `low` (`lib/documentos/gerar.ts`). |
-| `TAQCITI_TOKEN_INATIVO_DIAS` / `TAQCITI_MAX_ITENS_POR_TIPO` | não | Dias sem uso até um token do conector expirar (padrão 90, `lib/identidade/tokenDoConector.ts`) e teto de itens por tipo no acervo (padrão 5000, `lib/conector/projecoes.ts`). |
+| `TAQCITI_TOKEN_INATIVO_DIAS` / `TAQCITI_MAX_ITENS_POR_TIPO` | não | Dias sem uso até um token do conector expirar (padrão 90, `lib/identidade/tokenDoConector.ts`) e teto de itens por tipo no acervo (padrão 5000, `lib/conector/projecoes.ts`). Além da inatividade, todo token tem **prazo absoluto de 90 dias** desde a criação (`DIAS_DE_VALIDADE`, coluna `expira_em`), e cada pessoa tem no máximo **3 tokens ativos** (`MAX_TOKENS_ATIVOS`; o quarto recebe 409). Nenhum dos dois vem de variável. |
+| `DOCCITI_ORIGENS_PERMITIDAS` | **recomendada em produção** | Origens exatas que podem **ler** as respostas no navegador (CORS), separadas por vírgula. Em produção, só a origem da extensão publicada (`chrome-extension://<id>`); o valor real fica só no painel do host, nunca no repositório. Sem ela, qualquer origem `chrome-extension://<id>` é aceita (serve ao desenvolvimento e ao `dist-dev`, cujo id muda por máquina). Página web nunca é aceita (`lib/apiGuard.ts`). |
+| `SMOKE_ID_TOKEN` | não (só para o script) | Usada só pelo `scripts/smokePdf.mjs`: um `id_token` do Google de uma conta do domínio, enviado como `Authorization: Bearer`. Sem ela, o script usa `x-docciti-key`. Ver a seção 6. |
 | `MOCK_LLM` | **nunca em produção** | Força o provedor `mock` em todos os agentes; é a tranca dos testes (`vitest.setup.ts`). |
 
 > A lista acima sai de uma busca por `process.env` no código do servidor; o
@@ -113,9 +123,14 @@ openssl rand -hex 24
 > `DOCCITI_SHARED_KEY` (rotacionar antes quebra quem não atualizou). Ver
 > `lib/apiGuard.ts` e `docs/plano-de-seguranca.md`.
 >
-> E não conte com o CORS para ajudar: ele reflete **qualquer** origem, de
-> propósito, e CORS é regra de navegador, que `curl` e scripts ignoram. O bloco de
-> `corsHeaders` explica por extenso.
+> **CORS** (`corsHeaders`, `lib/apiGuard.ts`; commit `365ef8c`): o servidor só deixa a
+> **extensão** ler as respostas. Sem configuração, vale qualquer origem
+> `chrome-extension://<id>`; com `DOCCITI_ORIGENS_PERMITIDAS`, só as listadas.
+> Páginas web (inclusive a do Meet) não recebem `Access-Control-Allow-Origin`, então o
+> navegador bloqueia a leitura, e como as rotas exigem header próprio, nem o POST sai
+> depois do preflight. A origem recusada não vira 403: a rota responde normalmente,
+> sem o cabeçalho. Requisição **sem** `Origin` (curl, scripts) não é afetada pelo CORS:
+> quem a recusa é a autenticação (`autorizarIa`, `rejectIfUnauthorized`).
 
 ---
 
@@ -188,8 +203,9 @@ por modelo**. Uma Ata completa consome quase tudo.
 `app/api/documentos/gerar`, `app/api/documentos/editar`, `app/api/ai/secao`,
 `app/api/ai/bench`) declaram `export const maxDuration = 300`; `app/api/taq/turno`
 declara 60. Na Vercel, cada uma é função serverless com esse teto por requisição.
-Alguns comentários nesses arquivos (`generate`, `ai/bench`, `ai/secao`) ainda dizem
-"INERTE no Railway": são do host anterior e estão desatualizados. O comentário de
+O comentário de `app/api/generate/route.ts` ainda diz "INERTE" para o host atual
+(Railway): é do host anterior e está desatualizado (`ai/bench` e `ai/secao` já foram
+corrigidos no `365ef8c`). O comentário de
 `app/api/generate/route.ts` diz que 300 s é o máximo do plano Hobby, confirmado
 por deploy que falhou com 600 (17/08/2026) — não verificado de novo nesta
 revisão.
@@ -206,6 +222,18 @@ gere uma Ata de verdade e cronometre — é o único teste que exercita a coisa 
 E o teto que **continua valendo em qualquer host** é o do próprio código:
 transcrição acima de `DOCCITI_MAX_TRANSCRIPT_CHARS` (padrão 400.000
 caracteres) leva **413** antes de virar uma conta cara.
+
+Desde o `365ef8c`, as rotas `documentos/*` também medem o **corpo** antes do
+`JSON.parse` e respondem **413** acima do teto (`lib/documentos/requisicao.ts`,
+`tetoDoCorpo`). Com os padrões: `renderizar` 3,5 milhões de caracteres, `gerar`
+1,3 milhão e `editar` 4,3 milhões, todos abaixo dos 4,5 MB que a Vercel aceita no
+corpo de uma função (acima disso é ela quem recusa, antes do código). Um
+`DOCCITI_MAX_TRANSCRIPT_CHARS` maior pode empurrar `gerar` e `editar` para além
+desse limite. Depois do parse, um **orçamento de 250 mil nós** (`lib/listaComTeto.ts`,
+`ORCAMENTO_DE_NOS`) recusa estruturas enormes antes de a validação gastar CPU e
+memória, e toda lista do contrato recusa pelo tamanho antes de validar item por item
+(`listaComTeto`). `/api/answers` tem o mesmo padrão (teto de 2 milhões de caracteres
+no corpo, 413) e valida o `documentData` com `documentDataSchema`.
 
 ---
 
@@ -234,11 +262,13 @@ Prova de fumaça OK: build de produção renderiza PDF com a Barlow embutida.
 prova nada: o defeito que mais custou caro aqui era a rota respondendo **200
 sem PDF**, em silêncio, só em build de produção.
 
-O script autentica só com `x-docciti-key`, e `/api/answers` passa por
-`autorizarIa`: ele funciona enquanto a ponte do segredo antigo estiver aberta.
-Depois de `DOCCITI_CHAVE_LEGADA=recusar`, o script recebe 401 mesmo com o deploy
-saudável — aí é preciso um `Authorization: Bearer <id_token>` de uma conta do
-domínio permitido, que o script ainda não envia.
+Por padrão o script autentica com `x-docciti-key`, e `/api/answers` passa por
+`autorizarIa`: funciona enquanto a ponte do segredo antigo estiver aberta. **Com
+`DOCCITI_CHAVE_LEGADA=recusar`, o segredo sozinho toma 401 mesmo com o deploy
+saudável.** Aí defina `SMOKE_ID_TOKEN` com um `id_token` do Google de uma conta do
+domínio permitido: o script o envia como `Authorization: Bearer` (o valor não vai
+para o log nem para o repositório). Sem nenhuma das duas credenciais, o script
+avisa e sai.
 
 Para provar o pipeline inteiro (aí sim consumindo cota), `POST /api/generate`
 com um `transcript` e a mesma autenticação (`x-docciti-key` enquanto a ponte

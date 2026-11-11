@@ -304,7 +304,9 @@ nenhum). Nenhum é assinado: SmartScreen e Gatekeeper avisam, e é esperado. O
 | `DOCCITI_SHARED_KEY` | Segredo do header `x-docciti-key`. Ausente = 500 (falha fechada). Desde o commit `09e99ab` é ponte para as extensões antigas. |
 | `DOCCITI_CHAVE_LEGADA` | `recusar` desliga a ponte do segredo nas rotas de IA (só o `id_token` do Google vale). |
 | `TAQCITI_IA_CHAMADAS_DIA`, `TAQCITI_IA_CARACTERES_DIA` | Tetos diários por pessoa das rotas de IA (padrão 2.000 chamadas e 80 milhões de caracteres). |
-| `TAQCITI_TOKEN_INATIVO_DIAS` | Dias sem uso depois dos quais um token do conector deixa de valer (padrão 90). Cada uso renova o prazo; no máximo 5 tokens ativos por pessoa (409 ao passar). |
+| `TAQCITI_TOKEN_INATIVO_DIAS` | Dias sem uso depois dos quais um token do conector deixa de valer (padrão 90). Cada uso renova o prazo; há também prazo absoluto de 90 dias desde a criação (`expira_em`) e no máximo 3 tokens ativos por pessoa (409 ao passar). |
+| `DOCCITI_ORIGENS_PERMITIDAS` | Origens que podem ler as respostas do servidor (CORS), separadas por vírgula; em produção, só a da extensão publicada. Sem ela, qualquer `chrome-extension://<id>`. |
+| `SMOKE_ID_TOKEN` | `id_token` do Google para o `smokePdf.mjs` (vai como `Authorization: Bearer`); necessário quando `DOCCITI_CHAVE_LEGADA=recusar`. |
 | `DOCCITI_DIAGNOSTICO` | `ligado` reabre as rotas `/api/ai/{secao,smoke,bench}` em produção (404 sem ela); usar só pontualmente. |
 | `DOCCITI_DATA_POLICY` | `private` (chave paga) ou `training`. **Desde o commit `bcb3355`:** em produção é OBRIGATÓRIA (sem ela as rotas de geração respondem 503 e o Taq fica `configuracao_pendente`), e o `sintetica: true` do cliente deixa de valer em produção. Ver `servidor-documentos.md`, seção 8. |
 | `DATABASE_CA` | PEM da CA da Supabase; liga a validação do certificado TLS do banco (sem ela, aviso no log a cada instância). |

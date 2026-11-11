@@ -25,7 +25,7 @@ armadilhas que os comentários do código guardam, e diz como testar a área.
 | [`arquitetura/extensao-interface.md`](arquitetura/extensao-interface.md) | As telas (Home, sidebar, página do documento), o padrão de plataforma, componentes compartilhados, tema, fluxo de gerar documento (atualizado em 11/11/2026) |
 | [`arquitetura/taq-assistente.md`](arquitetura/taq-assistente.md) | O assistente Taq: ciclo do turno, ferramentas e seus limites, memória, subsistemas, servidor e prompts (atualizado em 11/11/2026) |
 | [`arquitetura/servidor-documentos.md`](arquitetura/servidor-documentos.md) | Geração de documentos: pipeline, agentes, modelo de dados, compilador e variantes visuais, guardas de fidelidade, camada de IA, rotas (atualizado em 11/11/2026) |
-| [`arquitetura/conector-sync-integracoes.md`](arquitetura/conector-sync-integracoes.md) | Conector MCP, sincronização, esquema do servidor, identidade, integrações Google e segurança (atualizado em 21/10/2026) |
+| [`arquitetura/conector-sync-integracoes.md`](arquitetura/conector-sync-integracoes.md) | Conector MCP, sincronização, esquema do servidor, identidade, integrações Google e segurança (atualizado em 11/11/2026) |
 | [`arquitetura/build-release-operacao.md`](arquitetura/build-release-operacao.md) | Estrutura do repositório, builds, testes, CI, release, instaladores, deploy e checklist de publicação (atualizado em 11/11/2026) |
 
 ## Produto e processo
