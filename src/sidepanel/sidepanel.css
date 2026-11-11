@@ -2937,3 +2937,15 @@
 .tq-onda {
   height: 312px;
 }
+
+/*
+ * Os cartões do Taq rolam por cima dessa onda maior. O fundo deles, quase
+ * transparente (bom na HOME, onde a onda fica só no pé), deixava os pontos
+ * atravessarem as letras do cartão. Aqui o cartão leva o grafite da coluna por
+ * baixo do mesmo véu claro: a aparência é a mesma, sem a onda dentro do texto.
+ */
+.tq-side .tq-c {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.025)),
+    var(--s-fundo);
+}
