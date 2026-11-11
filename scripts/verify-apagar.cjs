@@ -24,7 +24,7 @@ const assert = require('node:assert/strict');
 const output = path.resolve('docs/verification/apagar');
 fs.mkdirSync(output, { recursive: true });
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'taqciti-apagar-'));
-const extension = path.resolve('dist');
+const extension = path.resolve(process.argv[3] || 'dist');
 
 const REUNIAO = {
   id: 'teste-reuniao',
@@ -128,16 +128,38 @@ const conversa = (id, title, at) => ({
     const linhas = page.locator('.tq-item-linha');
     assert.equal(await linhas.count(), 2);
 
-    // O que o jsdom não vê: o botão TEM caixa, está à direita do item e não o
-    // cobre. Aninhado ou sobreposto, o clique acertaria o alvo errado.
+    // O que o jsdom não vê. Documentos são cartões com a página em miniatura, e
+    // a lixeira fica POR CIMA dela, no canto de baixo à direita (home.css,
+    // `.tq-documento-item .tq-item-apagar`). Então: ela tem caixa de alvo de
+    // verdade (a versão sem altura própria tinha 16 px), mora dentro da
+    // miniatura, e o ponto central dela é ELA — não o cartão por baixo, que
+    // abriria o documento em vez de apagar.
     const linha = linhas.filter({ hasText: 'Ata que some' });
-    const item = await linha.locator('.tq-item').boundingBox();
+    const miniatura = await linha.locator('.tq-miniatura').boundingBox();
     const lixeira = await linha.locator('.tq-item-apagar').boundingBox();
-    assert(lixeira.width > 20 && lixeira.height > 20, 'lixeira sem caixa');
-    assert(lixeira.x >= item.x + item.width - 1, 'lixeira sobre o item');
-    assert(Math.abs(lixeira.y - item.y) < 2, 'lixeira desalinhada da linha');
+    assert(lixeira.width >= 32 && lixeira.height >= 32, 'lixeira sem caixa de alvo');
+    assert(
+      lixeira.x >= miniatura.x &&
+        lixeira.x + lixeira.width <= miniatura.x + miniatura.width + 1 &&
+        lixeira.y >= miniatura.y &&
+        lixeira.y + lixeira.height <= miniatura.y + miniatura.height + 1,
+      'lixeira fora da miniatura',
+    );
+    assert(
+      lixeira.x + lixeira.width > miniatura.x + miniatura.width / 2 &&
+        lixeira.y > miniatura.y + miniatura.height / 2,
+      'lixeira fora do canto de baixo à direita',
+    );
+    assert(
+      await page.evaluate(
+        ([x, y]) => !!document.elementFromPoint(x, y)?.closest('.tq-item-apagar'),
+        [lixeira.x + lixeira.width / 2, lixeira.y + lixeira.height / 2],
+      ),
+      'lixeira coberta',
+    );
+    assert.equal(await linha.locator('.tq-item .tq-item-apagar').count(), 0, 'lixeira dentro do botão do item');
     assert(await linha.locator('.tq-item-apagar').isVisible());
-    check('Documentos: a lixeira é irmã do item, visível e à direita dele');
+    check('Documentos: a lixeira é irmã do item, com alvo de verdade, no canto da miniatura');
 
     await page.screenshot({ path: path.join(output, 'documentos-lista.png'), fullPage: true });
 

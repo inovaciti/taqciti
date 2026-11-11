@@ -9,7 +9,7 @@ const assert = require('node:assert/strict');
 const output = path.resolve('docs/verification/meetings-documents');
 fs.mkdirSync(output, { recursive: true });
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'taqciti-verification-'));
-const extension = path.resolve('dist');
+const extension = path.resolve(process.argv[3] || 'dist');
 const options = {
   executablePath:
     process.env.BROWSER_PATH ||
@@ -114,8 +114,11 @@ const options = {
       .fill('[TESTE] Nota editada na HOME durante atualização da captura.');
     await page.evaluate(async () => {
       const data = await chrome.storage.local.get('taq:history');
-      data['taq:history'][0].segments[0].text =
-        '[TESTE] Transcrição atualizada pela captura simulada.';
+      // A captura acrescenta no FIM. Mexer numa fala acima da rolagem mudaria a
+      // altura do que está acima, e a ancoragem de rolagem do navegador (que mantém
+      // a mesma fala à vista) mudaria o scrollTop sem defeito algum.
+      const segs = data['taq:history'][0].segments;
+      segs[segs.length - 1].text = '[TESTE] Transcrição atualizada pela captura simulada.';
       await chrome.storage.local.set(data);
     });
     await page.getByRole('tab', { name: 'Transcrição', exact: true }).click();
@@ -135,26 +138,21 @@ const options = {
     });
     check('Alternância estreita preserva rolagem e rascunho durante captura simulada');
 
+    // A sidebar abre a reunião guardada só com a transcrição: notas e tudo o que
+    // se faz COM uma reunião guardada moram na HOME (decisão do 6db1a26, comentário
+    // em src/sidepanel/Reunioes.tsx). Antes este passo editava a nota pela sidebar.
     const side = await context.newPage();
     await side.setViewportSize({ width: 390, height: 844 });
     await side.goto(`${base}/src/sidepanel/index.html`);
     await side.locator('.tq-modo').first().click();
     await side.locator('.tq-lista button').first().click();
-    await side.getByRole('tab', { name: 'Notas', exact: true }).click();
-    await side.waitForFunction(() =>
-      document.querySelector('#tq-editor-de-nota')?.value.includes('HOME durante'),
-    );
-    await side
-      .locator('#tq-editor-de-nota')
-      .fill('[TESTE] Atualizada pela sidebar; a HOME deve refletir esta edição.');
-    await page.waitForFunction(() =>
-      document.querySelector('.tq-notas-campo')?.value.includes('pela sidebar'),
-    );
+    await side.getByText('[TESTE] Planejamento do projeto').first().waitFor();
+    assert.equal(await side.getByRole('tab', { name: 'Notas', exact: true }).count(), 0);
     await side.screenshot({
-      path: path.join(output, 'sidebar-notas.png'),
+      path: path.join(output, 'sidebar-reuniao-guardada.png'),
       fullPage: true,
     });
-    check('HOME e sidebar leem e editam a mesma nota após confirmação do salvamento');
+    check('Sidebar abre a reunião guardada só com a transcrição; a nota fica na HOME');
     await side.close();
 
     await page.setViewportSize({ width: 1440, height: 1000 });
@@ -169,7 +167,7 @@ const options = {
         )
       ).includes('renomeada'),
     );
-    assert((await page.locator('.tq-notas-campo').inputValue()).includes('pela sidebar'));
+    assert((await page.locator('.tq-notas-campo').inputValue()).includes('HOME durante'));
     check('Renomeação da reunião preserva vínculo com as notas');
 
     // Resposta sintética, explicitamente identificada: nenhuma chamada de IA.
@@ -194,7 +192,7 @@ const options = {
           ? Promise.reject(new Error('Falha de teste'))
           : window.originalSet(values);
     });
-    await page.getByRole('button', { name: 'Gerar documento', exact: true }).click();
+    await page.getByRole('button', { name: 'Criar documento', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Ata de Reunião', exact: true }).click();
     await page
       .getByRole('button', { name: 'Tentar salvar de novo', exact: true })
