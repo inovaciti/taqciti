@@ -366,19 +366,19 @@ function SuaConta() {
           </span>
           <div role="status">
             <b>{dentro ? 'Conectado' : 'Não conectado'}</b>
-            {login === null && <small>Verificando…</small>}
+            {login === null && <small className="tq-hub-neutro">Verificando…</small>}
             {login?.situacao === 'dentro' && <small>{login.email ?? 'conta do CITi'}</small>}
             {login?.situacao === 'dentro' && login.pelaSincronizacao && (
               <small>pela sincronização — para sair, desconecte a Conta Google abaixo</small>
             )}
             {login?.situacao === 'vencido' && (
-              <small>A sessão de {login.email} venceu. Entre de novo para o Taq voltar a responder.</small>
+              <small className="tq-hub-aviso">A sessão de {login.email} venceu. Entre de novo para o Taq voltar a responder.</small>
             )}
             {login?.situacao === 'fora' && (
-              <small>Entre com a sua conta @citi.org.br para usar o Taq e gerar documentos.</small>
+              <small className="tq-hub-neutro">Entre com a sua conta @citi.org.br para usar o Taq e gerar documentos.</small>
             )}
             {login?.situacao === 'sem-oauth' && (
-              <small>O login do Google não está configurado nesta versão do TaqCiti.</small>
+              <small className="tq-hub-aviso">O login do Google não está configurado nesta versão do TaqCiti.</small>
             )}
             {erro && <small className="tq-hub-falha">{erro}</small>}
           </div>
@@ -656,7 +656,7 @@ export function PaginaConexoes({
       ? [{ id: 'claude', nome: 'Claude', faz: 'Responde sobre as suas reuniões dentro da Claude.', icone: <span>C</span>, fluxo: fluxoDoAssistente('Claude') }]
       : []),
     ...(!temEndereco('ChatGPT')
-      ? [{ id: 'chatgpt', nome: 'ChatGPT', faz: 'Busca e abre as suas reuniões no ChatGPT.', icone: <span>G</span>, fluxo: fluxoDoAssistente('ChatGPT') }]
+      ? [{ id: 'chatgpt', nome: 'ChatGPT', faz: 'Busca e abre as suas reuniões no ChatGPT.', icone: <span className="tq-hub-sigla">GPT</span>, fluxo: fluxoDoAssistente('ChatGPT') }]
       : []),
     ...(!conta.conexao
       ? [

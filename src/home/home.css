@@ -3178,6 +3178,13 @@ body .tq-home [role='dialog'] button {
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+/* "G" era a Conta Google e também o ChatGPT, lado a lado. A sigla de três
+   letras precisa de corpo menor para caber na placa. */
+.tq-hub-sigla {
+  font-size: 11px;
+  letter-spacing: 0.2px;
+}
+
 .tq-hub-lista .tq-hub-icone {
   width: 34px;
   height: 34px;
@@ -3195,6 +3202,16 @@ body .tq-home [role='dialog'] button {
   display: block;
   font-size: 12px;
   color: var(--voz-clara);
+}
+
+/* O verde da lista diz "está ligado". Na linha da conta, quando NÃO está,
+   ele mentia: "o login não está configurado" saía na cor de sucesso. */
+.tq-hub-lista small.tq-hub-neutro {
+  color: var(--e-cinza);
+}
+
+.tq-hub-lista small.tq-hub-aviso {
+  color: var(--e-atencao);
 }
 
 .tq-hub-ok {
