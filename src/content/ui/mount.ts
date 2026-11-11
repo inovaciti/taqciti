@@ -60,9 +60,11 @@ function ensureShadowRoot(): ShadowRoot {
   document.documentElement.appendChild(host);
   guardHost(host);
 
-  // 'open' (e não 'closed') para o React conseguir gerir foco e eventos
-  // sintéticos dentro do shadow root sem casos especiais.
-  shadowRoot = host.attachShadow({ mode: 'open' });
+  // 'closed': a página do Meet não alcança a UI da cápsula por `host.shadowRoot`
+  // (devolve null), então não clica nos botões nem lê o que há dentro. A
+  // referência fica só neste módulo; o React recebe o nó de montagem, não o
+  // host, então foco e eventos funcionam normalmente.
+  shadowRoot = host.attachShadow({ mode: 'closed' });
   const sheet = new CSSStyleSheet();
   sheet.replaceSync(PANEL_CSS);
   shadowRoot.adoptedStyleSheets = [sheet];

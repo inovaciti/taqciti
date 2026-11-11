@@ -44,7 +44,7 @@
 import { termosDe } from './busca';
 
 /** Sobe quando o conteúdo muda — vai no resultado da consulta. */
-export const VERSAO_DA_REFERENCIA = '2026-10-08';
+export const VERSAO_DA_REFERENCIA = '2026-11-11';
 
 export const ASSUNTOS = [
   'captura',
@@ -1096,9 +1096,7 @@ export const FUNCIONALIDADES: readonly Funcionalidade[] = [
       'Só os contextos ligados vão junto quando o Taq consulta a IA; os guardados ficam só neste computador.',
       '“Busca na internet” guarda só a sua preferência: a busca ainda não está disponível nesta versão.',
       'Cada reunião começa com a versão do assistente em uso e fica com ela até o fim: o que você mudar durante uma reunião vale a partir da próxima.',
-      '“Reproduzir” envia trechos da reunião ao provedor de IA e usa algumas chamadas (há um teto); só roda quando você clica e não grava nada na reunião.',
       'Se você der vários retornos do mesmo tipo sobre as sugestões (descartar, “tarde demais”, “já foi resolvido”), aparecem “Ajustes sugeridos”, com o que mudaria. Nada muda sozinho: “Aplicar ao meu assistente” grava uma nova versão do perfil; “Agora não” recusa, e a proposta só volta com retorno novo.',
-      'Para ver o que o seu assistente teria feito numa reunião passada, use “Testar o assistente numa reunião passada” e clique em “Reproduzir”: a reunião é reproduzida por cortes de tempo, e a cada ponto só existe o que já tinha sido dito.',
     ],
     rotulos: [
       'Preparar',
@@ -1111,12 +1109,33 @@ export const FUNCIONALIDADES: readonly Funcionalidade[] = [
       'Ajustes sugeridos',
       'Aplicar ao meu assistente',
       'Agora não',
-      'Testar o assistente numa reunião passada',
-      'Reproduzir',
     ],
     implementacao: ['src/home/Preparar.tsx', 'src/home/OQueLevar.tsx', NAV],
-    verificacao: 'codigo',
+    verificacao: 'interface',
     palavras: ['preparar', 'perfil', 'contexto', 'contextos', 'conduzir', 'assistente', 'padrao do citi', 'personalizado', 'como quero ser ajudado'],
+  },
+  {
+    // Separada de `preparar_assistente` (11/11/2026): a volta na tela viu o
+    // bloco e o botão, mas não clicou (o clique envia trechos ao provedor de
+    // IA). O que acontece depois do clique está conferido só nos testes de
+    // `Preparar.test.tsx`, então esta entrada fica `codigo`.
+    id: 'reproduzir_reuniao_passada',
+    assunto: 'navegacao',
+    titulo: 'Testar o assistente numa reunião passada',
+    oQueFaz:
+      'Mostra o que o seu assistente teria feito numa reunião já guardada: a reunião é reproduzida por cortes de tempo, e a cada ponto só existe o que já tinha sido dito.',
+    onde: 'HOME → Preparar → Testar o assistente numa reunião passada',
+    passos: [
+      'Na HOME, abra “Preparar”.',
+      'Em “Testar o assistente numa reunião passada”, escolha a reunião e clique em “Reproduzir”.',
+    ],
+    limitacoes: [
+      '“Reproduzir” envia trechos da reunião ao provedor de IA e usa algumas chamadas (há um teto); só roda quando você clica e não grava nada na reunião.',
+    ],
+    rotulos: ['Preparar', 'Testar o assistente numa reunião passada', 'Reproduzir'],
+    implementacao: ['src/home/Preparar.tsx', NAV],
+    verificacao: 'codigo',
+    palavras: ['reproduzir', 'testar assistente', 'reuniao passada', 'simular', 'calibrar'],
   },
   {
     id: 'perguntas_prontas_da_reuniao',

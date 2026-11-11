@@ -44,9 +44,9 @@ import { PANEL_OPEN_EVENT } from './mount';
 /**
  * O clique veio de uma pessoa?
  *
- * O shadow root da cápsula é `open` (ver `mount.ts`), então o script da página
- * do Meet alcança estes botões e pode disparar `.click()` neles — começando uma
- * captura que ninguém autorizou. Um evento sintético desses chega com
+ * O shadow root da cápsula é `closed` (ver `mount.ts`), então o script da
+ * página do Meet não alcança estes botões por `host.shadowRoot`. Esta checagem
+ * fica como defesa extra: um `.click()` sintético chegaria com
  * `isTrusted: false`; o clique de verdade, com `true`. Nos testes (jsdom) todo
  * evento é sintético, daí a exceção do modo `test`.
  */

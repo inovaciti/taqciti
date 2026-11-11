@@ -1,3 +1,8 @@
+// ATENÇÃO (11/11/2026): o trecho 'Meet: a cápsula aparece e a sidebar aceita' foi
+// REESCRITO quando o shadow root da cápsula virou closed (consentimento pela
+// sidebar, presença pelo host `taqciti-root` + print) e AINDA NÃO FOI EXECUTADO:
+// exige chave de IA.
+//
 // A reunião AO VIVO contra a extensão RODANDO: captura de legendas, cartão de
 // apoio e "O que falta fechar", com o servidor e o modelo de verdade.
 //
@@ -6,8 +11,8 @@
 // `src/content/providers/googleMeet/selectors.ts`: botão de sair visível, botão
 // de legendas com aria-pressed e a região de legendas no formato
 // `.nMcdL > .KcIKyf + .bh44bd`. O content script, o background e a sidebar são
-// os de verdade. O consentimento é aceito por clique REAL (isTrusted), como a
-// pessoa faria. As falas são inventadas (reunião sintética, com uma fala de
+// os de verdade. O consentimento é aceito por clique REAL (isTrusted) na
+// sidebar, como a pessoa faria. As falas são inventadas (reunião sintética, com uma fala de
 // injeção de propósito). Perfil de navegador isolado.
 //
 // Existe desde 28/10/2026: o cartão de apoio e o "O que falta fechar" nunca
@@ -99,13 +104,30 @@ const falhas = [];
     meet.on('pageerror', (e) => erros.push(`meet: ${e.message}`));
     await meet.goto('https://meet.google.com/abc-defg-hij');
 
-    await tentar('Meet: a cápsula pergunta e o clique real aceita', async () => {
-      const dialogo = meet.getByRole('dialog', { name: 'Registrar esta reunião?' });
-      await dialogo.waitFor({ timeout: 20000 });
-      await meet.screenshot({ path: path.join(saida, 'ao-vivo-1-pergunta.png') });
-      await dialogo.getByRole('button', { name: /^(Registrar|Nova gravação)/ }).first().click();
+    await tentar('Meet: a cápsula aparece e a sidebar aceita', async () => {
+      // O shadow root da cápsula é closed: getByRole/locator não entram nele.
+      // A presença se confere pelo host `taqciti-root` e pelo print; o
+      // consentimento é respondido na sidebar. Com a pergunta pendente ela
+      // mostra a tela `Pergunta` ("Registrar" / "Nova gravação"), que grava a
+      // mesma decisão que a cápsula grava; sem pergunta, mostra o "Registrar
+      // esta reunião" da lista (ui/gravarAgora). Página da extensão aberta numa
+      // aba comum passa pela barreira de `remetente.ts` (url chrome-extension://).
+      const host = meet.locator('taqciti-root');
+      await host.waitFor({ state: 'attached', timeout: 20000 });
       await meet.waitForTimeout(1500);
-      verificacoes.pergunta_respondida = (await dialogo.count()) === 0;
+      await meet.screenshot({ path: path.join(saida, 'ao-vivo-1-pergunta.png') });
+      verificacoes.capsula_presente = (await host.count()) === 1;
+      const consentimento = await context.newPage();
+      await consentimento.goto(`${raiz}/src/sidepanel/index.html`);
+      const aceitar = consentimento.getByRole('button', { name: /^(Registrar|Nova gravação|Registrar esta reunião)$/ }).first();
+      await aceitar.waitFor({ timeout: 15000 });
+      await aceitar.click();
+      await consentimento.waitForTimeout(1500);
+      await meet.screenshot({ path: path.join(saida, 'ao-vivo-1b-depois-do-registro.png') });
+      verificacoes.pergunta_respondida =
+        (await consentimento.getByRole('heading', { name: 'Registrar esta reunião?' }).count()) === 0 &&
+        (await consentimento.getByText(/Começando…|Não achei uma reunião|ainda não tem o TaqCiti|Não consegui começar/).count()) === 0;
+      await consentimento.close();
     });
 
     await tentar('Meet: as falas entram pela região de legendas', async () => {

@@ -1,7 +1,7 @@
 {
-  "quando": "2026-10-08T18:41:20.195Z",
-  "build": "..\\AppData\\Local\\Temp\\claude\\C--Users-edisi-taqciti\\709f8ab8-271a-41f5-9c47-4a5b41d99191\\scratchpad\\dist-verify",
-  "browser": "154.0.4258.62",
+  "quando": "2026-11-11T04:54:03.083Z",
+  "build": "..\\AppData\\Local\\Temp\\taq-build-dev",
+  "browser": "157.0.4341.42",
   "dados": "[TESTE] sintéticos; geração simulada, sem IA",
   "vistos": [
     "Abrir",
@@ -9,13 +9,15 @@
     "Abrir documento",
     "Abrir navegação",
     "Acompanhamento",
+    "Adicionar contexto",
     "Agora não",
-    "Anexar imagem ou documento",
+    "Ajustes sugeridos",
     "Apagar",
     "Apagar as notas desta reunião",
     "Apagar documento",
     "Apagar esta conversa",
     "Apagar reunião",
+    "Aplicar ao meu assistente",
     "Assistente",
     "Ata de Reunião",
     "Ação",
@@ -44,11 +46,10 @@
     "Desligar",
     "Desligar brasas do fundo",
     "Destaque",
+    "Discreto: uma lembrança relevante por vez",
     "Doc Conversa (X1)",
-    "Documento",
     "Documentos",
     "Dúvida",
-    "Em breve",
     "Enviar",
     "Enviar ao Google Docs",
     "Escolher conversa",
@@ -56,7 +57,6 @@
     "Finalizar",
     "Fontes",
     "Gerar com o padrão CITi",
-    "Imagem",
     "Mais ações",
     "Nome da reunião",
     "Nome do documento",
@@ -65,17 +65,24 @@
     "Nova",
     "Nova conversa",
     "O que falta fechar",
+    "O que levar para as reuniões",
+    "Padrão do CITi",
     "Para conectar",
+    "Participativo: perguntas e encaminhamentos com mais frequência",
     "Pausada",
     "Pausar",
     "Pausar movimento",
     "Pedir alteração",
     "Pergunta rápida",
     "Perguntar sobre o trecho",
+    "Personalizar a partir deste",
     "Preparar",
     "Print",
     "Prints",
     "Registrar",
+    "Registrar esta reunião",
+    "Regras que não mudam",
+    "Reproduzir",
     "Restaurar",
     "Resumo completo",
     "Retomar",
@@ -83,8 +90,10 @@
     "Reuniões",
     "Salvar",
     "Sem conectar: o caminho manual",
+    "Testar o assistente numa reunião passada",
     "Tirar o contexto desta pergunta",
     "Transcrição",
+    "Usar este assistente",
     "Ver",
     "Versões"
   ],
@@ -94,13 +103,14 @@
     "Desfazer": "HOME · Assistente",
     "Abrir": "HOME · Assistente",
     "Assistente": "HOME · Assistente",
+    "Preparar": "HOME · Assistente",
     "Documentos": "HOME · Assistente",
+    "Acompanhamento": "HOME · Assistente",
     "Conexões": "HOME · Assistente",
     "Abrir navegação": "HOME · Assistente",
     "Conversa": "HOME · Assistente",
     "Fontes": "HOME · Assistente",
     "Conversas": "HOME · Assistente",
-    "Anexar imagem ou documento": "HOME · Assistente",
     "Copiar": "HOME · Assistente",
     "Copiar a resposta": "HOME · Assistente",
     "Copiar sua mensagem": "HOME · Assistente",
@@ -108,15 +118,11 @@
     "Desligar": "HOME · Assistente",
     "Desligar brasas do fundo": "HOME · Assistente",
     "Pausar movimento": "HOME · Assistente",
-    "Acompanhamento": "HOME · Assistente",
-    "Preparar": "HOME · Assistente",
     "Enviar": "HOME · Assistente",
     "Apagar": "HOME · menu Conversas",
     "Nova conversa": "HOME · menu Conversas",
     "Nova": "HOME · menu Conversas",
     "Apagar esta conversa": "HOME · menu Conversas",
-    "Imagem": "HOME · anexar",
-    "Documento": "HOME · anexar",
     "Transcrição": "HOME · reunião",
     "Baixar": "HOME · reunião",
     "Nome da reunião": "HOME · reunião",
@@ -151,8 +157,22 @@
     "Sem conectar: o caminho manual": "HOME · Conexões",
     "Para conectar": "HOME · Conexões",
     "Conectar": "HOME · Conexões",
-    "Em breve": "HOME · Conexões",
     "Conectadas": "HOME · Conexões",
+    "O que levar para as reuniões": "HOME · Preparar (Padrão do CITi)",
+    "Padrão do CITi": "HOME · Preparar (Padrão do CITi)",
+    "Personalizar a partir deste": "HOME · Preparar (Padrão do CITi)",
+    "Regras que não mudam": "HOME · Preparar (regras que não mudam)",
+    "Discreto: uma lembrança relevante por vez": "HOME · Preparar (regras que não mudam)",
+    "Participativo: perguntas e encaminhamentos com mais frequência": "HOME · Preparar (regras que não mudam)",
+    "Adicionar contexto": "HOME · Preparar (personalizado)",
+    "Usar este assistente": "HOME · Preparar (personalizado)",
+    "Agora não": "HOME · Preparar (ajustes sugeridos)",
+    "Ajustes sugeridos": "HOME · Preparar (ajustes sugeridos)",
+    "Aplicar ao meu assistente": "HOME · Preparar (ajustes sugeridos)",
+    "Testar o assistente numa reunião passada": "HOME · Preparar (ajustes sugeridos)",
+    "Reproduzir": "HOME · Preparar (ajustes sugeridos)",
+    "Registrar": "sidebar · Conversa",
+    "Registrar esta reunião": "sidebar · Conversa",
     "Abrir HOME": "sidebar · Conversa",
     "Escolher conversa": "sidebar · Conversa",
     "Finalizar": "sidebar · reunião simulada",
@@ -169,9 +189,7 @@
     "Perguntar sobre o trecho": "sidebar · trecho selecionado",
     "Tirar o contexto desta pergunta": "sidebar · pergunta com contexto",
     "Retomar": "sidebar · reunião simulada pausada",
-    "Pausada": "sidebar · reunião simulada pausada",
-    "Agora não": "sidebar · pergunta de registro",
-    "Registrar": "sidebar · pergunta de registro"
+    "Pausada": "sidebar · reunião simulada pausada"
   },
   "porEntrada": [
     {
@@ -179,6 +197,7 @@
       "vistos": [
         "Agora não",
         "Registrar",
+        "Registrar esta reunião",
         "Reunião",
         "Transcrição"
       ],
@@ -186,7 +205,6 @@
         "Deseja registrar esta reunião?",
         "Continuar de onde parou",
         "Nova gravação",
-        "Iniciar captura",
         "Preparando a transcrição…"
       ]
     },
@@ -269,8 +287,10 @@
       "vistos": [
         "Abrir HOME",
         "Assistente",
+        "Preparar",
         "Reuniões",
         "Documentos",
+        "Acompanhamento",
         "Conexões",
         "Abrir navegação"
       ],
@@ -369,15 +389,6 @@
         "Conversas",
         "Apagar esta conversa",
         "Apagar"
-      ],
-      "nao_vistos": []
-    },
-    {
-      "id": "anexar_arquivo",
-      "vistos": [
-        "Anexar imagem ou documento",
-        "Imagem",
-        "Documento"
       ],
       "nao_vistos": []
     },
@@ -532,7 +543,6 @@
         "Conexões",
         "Para conectar",
         "Conectar",
-        "Em breve",
         "Conectadas"
       ],
       "nao_vistos": []
@@ -585,14 +595,20 @@
     {
       "id": "preparar_assistente",
       "vistos": [
-        "Preparar"
-      ],
-      "nao_vistos": [
-        "Organizar o que entendi",
+        "Preparar",
+        "O que levar para as reuniões",
+        "Padrão do CITi",
+        "Personalizar a partir deste",
+        "Adicionar contexto",
+        "Regras que não mudam",
         "Usar este assistente",
-        "Salvar a preparação",
-        "Usar a versão atual"
-      ]
+        "Ajustes sugeridos",
+        "Aplicar ao meu assistente",
+        "Agora não",
+        "Testar o assistente numa reunião passada",
+        "Reproduzir"
+      ],
+      "nao_vistos": []
     },
     {
       "id": "perguntas_prontas_da_reuniao",
@@ -618,18 +634,19 @@
         "Ver fonte",
         "Fechar a reunião",
         "Me ajude a fechar",
-        "Registrar como acompanhamento"
+        "Registrar como acompanhamento",
+        "Registrar como decisão"
       ]
     },
     {
       "id": "apoio_a_conducao",
       "vistos": [
-        "Preparar"
-      ],
-      "nao_vistos": [
+        "Preparar",
         "Usar este assistente",
         "Discreto: uma lembrança relevante por vez",
-        "Participativo: perguntas e encaminhamentos com mais frequência",
+        "Participativo: perguntas e encaminhamentos com mais frequência"
+      ],
+      "nao_vistos": [
         "Usei esta pergunta",
         "Isso já foi resolvido",
         "Guardar para depois",
@@ -774,7 +791,6 @@
     "perguntar_sobre_trecho",
     "nova_e_trocar_conversa",
     "apagar_conversa",
-    "anexar_arquivo",
     "copiar_resposta",
     "texto_para_claude",
     "fontes_do_contexto",
@@ -790,6 +806,7 @@
     "enviar_google_docs",
     "aparencia",
     "capacidades_do_taq",
+    "preparar_assistente",
     "rascunho_de_mensagem",
     "revisar_documento",
     "revisar_exposicao",
@@ -809,5 +826,7 @@
     },
     "texto_da_conversa_na_tela": 0
   },
-  "falhas": []
+  "falhas": [
+    "HOME: anexar: locator.click: Timeout 5000ms exceeded."
+  ]
 }

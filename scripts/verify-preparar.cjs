@@ -75,7 +75,7 @@ const falhas = [];
       verificacoes.sem_preparar_uma_reuniao = (await page.getByRole('heading', { name: 'Preparar uma reunião' }).count()) === 0;
       verificacoes.sem_taq_no_texto = !/\bTaq\b|Mente/.test(await page.locator('.tq-levar').innerText());
       verificacoes.mapa_em_modo_mapa_1440 = (await page.locator('.tq-mapa-caixa.lista').count()) === 0;
-      verificacoes.nada_salvo_ao_abrir = (await guardado(page))?.perfil ?? null;
+      verificacoes.nada_salvo_ao_abrir = ((await guardado(page))?.perfil ?? null) === null; // true = nada foi salvo
       await page.screenshot({ path: path.join(saida, 'preparar-1440-padrao.png'), fullPage: true });
     });
 
@@ -91,7 +91,7 @@ const falhas = [];
       await page.locator('.tq-ed-campo input').fill('[TESTE] Escopo do Portal');
       await page.locator('.tq-ed-campo textarea').fill('Primeira entrega: cadastro de voluntários e painel da coordenação. Ficam fora: app mobile e pagamentos.');
       verificacoes.contador = await page.locator('.tq-ed-conta').innerText();
-      verificacoes.nada_salvo_antes_de_usar = (await guardado(page))?.perfil ?? null;
+      verificacoes.nada_salvo_antes_de_usar = ((await guardado(page))?.perfil ?? null) === null; // true = nada foi salvo
       verificacoes.status_pendente = await page.locator('.tq-levar-status').innerText();
       await page.screenshot({ path: path.join(saida, 'preparar-1440-editando.png'), fullPage: true });
       await page.getByRole('button', { name: 'Usar este assistente' }).click();
@@ -137,6 +137,100 @@ const falhas = [];
       await page.setViewportSize({ width: 1440, height: 1000 });
     });
 
+    /*
+     * Ajustes sugeridos, Aplicar, Agora não e o bloco de Reproduzir — tudo com
+     * dados [TESTE] semeados no storage, sem servidor e sem IA. O clique em
+     * "Reproduzir" NÃO é exercitado: ele envia trechos ao provedor de IA (só se
+     * vê o bloco, a reunião escolhida e o botão habilitado).
+     */
+    const apoioCom = (tipo, n) => ({
+      versao: 1,
+      sugestoes: [],
+      feedback: Array.from({ length: n }, (_, i) => ({
+        id: `fb-teste-${tipo}-${i}`,
+        sugestaoId: `sug-teste-${i}`,
+        reuniaoId: REUNIAO.id,
+        em: Date.now() - 1000 * (n - i),
+        tipo,
+        alcance: 'agora',
+      })),
+      pausadas: {},
+      medicoes: {},
+      ajustes: {},
+    });
+    const abrirPreparar = async () => {
+      await page.goto(`${raiz}/src/home/index.html?secao=preparar`);
+      await page.getByRole('heading', { name: 'O que levar para as reuniões' }).waitFor({ timeout: 10000 });
+      await page.waitForTimeout(500);
+    };
+
+    await tentar('Preparar: sem retorno nenhum, não há "Ajustes sugeridos"', async () => {
+      await abrirPreparar();
+      verificacoes.sem_ajustes_sem_retorno = (await page.getByRole('heading', { name: 'Ajustes sugeridos' }).count()) === 0;
+    });
+
+    await tentar('Preparar: "Ajustes sugeridos" aparece com retorno, e só "Aplicar ao meu assistente" grava', async () => {
+      await page.evaluate(async (a) => chrome.storage.local.set({ 'taq:apoio': a }), apoioCom('ja_respondido', 2));
+      await abrirPreparar();
+      await page.getByRole('heading', { name: 'Ajustes sugeridos' }).waitFor({ timeout: 10000 });
+      const antes = (await guardado(page))?.perfil?.revisao;
+      verificacoes.ajuste_proposto = await page.locator('.tq-prep-ajuste').first().innerText();
+      verificacoes.ajuste_nao_gravou_ao_aparecer = antes === (await guardado(page))?.perfil?.revisao;
+      await page.locator('[aria-labelledby="tq-prep-ajustes"]').screenshot({ path: path.join(saida, 'preparar-1440-ajustes-sugeridos.png') });
+      await page.getByRole('button', { name: 'Aplicar ao meu assistente' }).click();
+      await page.getByText('Ajuste aplicado: o assistente tem uma nova versão.').waitFor({ timeout: 10000 });
+      const g = await guardado(page);
+      verificacoes.ajuste_aplicado = {
+        revisaoAntes: antes,
+        revisaoDepois: g?.perfil?.revisao,
+        contextos: g?.perfil?.contextos?.map((c) => `${c.nome}: ${c.texto}`),
+      };
+      verificacoes.ajuste_aplicado_subiu_revisao = g?.perfil?.revisao === antes + 1;
+      await page.locator('[aria-labelledby="tq-prep-ajustes"]').screenshot({ path: path.join(saida, 'preparar-1440-ajuste-aplicado.png') });
+    });
+
+    await tentar('Preparar: "Agora não" recusa e não grava no assistente', async () => {
+      const modo = (await guardado(page))?.perfil?.intervencao?.modo;
+      verificacoes.modo_antes_da_recusa = modo;
+      // Sem modo abaixo (sob_demanda) a proposta é a de "avisar mais cedo".
+      const [tipo, n] = modo === 'sob_demanda' ? ['tarde_demais', 2] : ['descartada', 3];
+      await page.evaluate(async (a) => chrome.storage.local.set({ 'taq:apoio': a }), apoioCom(tipo, n));
+      await abrirPreparar();
+      await page.getByRole('button', { name: 'Agora não' }).waitFor({ timeout: 10000 });
+      const revisao = (await guardado(page))?.perfil?.revisao;
+      await page.locator('[aria-labelledby="tq-prep-ajustes"]').screenshot({ path: path.join(saida, 'preparar-1440-ajuste-recusa-antes.png') });
+      await page.getByRole('button', { name: 'Agora não' }).click();
+      await page.waitForTimeout(600);
+      verificacoes.recusa_nao_mudou_o_assistente = revisao === (await guardado(page))?.perfil?.revisao;
+      verificacoes.recusa_some_a_proposta = (await page.getByRole('button', { name: 'Agora não' }).count()) === 0;
+      verificacoes.recusa_guardada = Object.keys((await page.evaluate(async () => (await chrome.storage.local.get('taq:apoio'))['taq:apoio']))?.ajustes ?? {});
+      await page.locator('[aria-labelledby="tq-prep-ajustes"]').screenshot({ path: path.join(saida, 'preparar-1440-ajuste-recusa-depois.png') });
+    });
+
+    await tentar('Preparar: "Testar o assistente numa reunião passada" mostra o bloco e o "Reproduzir" (sem clicar)', async () => {
+      const longa = {
+        ...REUNIAO,
+        id: 'teste-preparar-longa',
+        title: '[TESTE] Reunião longa para reproduzir',
+        segments: Array.from({ length: 6 }, (_, i) => ({
+          captionId: `l-${i}`,
+          speaker: 'Júlia — teste',
+          text: `Fala sintética número ${i + 1}.`,
+          startOffsetMs: i * 20000,
+          endOffsetMs: i * 20000 + 9000,
+        })),
+      };
+      await page.evaluate(async (r) => chrome.storage.local.set({ 'taq:history': r }), [REUNIAO, longa]);
+      await abrirPreparar();
+      const bloco = page.locator('[aria-labelledby="tq-prep-historico"]');
+      await bloco.waitFor({ timeout: 10000 });
+      const botao = bloco.getByRole('button', { name: 'Reproduzir', exact: true });
+      verificacoes.reproduzir_desabilitado_sem_escolher = await botao.isDisabled();
+      await bloco.getByLabel('Reunião para reproduzir').selectOption('teste-preparar-longa');
+      verificacoes.reproduzir_habilitado_com_reuniao = await botao.isEnabled();
+      verificacoes.reproduzir_aviso_de_privacidade = /Envia trechos da reunião ao provedor de IA/.test(await bloco.innerText());
+      await bloco.screenshot({ path: path.join(saida, 'preparar-1440-reproduzir.png') });
+    });
     /*
      * A migração da versão 4 contra a extensão de verdade: um perfil no formato
      * anterior, a versão do storage em 3, e a extensão recarregada (é no início

@@ -438,13 +438,18 @@ jobs:
           echo "A publicar: TaqCiti-teste.zip ($(stat -c%s gdrive-assets/TaqCiti-teste.zip) bytes)"
           echo "O TaqCiti.zip oficial NÃO é tocado por este job."
 
+      # ENSAIO do escopo estreito: aqui o escopo é `drive.file` (a conta de
+      # serviço só enxerga arquivos que ela mesma criou), enquanto o job
+      # oficial segue com `drive`. Só vale trocar o oficial depois de um
+      # `workflow_dispatch` deste canal de teste confirmar que ele encontra e
+      # ATUALIZA o TaqCiti-teste.zip (e não cria um duplicado).
       - name: Autenticar no Google Drive
         id: gdrive-auth
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
           credentials_json: ${{ secrets.GDRIVE_SA_KEY }}
           token_format: access_token
-          access_token_scopes: https://www.googleapis.com/auth/drive
+          access_token_scopes: https://www.googleapis.com/auth/drive.file
 
       - name: Publicar o pacote de teste no Google Drive
         env:
