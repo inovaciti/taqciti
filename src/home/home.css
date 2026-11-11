@@ -2497,6 +2497,20 @@ body .tq-home [role='dialog'] button {
   font-size: 12px;
 }
 
+/* Em tela estreita a meta desce para baixo do título. Lado a lado, a meta não
+   quebra (nowrap) e come a linha: um título longo ficava numa coluna de uma
+   palavra por linha. */
+@media (max-width: 560px) {
+  .tq-item.tq-linha-reuniao {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tq-linha-reuniao .tq-meta {
+    justify-content: flex-start;
+    white-space: normal;
+  }
+}
+
 .tq-linha-reuniao small {
   grid-column: 1 / -1;
   display: block;
@@ -2840,11 +2854,16 @@ body .tq-home [role='dialog'] button {
   background: rgba(21, 23, 26, 0.55);
 }
 
-/* No pé da página, longe da marca preta do canto de cima. */
+/* No pé da página, longe da marca preta do canto de cima. Fora da linha flex,
+   o botão perde o `stretch` que lhe dava altura: sem altura própria, ficava com
+   os 16 px do ícone — um alvo fino demais para o clique. */
 .tq-documento-item .tq-item-apagar {
   position: absolute;
   top: calc(130cqw - 46px);
   right: 8px;
+  width: 40px;
+  height: 36px;
+  border-radius: 10px;
   background: rgba(21, 23, 26, 0.75);
   color: rgb(236 238 240);
 }
@@ -3021,6 +3040,12 @@ body .tq-home [role='dialog'] button {
 @media (max-width: 600px) {
   .tq-acomp-form {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* As três abas e o "+ Novo" não cabem numa linha de 390 px: sem quebra, o
+     botão saía cortado pela direita. Ele desce, ainda alinhado à direita. */
+  .tq-acomp-abas {
+    flex-wrap: wrap;
   }
 }
 
