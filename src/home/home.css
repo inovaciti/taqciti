@@ -2465,6 +2465,8 @@ body .tq-home [role='dialog'] button {
 }
 
 .tq-status-ia .tq-linkish {
+  flex: 0 0 auto;
+  white-space: nowrap;
   font-size: 11.5px;
   text-decoration: underline;
   text-underline-offset: 2px;
