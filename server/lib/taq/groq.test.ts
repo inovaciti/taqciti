@@ -135,6 +135,9 @@ describe('Groq (temporário)', () => {
       },
     );
     expect(turno.corpo).toMatchObject({ erro: { codigo: 'falha_do_provedor', transitorio: true } });
+    // S11: a mensagem do provedor (nome de ferramenta, schema, modelo) fica no
+    // log do servidor; o cliente só vê o texto genérico.
+    expect(JSON.stringify(turno.corpo)).not.toMatch(/Tool call validation|read_meeting|groq\//);
   });
 
   it('429 por minuto com espera longa volta como erro transitório; por dia não; 503 é sobrecarga', async () => {

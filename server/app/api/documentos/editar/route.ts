@@ -6,6 +6,8 @@ import { editarDocumentoPersonalizado } from '@/lib/documentos/gerar';
 import {
   corpoDeEdicaoSchema,
   erroConhecido,
+  lerCorpoComTeto,
+  tetoDoCorpo,
   mensagemDeValidacao,
   serializarResultado,
   totalDeCaracteres,
@@ -26,12 +28,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const autorizacao = await autorizarIa(request, headers);
   if (!autorizacao.ok) return autorizacao.resposta;
 
-  let corpo: unknown;
-  try {
-    corpo = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Corpo da requisição precisa ser JSON válido.' }, { status: 400, headers });
-  }
+  // Teto do corpo ANTES do parse (S8): ver `tetoDoCorpo` em lib/documentos/requisicao.ts.
+  const lido = await lerCorpoComTeto(request, tetoDoCorpo.editar(maxTranscriptChars()));
+  if (!lido.ok) return NextResponse.json({ error: lido.error }, { status: lido.status, headers });
+  const corpo = lido.corpo;
 
   const validado = corpoDeEdicaoSchema.safeParse(corpo);
   if (!validado.success) {

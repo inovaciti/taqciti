@@ -92,7 +92,9 @@ function report(result: CompletionResult, expectParsed: boolean): CallReport {
 }
 
 function failure(model: string, error: unknown): CallReport {
-  return { ok: false, model, failure: (error as Error).message };
+  // Detalhe só no log do servidor (S11); o cliente recebe texto genérico.
+  console.error('[api/ai/smoke] falha em ' + model, error);
+  return { ok: false, model, failure: 'Falha ao chamar o modelo.' };
 }
 
 /**

@@ -45,8 +45,8 @@ export function urlDoBanco(): string {
   const url = process.env.DATABASE_URL?.trim();
   if (!url) {
     throw new Error(
-      'DATABASE_URL não está definida. No Railway ela vem do plugin de Postgres; ' +
-        'em desenvolvimento, ver server/.env.example.',
+      'DATABASE_URL não está definida. Em produção ela vai nas variáveis de ambiente ' +
+        'do projeto na Vercel; em desenvolvimento, ver server/.env.example.',
     );
   }
   return url;

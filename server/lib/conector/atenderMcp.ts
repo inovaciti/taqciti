@@ -53,7 +53,7 @@ import { pessoaDoToken } from '@/lib/identidade/tokenDoConector';
  * ID — nada que aponte para o problema real, que é a credencial.
  *
  * Com 200 e o erro no corpo, o cliente entrega ao usuário a MENSAGEM que está
- * aqui: "Token inválido ou revogado. Gere outro endereço em Conexões." É a
+ * aqui: "Token inválido, revogado ou vencido. Gere outro endereço em Conexões." É a
  * frase que resolve o problema de quem está lendo.
  *
  * O preço, escrito para quem for revisar isto: um monitor de uptime que olhe
@@ -271,12 +271,13 @@ export async function atenderMcp(
 
   const pessoaId = await pessoaDoToken(recebido.token, consultador);
   if (!pessoaId) {
-    // Mesma resposta para token inexistente e token revogado: distinguir os
-    // dois diria a quem está tentando que um valor existiu.
+    // Mesma resposta para token inexistente, revogado ou vencido (prazo de 90
+    // dias ou inatividade): distinguir diria a quem está tentando que um valor
+    // existiu.
     registrar(request, recebido.origem, 'recusa-token-invalido');
     return credencialRecusada(
       request,
-      'Token inválido ou revogado. Gere outro endereço em Conexões.',
+      'Token inválido, revogado ou vencido. Gere outro endereço em Conexões.',
     );
   }
 

@@ -18,7 +18,6 @@ import { corsHeaders } from '@/lib/apiGuard';
 import { autenticar } from '@/lib/identidade/rota';
 import {
   MAX_TOKENS_ATIVOS,
-  contarTokens,
   criarTokenDoConector,
   listarTokens,
   revogarToken,
@@ -67,15 +66,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   // Teto de tokens ativos: cada um é uma credencial ao portador para o acervo
-  // inteiro, e um acúmulo de URLs esquecidas é superfície sem dono.
-  if ((await contarTokens(auth.pessoaId)) >= MAX_TOKENS_ATIVOS) {
+  // inteiro, e um acúmulo de URLs esquecidas é superfície sem dono. Contar e
+  // criar acontecem juntos, numa transação (ver `criarTokenDoConector`): dois
+  // pedidos simultâneos não passam do teto.
+  const criado = await criarTokenDoConector(auth.pessoaId, rotulo);
+  if (!criado) {
     return NextResponse.json(
       { error: `Você já tem ${MAX_TOKENS_ATIVOS} endereços ativos. Revogue um que não usa antes de gerar outro.` },
       { status: 409, headers },
     );
   }
-
-  const { token, id } = await criarTokenDoConector(auth.pessoaId, rotulo);
+  const { token, id } = criado;
 
   return NextResponse.json(
     {

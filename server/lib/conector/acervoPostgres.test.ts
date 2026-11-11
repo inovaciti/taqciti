@@ -18,7 +18,7 @@
  * teste que não roda. Este roda no `npm test` de sempre.
  *
  * O que ele NÃO cobre é o que difere entre um Postgres embutido e o
- * gerenciado do Railway: TLS, permissões, e o `bigint` que o driver `pg`
+ * gerenciado de produção: TLS, permissões, e o `bigint` que o driver `pg`
  * devolve como string (o PGlite devolve como number). O último está tratado
  * em `ms()`, e é justamente o tipo de divergência que valeu documentar.
  *

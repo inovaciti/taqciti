@@ -26,15 +26,15 @@
  *
  * Por isso a conversão é explícita, via `Intl` com `timeZone`, e nunca pelos
  * getters locais do `Date` (que dependeriam do fuso da máquina onde o servidor
- * roda — hoje um contêiner do Railway em `mia1`, Miami, que não é o fuso de
- * ninguém envolvido na reunião).
+ * roda — hoje uma função da Vercel, cujo relógio é UTC e não o fuso de
+ * ninguém envolvido na reunião; antes, um contêiner em Miami).
  */
 
 /**
  * O fuso em que as datas são escritas.
  *
  * Constante e não "o fuso do servidor", porque o servidor não tem nada a ver
- * com a reunião: ele roda em Miami hoje e pode rodar em qualquer lugar amanhã,
+ * com a reunião: já rodou em Miami, hoje roda em UTC, e pode rodar em qualquer lugar amanhã,
  * e a data da ata mudaria junto sem ninguém mexer em nada.
  *
  * `DOCCITI_TIMEZONE` sobrescreve, para quando houver time fora do Brasil. O

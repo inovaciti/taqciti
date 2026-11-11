@@ -34,10 +34,10 @@ import {
   type BenchOutput,
 } from '@/lib/ai/bench';
 
-/** Ver o mesmo comentário em app/api/generate/route.ts: diretiva da Vercel,
- *  INERTE no Railway. Vários modelos em sequência, com pausa entre eles, era o
- *  caso mais fácil de estourar o teto de função lá. 300 é o teto duro do plano
- *  Hobby, confirmado por deploy real; fica como porta de volta. */
+/** Ver o mesmo comentário em app/api/generate/route.ts: teto da função na
+ *  Vercel, o host de produção. Vários modelos em sequência, com pausa entre
+ *  eles, é o caso mais fácil de estourá-lo — daí `MAX_MODELOS`. 300 é o teto
+ *  duro do plano Hobby, confirmado por deploy real. */
 export const maxDuration = 300;
 
 /** Pausa entre modelos, para não empilhar requisições numa chave free tier. */
@@ -200,11 +200,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         statementsCompletos: statements,
       });
     } catch (error) {
+      console.error('[api/ai/bench] falha em ' + spec.provider + ':' + spec.model, error);
       results.push({
         provider: spec.provider,
         model: spec.model,
         ok: false,
-        erro: (error as Error).message,
+        // Detalhe só no log do servidor (S11); o cliente recebe texto genérico.
+        erro: 'Falha ao chamar este modelo.',
       });
     }
   }

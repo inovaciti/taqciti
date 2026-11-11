@@ -133,8 +133,16 @@ export async function atenderTurno(
     if (e instanceof OverloadedError) {
       return erro(503, 'provedor_sobrecarregado', 'O provedor está sobrecarregado agora.', true, e.retryAfterMs);
     }
-    if (e instanceof ErroDeChamadaDoModelo) return erro(502, 'falha_do_provedor', e.message, true);
-    if (e instanceof ProviderError) return erro(502, 'falha_do_provedor', e.message);
+    // A mensagem do provedor pode trazer trecho do pedido ou detalhe interno (S11):
+    // vai para o log do servidor, e o cliente recebe só o texto genérico.
+    if (e instanceof ErroDeChamadaDoModelo) {
+      console.error('[taq/turno] falha na chamada do modelo', e);
+      return erro(502, 'falha_do_provedor', 'O modelo não respondeu direito. Tente de novo.', true);
+    }
+    if (e instanceof ProviderError) {
+      console.error('[taq/turno] falha do provedor', e);
+      return erro(502, 'falha_do_provedor', 'O provedor de IA falhou. Tente de novo.');
+    }
     // Erro inesperado: o detalhe fica no log do servidor, não na resposta.
     console.error('[taq/turno] falha inesperada', e);
     return erro(502, 'falha_do_provedor', 'Falha inesperada ao chamar o modelo.');

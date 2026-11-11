@@ -19,10 +19,9 @@ import { TEMPLATES } from '@/lib/templates';
 import type { SectionSpec } from '@/lib/templates/types';
 import { isDocumentType } from '@/lib/documentTypes';
 
-/** Ver o mesmo comentário em app/api/generate/route.ts: diretiva da Vercel,
- *  INERTE no Railway (que roda processo Node de vida longa, não função
- *  serverless). 300 é o teto duro do plano Hobby, confirmado por deploy real;
- *  fica como porta de volta. */
+/** Ver o mesmo comentário em app/api/generate/route.ts: teto da função na
+ *  Vercel, o host de produção. 300 é o teto duro do plano Hobby, confirmado
+ *  por deploy real. */
 export const maxDuration = 300;
 
 export function OPTIONS(request: NextRequest): NextResponse {
@@ -149,7 +148,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       documentData: data,
     });
   } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 502, headers });
+    // O detalhe do provedor fica só no log do servidor (S11): a mensagem crua pode
+    // trazer trecho de pedido, nome de modelo ou chave parcial.
+    console.error('[api/ai/secao] falha na apuração', error);
+    return NextResponse.json({ error: 'Falha ao chamar o modelo de IA. Tente de novo.' }, { status: 502, headers });
   }
 
   function RespostaOk(payload: unknown): NextResponse {

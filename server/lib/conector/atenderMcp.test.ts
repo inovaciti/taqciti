@@ -104,7 +104,7 @@ describe('atenderMcp', () => {
       pool,
     );
     await gravarReuniao(pessoaId, REUNIAO, pool);
-    ({ token } = await criarTokenDoConector(pessoaId, 'teste', pool));
+    ({ token } = (await criarTokenDoConector(pessoaId, 'teste', pool))!);
   });
 
   afterAll(async () => {
@@ -225,7 +225,7 @@ describe('atenderMcp', () => {
     });
 
     it('token revogado deixa de valer na hora, e diz isso em texto', async () => {
-      const { token: descartavel, id } = await criarTokenDoConector(pessoaId, 'curto', pool);
+      const { token: descartavel, id } = (await criarTokenDoConector(pessoaId, 'curto', pool))!;
       const antes = await atenderMcp(
         requisicao(INICIALIZAR),
         { token: descartavel, origem: 'caminho' },
@@ -260,7 +260,7 @@ describe('atenderMcp', () => {
         { googleSub: `outra-${Date.now()}`, email: 'bia@citi.org.br' },
         pool,
       );
-      const { token: tokenDaOutra } = await criarTokenDoConector(outra, 'outra', pool);
+      const { token: tokenDaOutra } = (await criarTokenDoConector(outra, 'outra', pool))!;
 
       const r = await atenderMcp(
         requisicao({

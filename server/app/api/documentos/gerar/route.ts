@@ -6,6 +6,8 @@ import { gerarDocumentoPersonalizado } from '@/lib/documentos/gerar';
 import {
   corpoDeGeracaoSchema,
   erroConhecido,
+  lerCorpoComTeto,
+  tetoDoCorpo,
   mensagemDeValidacao,
   serializarResultado,
   totalDeCaracteres,
@@ -14,8 +16,8 @@ import {
 /**
  * Documento personalizado a partir de um pedido em linguagem natural e das
  * fontes que a pessoa escolheu. Mesma tranca e mesmo CORS de `/api/generate`
- * (ver o comentário de lá). Sobre `maxDuration`, vale o que está dito lá: é
- * diretiva da Vercel e fica inerte no host atual.
+ * (ver o comentário de lá). Sobre `maxDuration`, vale o que está dito lá: é o
+ * teto da função na Vercel, o host de produção, e 300 é o máximo do plano Hobby.
  */
 export const maxDuration = 300;
 
@@ -28,12 +30,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const autorizacao = await autorizarIa(request, headers);
   if (!autorizacao.ok) return autorizacao.resposta;
 
-  let corpo: unknown;
-  try {
-    corpo = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Corpo da requisição precisa ser JSON válido.' }, { status: 400, headers });
-  }
+  // Teto do corpo ANTES do parse (S8): ver `tetoDoCorpo` em lib/documentos/requisicao.ts.
+  const lido = await lerCorpoComTeto(request, tetoDoCorpo.gerar(maxTranscriptChars()));
+  if (!lido.ok) return NextResponse.json({ error: lido.error }, { status: lido.status, headers });
+  const corpo = lido.corpo;
 
   const validado = corpoDeGeracaoSchema.safeParse(corpo);
   if (!validado.success) {

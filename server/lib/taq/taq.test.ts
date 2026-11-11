@@ -335,6 +335,21 @@ describe('atenderTurno', () => {
     expect(r.status).toBe(status);
     expect(r.corpo).toMatchObject({ erro: { codigo, transitorio } });
   });
+
+  it('falha do provedor não repassa a mensagem crua ao cliente (S11)', async () => {
+    // A mensagem do provedor pode trazer trecho do pedido, nome de modelo ou
+    // chave parcial: vai para o log, e o cliente recebe só o código e o texto
+    // genérico. `codigo` e `transitorio` são o contrato que a extensão lê.
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const cru = new ProviderError('google', 'modelo-secreto', 'API key AIza-PARCIAL invalida; prompt: "segredo"');
+    const adaptador: AdaptadorDeTurno = { provedor: 'google', executar: vi.fn().mockRejectedValue(cru) };
+    const r = await atenderTurno(PEDIDO, { adaptadores: { google: adaptador }, env: ENV_OK });
+    expect(r.status).toBe(502);
+    expect(r.corpo).toMatchObject({ erro: { codigo: 'falha_do_provedor' } });
+    expect(JSON.stringify(r.corpo)).not.toMatch(/AIza|segredo|modelo-secreto/);
+    expect(console.error).toHaveBeenCalled();
+    vi.mocked(console.error).mockRestore();
+  });
 });
 
 describe('adaptador Gemini', () => {

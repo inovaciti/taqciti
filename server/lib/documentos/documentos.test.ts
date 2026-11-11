@@ -153,6 +153,78 @@ describe('ContentTree', () => {
     expect(blocoSchema.safeParse({ tipo: 'imagem', blockId: 'i', ativoId: 'a' }).success).toBe(false);
   });
 
+  /*
+   * S8: /api/documentos/renderizar compila a árvore que chegar, sem modelo no
+   * meio. Campo sem teto é CPU de graça no pdfkit/docx — por isso TODO texto e
+   * toda lista têm `.max()`, e a árvore inteira tem orçamento de células e de
+   * caracteres (campo a campo, 3.000 tabelas de 3.000×40 passariam).
+   */
+  it.each([
+    ['capa.titulo', { tipo: 'capa', blockId: 'c', titulo: 'x'.repeat(2_001) }],
+    ['capa.cliente', { tipo: 'capa', blockId: 'c', titulo: 'T', cliente: 'x'.repeat(2_001) }],
+    ['titulo.texto', { tipo: 'titulo', blockId: 't', nivel: 1, texto: 'x'.repeat(2_001) }],
+    ['blockId', { tipo: 'sumario', blockId: 'x'.repeat(201) }],
+    ['referencia.texto', { tipo: 'referencia', blockId: 'r', texto: 'x'.repeat(60_001) }],
+    ['imagem.textoAlternativo', { tipo: 'imagem', blockId: 'i', ativoId: 'a', textoAlternativo: 'x'.repeat(2_001) }],
+    ['fontes[].trecho', { tipo: 'paragrafo', blockId: 'p', texto: 'oi', fontes: [{ fonteId: 'm', trecho: 'x'.repeat(60_001) }] }],
+  ])('recusa %s acima do teto', (_campo, bloco) => {
+    expect(blocoSchema.safeParse(bloco).success).toBe(false);
+  });
+
+  it('recusa título da árvore e lacuna acima do teto', () => {
+    const base = { revisao: 0, blocos: [] };
+    expect(contentTreeSchema.safeParse({ ...base, titulo: 'x'.repeat(2_001) }).success).toBe(false);
+    expect(
+      contentTreeSchema.safeParse({ ...base, titulo: 'T', lacunas: [{ campo: 'c', pergunta: 'x'.repeat(2_001) }] }).success,
+    ).toBe(false);
+  });
+
+  it('recusa árvore cujas tabelas somam células demais, mesmo com cada tabela no teto', () => {
+    const linhas = Array.from({ length: 2_600 }, () => Array.from({ length: 20 }, () => 'c'));
+    const tabela = (n: number) => ({ tipo: 'tabela', blockId: `t${n}`, cabecalho: ['a'], linhas });
+    // Cada tabela tem 52.001 células (dentro dos tetos por tabela); duas passam de 100.000.
+    expect(contentTreeSchema.safeParse({ revisao: 0, titulo: 'T', blocos: [tabela(1)] }).success).toBe(true);
+    const resultado = contentTreeSchema.safeParse({ revisao: 0, titulo: 'T', blocos: [tabela(1), tabela(2)] });
+    expect(resultado.success).toBe(false);
+    expect(resultado.error?.issues[0]?.message).toMatch(/células/);
+  });
+
+  /*
+   * O orçamento soma TODA string da árvore, de forma genérica. A primeira versão
+   * somava campo a campo e esquecia capa, legenda, texto alternativo e lacunas:
+   * 4,8 milhões em parágrafos mais 400 mil em legendas passavam.
+   */
+  it('o orçamento conta legenda e texto alternativo', () => {
+    const paragrafos = Array.from({ length: 80 }, (_, i) => ({ tipo: 'paragrafo', blockId: `p${i}`, texto: 'x'.repeat(60_000) }));
+    const imagens = Array.from({ length: 100 }, (_, i) => ({
+      tipo: 'imagem',
+      blockId: `i${i}`,
+      ativoId: 'a',
+      legenda: 'x'.repeat(2_000),
+      textoAlternativo: 'x'.repeat(2_000),
+    }));
+    expect(contentTreeSchema.safeParse({ revisao: 0, titulo: 'T', blocos: paragrafos }).success).toBe(true);
+    const r = contentTreeSchema.safeParse({ revisao: 0, titulo: 'T', blocos: [...paragrafos, ...imagens] });
+    expect(r.success).toBe(false);
+    expect(r.error?.issues[0]?.message).toMatch(/caracteres/);
+  });
+
+  it('o orçamento conta as lacunas e a capa', () => {
+    const paragrafos = Array.from({ length: 80 }, (_, i) => ({ tipo: 'paragrafo', blockId: `p${i}`, texto: 'x'.repeat(60_000) }));
+    const capa = { tipo: 'capa', blockId: 'capa', titulo: 'x'.repeat(2_000), subtitulo: 'x'.repeat(2_000) };
+    const lacunas = Array.from({ length: 500 }, () => ({ campo: 'x'.repeat(2_000), pergunta: 'x'.repeat(2_000) }));
+    const r = contentTreeSchema.safeParse({ revisao: 0, titulo: 'T', blocos: [capa, ...paragrafos], lacunas });
+    expect(r.success).toBe(false);
+    expect(r.error?.issues[0]?.message).toMatch(/caracteres/);
+  });
+
+  it('recusa árvore que soma caracteres demais, mesmo com cada parágrafo no teto', () => {
+    const blocos = Array.from({ length: 84 }, (_, i) => ({ tipo: 'paragrafo', blockId: `p${i}`, texto: 'x'.repeat(60_000) }));
+    const resultado = contentTreeSchema.safeParse({ revisao: 0, titulo: 'T', blocos });
+    expect(resultado.success).toBe(false);
+    expect(resultado.error?.issues[0]?.message).toMatch(/caracteres/);
+  });
+
   it('árvore correta não tem problemas', () => {
     expect(validarArvore(arvore())).toEqual([]);
   });

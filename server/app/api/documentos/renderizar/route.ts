@@ -5,7 +5,8 @@ import { autorizarIa } from '@/lib/guardaDeIa';
 import { compilarDocumento } from '@/lib/documentos/compilador';
 import { contentTreeSchema } from '@/lib/documentos/contentTree';
 import { VARIANTE_DOS_PERSONALIZADOS } from '@/lib/documentos/perfil';
-import { erroConhecido, mensagemDeValidacao } from '@/lib/documentos/requisicao';
+import { listaComTeto } from '@/lib/listaComTeto';
+import { erroConhecido, lerCorpoComTeto, mensagemDeValidacao, tetoDoCorpo } from '@/lib/documentos/requisicao';
 
 /**
  * Árvore → PDF, SEM modelo. A árvore é a fonte de verdade e o PDF é derivado
@@ -16,9 +17,9 @@ import { erroConhecido, mensagemDeValidacao } from '@/lib/documentos/requisicao'
  */
 const corpoSchema = z.object({
   arvore: contentTreeSchema,
-  variante: z.string().min(1).optional(),
+  variante: z.string().min(1).max(200).optional(),
   /** Padrão: só o PDF. O DOCX é o Word editável, da mesma árvore. */
-  formatos: z.array(z.enum(['pdf', 'docx'])).min(1).optional(),
+  formatos: listaComTeto(z.enum(['pdf', 'docx']), 2, 1).optional(),
 });
 
 export function OPTIONS(request: NextRequest): NextResponse {
@@ -30,12 +31,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const autorizacao = await autorizarIa(request, headers, { cobrar: false });
   if (!autorizacao.ok) return autorizacao.resposta;
 
-  let corpo: unknown;
-  try {
-    corpo = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Corpo da requisição precisa ser JSON válido.' }, { status: 400, headers });
-  }
+  // Teto do corpo ANTES do parse (S8): ver `tetoDoCorpo` em lib/documentos/requisicao.ts.
+  const lido = await lerCorpoComTeto(request, tetoDoCorpo.renderizar());
+  if (!lido.ok) return NextResponse.json({ error: lido.error }, { status: lido.status, headers });
+  const corpo = lido.corpo;
   const validado = corpoSchema.safeParse(corpo);
   if (!validado.success) {
     return NextResponse.json({ error: mensagemDeValidacao(validado.error) }, { status: 400, headers });

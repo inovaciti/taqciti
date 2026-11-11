@@ -43,7 +43,7 @@
 -- Nenhuma extensão é necessária: `gen_random_uuid()` é do núcleo desde o
 -- PostgreSQL 13, e a busca não usa `unaccent` de propósito (ver acima). Isso
 -- não é economia à toa — é o que permite o esquema rodar igual no Postgres
--- gerenciado do Railway e no PGlite dos testes, onde extensão é limitada.
+-- gerenciado de produção e no PGlite dos testes, onde extensão é limitada.
 
 -- ---------------------------------------------------------------- pessoas
 
@@ -79,6 +79,15 @@ create table if not exists token_do_conector (
 );
 
 create index if not exists token_por_pessoa on token_do_conector (pessoa_id);
+
+-- Prazo absoluto do token (S6 do plano de segurança, 11/2026): 90 dias depois
+-- de criado ele deixa de valer, mesmo em uso. O prazo de inatividade não basta,
+-- porque uma URL vazada e usada por outra pessoa nunca fica inativa. Linhas que
+-- já existiam ganham 90 dias a partir desta migração (o default é calculado no
+-- `alter`), então aplicar o esquema não derruba conector nenhum na hora.
+-- APLICAR ANTES de publicar o servidor que lê a coluna.
+alter table token_do_conector
+  add column if not exists expira_em timestamptz not null default (now() + interval '90 days');
 
 -- ----------------------------------------------------------------- acervo
 

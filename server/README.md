@@ -64,9 +64,9 @@ publica sozinho. Seja qual for o host, aponte o **Root Directory para
 `server/`** (é um projeto Next.js à parte dentro do monorepo) e configure as
 variáveis abaixo no painel dele.
 
-O runbook em [`docs/deploy.md`](docs/deploy.md) ainda descreve o **Railway**,
-o host anterior, e tem um aviso no topo dizendo isso: vale como referência do
-que precisa estar configurado, não de onde clicar.
+O runbook fica em [`docs/deploy.md`](docs/deploy.md). O **Railway** foi o host
+anterior; qualquer menção a ele ali vale só como referência do que precisa
+estar configurado, não de onde clicar.
 
 ### Variáveis no host
 
@@ -101,12 +101,12 @@ $env:VITE_DOCCITI_SHARED_KEY = '<o mesmo valor de DOCCITI_SHARED_KEY no host>'
 npm run build
 ```
 
-O CORS (`lib/apiGuard.ts`) reflete **qualquer** origem, sem configuração por
-navegador nem por site. Não é desleixo: o painel é um content script
-declarado para `<all_urls>`, e um `fetch` de content script carrega a origem
-da PÁGINA — uma lista de origens permitidas precisaria conter a internet
-inteira. A justificativa completa, e por que isso não afrouxa nada, está no
-bloco de `corsHeaders`.
+O CORS (`lib/apiGuard.ts`) só deixa a **extensão** ler as respostas: qualquer
+`chrome-extension://<id>` por padrão, ou só as origens de
+`DOCCITI_ORIGENS_PERMITIDAS` quando definida (em produção, a origem da extensão
+publicada). Página web nunca. Até 11/2026 refletia qualquer origem, porque o
+painel era content script em `<all_urls>`; hoje o content script fica só no
+Meet e não chama o servidor. A justificativa está no bloco de `corsHeaders`.
 
 ## Rotas
 
@@ -206,13 +206,11 @@ Falha **fechada**: sem `DOCCITI_SHARED_KEY` definida a rota devolve 500. Com
 dinheiro atrás dela, "sem segredo configurado" não pode significar "aberto
 pra todo mundo".
 
-O CORS reflete qualquer origem e **não segura abuso nenhum** — quem segura é
-o header. Vale dizer por extenso, porque a tentação de "trancar pelo CORS"
-já custou dois bugs: CORS é regra que o NAVEGADOR aplica a páginas, e `curl`
-ou um script de servidor ignoram o cabeçalho por completo. Um POST sem
-`Origin` nenhum chega ao handler e é recusado pelo segredo. O único ataque
-que uma lista de origens impediria é uma página web usando o navegador de
-quem a visita, com uma chave que já viaja pública dentro do bundle.
+O CORS (só a extensão) **não segura abuso nenhum** — quem segura é a
+autenticação. CORS é regra que o NAVEGADOR aplica a páginas, e `curl` ou um
+script de servidor ignoram o cabeçalho por completo: um POST sem `Origin`
+nenhum chega ao handler e é recusado pela autenticação. O único ataque que a
+lista de origens impede é uma página web usando o navegador de quem a visita.
 
 Há também um teto por requisição: transcrição acima de
 `DOCCITI_MAX_TRANSCRIPT_CHARS` (padrão 400.000 caracteres) é recusada com
