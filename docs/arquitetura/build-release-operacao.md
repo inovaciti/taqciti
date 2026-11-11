@@ -280,11 +280,12 @@ nenhum). Nenhum é assinado: SmartScreen e Gatekeeper avisam, e é esperado. O
   (`300` em `generate`, `ai/secao`, `ai/bench`, `documentos/gerar` e
   `documentos/editar`; `60` em `taq/turno`).
 - `server/docs/deploy.md` é o runbook da Vercel (o Railway, host anterior, aparece
-  só como histórico). Os comentários "INERTE no Railway" nas rotas de geração
-  voltaram a ser falsos e ainda não foram revistos no código.
+  só como histórico). Os comentários das rotas de geração já dizem que a diretiva
+  vale em produção (`app/api/generate/route.ts:8-13`); o Railway só aparece como o
+  período em que ela ficava sem efeito.
 - `DATABASE_URL` tem que ser o endereço do **pooler** da Supabase, não a
-  conexão direta (o texto de erro de `lib/conector/banco.ts` ainda cita o
-  Railway). O pool é criado de forma preguiçosa, um por processo.
+  conexão direta (o erro de `lib/conector/banco.ts` quando a variável falta já
+  aponta para as variáveis do projeto na Vercel). O pool é criado de forma preguiçosa, um por processo.
 - A chave do provedor precisa ser **paga**: no free tier o conteúdo vai para
   treinamento. `DOCCITI_DATA_POLICY` é **obrigatória** em produção
   (`VERCEL_ENV=production`): `private` para a chave paga; ausente, 503 nas rotas

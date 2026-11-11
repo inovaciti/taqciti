@@ -203,11 +203,10 @@ por modelo**. Uma Ata completa consome quase tudo.
 `app/api/documentos/gerar`, `app/api/documentos/editar`, `app/api/ai/secao`,
 `app/api/ai/bench`) declaram `export const maxDuration = 300`; `app/api/taq/turno`
 declara 60. Na Vercel, cada uma é função serverless com esse teto por requisição.
-O comentário de `app/api/generate/route.ts` ainda diz "INERTE" para o host atual
-(Railway): é do host anterior e está desatualizado (`ai/bench` e `ai/secao` já foram
-corrigidos no `365ef8c`). O comentário de
-`app/api/generate/route.ts` diz que 300 s é o máximo do plano Hobby, confirmado
-por deploy que falhou com 600 (17/08/2026) — não verificado de novo nesta
+Os comentários dessas rotas já dizem isso (`app/api/generate/route.ts:8-13`: "VALE EM
+PRODUÇÃO"; o Railway só aparece como o período em que a diretiva ficava sem efeito).
+O comentário de `app/api/generate/route.ts` diz que 300 s é o máximo do plano Hobby,
+confirmado por deploy que falhou com 600 (17/08/2026) — não verificado de novo nesta
 revisão.
 
 Histórico: no Railway, o app rodava como processo Node de vida longa (`next
