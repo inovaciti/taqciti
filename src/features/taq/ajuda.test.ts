@@ -71,6 +71,19 @@ describe('a referência contra o código', () => {
     expect(faltam).toEqual([]);
   });
 
+  it('o passo de navegação lista todas as seções da HOME, com os nomes de SideNav.tsx', () => {
+    // A HOME tem seis seções (`SECOES` em SideNav.tsx). Uma seção nova lá sem entrada
+    // aqui deixa a ajuda contando menos seções do que a tela mostra.
+    const secoes = [...readFileSync('src/home/SideNav.tsx', 'utf8').matchAll(/rotulo: '([^']+)'/g)].map(
+      (m) => m[1]!,
+    );
+    expect(secoes).toHaveLength(6);
+    const passo = FUNCIONALIDADES.find((f) => f.id === 'abrir_sidebar_e_home')!;
+    const texto = passo.passos.join(' ');
+    for (const secao of secoes) expect(texto, secao).toContain(`“${secao}”`);
+    expect(passo.rotulos).toEqual(expect.arrayContaining(secoes));
+  });
+
   it('todo nome entre aspas nos passos está na lista de rótulos (e portanto conferido)', () => {
     const soltos = FUNCIONALIDADES.flatMap((f) =>
       (f.passos.join(' ').match(/“([^”]+)”/g) ?? [])

@@ -61,6 +61,22 @@ describe('BotaoNaBarra', () => {
     expect(aoClicar).toHaveBeenCalledTimes(1);
   });
 
+  it('clique sintético da página (isTrusted: false) não começa a captura', () => {
+    // O modo `test` aceita qualquer clique (ver `gestoReal`); aqui simula-se o build
+    // de produção para exercitar a recusa de verdade.
+    vi.stubEnv('MODE', 'production');
+    try {
+      barraDoMeet();
+      const aoClicar = vi.fn();
+      const botao = new BotaoNaBarra(aoClicar);
+      botao.sincronizar(ESTADO);
+      document.getElementById('taqciti-botao-na-barra')!.dispatchEvent(new MouseEvent('click'));
+      expect(aoClicar).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it('remover tira o botão e o estilo', () => {
     barraDoMeet();
     const botao = new BotaoNaBarra(() => undefined);

@@ -261,18 +261,35 @@ export const uiMessageSchema = z.discriminatedUnion('type', [
    * Devolve ao histórico uma reunião que o Taq tinha mandado para a lixeira
    * (ver `features/taq/lixeira.ts`). Passa pelo background porque ele é o dono
    * único da escrita do histórico — o mesmo `upsertRecord` da captura.
+   *
+   * Estrito: o background grava o registro como veio, então um campo extra
+   * não pode entrar no histórico por aqui. O remetente manda o `MeetingRecord`
+   * inteiro (`domain.ts`); por isso os campos dele estão listados.
+   * `endedAt`, `durationSeconds`, `participants`, `status` e `metadata` são
+   * obrigatórios no tipo mas opcionais aqui DE PROPÓSITO: a lixeira guarda o
+   * registro como o histórico o tinha, e uma reunião gravada por versão antiga
+   * pode não ter algum deles. Recusar a mensagem deixaria a pessoa sem poder
+   * recuperar a reunião. O background regrava `status` como 'ready'.
    */
   z.object({
     type: z.literal('ui/history/restore'),
     record: z
       .object({
         id: z.string().min(1),
+        meetingCode: z.string().optional(),
         title: z.string(),
         startedAt: z.number(),
+        endedAt: z.number().optional(),
+        durationSeconds: z.number().optional(),
+        participants: z.array(participantSchema).optional(),
+        presentNow: z.array(participantSchema).optional(),
+        speakersObserved: z.array(speakerObservationSchema).optional(),
         segments: z.array(z.unknown()),
+        status: z.enum(['recording', 'ready']).optional(),
+        metadata: z.unknown().optional(),
       })
-      .passthrough(),
-  }),
+      .strict(),
+  }).strict(),
 ]);
 
 /** Broadcast do background → todos os contextos. */

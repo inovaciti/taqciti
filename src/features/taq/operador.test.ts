@@ -212,11 +212,15 @@ describe('copy_transcript', () => {
   });
 
   it('exportar também diz se é parcial ou final', async () => {
+    // O download real clica num <a href=blob:>; o jsdom não navega e avisa no
+    // stderr ("Not implemented: navigation"). O clique é trocado por um espião.
+    const clique = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
     const { resultado } = await operar(
       'Exporte e baixe a transcrição da reunião em andamento',
       'export_transcript',
       { reuniao: 'andamento' },
     ).catch(() => ({ resultado: {} as Record<string, unknown> }));
+    clique.mockRestore();
     // O download real usa o DOM; aqui só importa que a situação é reportada
     // quando a ferramenta chega ao fim, ou que nada é afirmado quando falha.
     if (resultado.exportada) expect(resultado.situacao).toBe('parcial');

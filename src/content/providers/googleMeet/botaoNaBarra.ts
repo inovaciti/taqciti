@@ -66,6 +66,16 @@ const ESTILO = `
 }
 `;
 
+/**
+ * O clique veio de uma pessoa? Mesma regra da cápsula (`Capsula.tsx`): a página
+ * do Meet alcança este botão e pode disparar `.click()` nele, o que começaria
+ * uma captura sem autorização. Evento sintético chega com `isTrusted: false`.
+ * Nos testes (jsdom) todo evento é sintético, daí a exceção do modo `test`.
+ */
+function gestoReal(e: Event): boolean {
+  return e.isTrusted || import.meta.env.MODE === 'test';
+}
+
 function visivel(el: Element): boolean {
   return typeof el.checkVisibility !== 'function' || el.checkVisibility();
 }
@@ -146,6 +156,7 @@ export class BotaoNaBarra {
     // Chrome a abrir a sidebar.
     botao.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (!gestoReal(e)) return;
       this.aoClicar();
     });
     return botao;

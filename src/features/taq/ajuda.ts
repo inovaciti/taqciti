@@ -353,14 +353,16 @@ export const FUNCIONALIDADES: readonly Funcionalidade[] = [
     passos: [
       'Sidebar: clique no ícone do TaqCiti na barra do navegador. No Meet, clicar na cápsula também abre.',
       'HOME: na sidebar, clique no ícone “Abrir HOME” (no topo). O ícone “Reuniões”, ao lado, abre o histórico na própria sidebar.',
-      'Na HOME, as seções ficam no menu da esquerda — “Assistente”, “Reuniões”, “Documentos” e “Conexões”. O menu abre ao levar o mouse à borda esquerda, ou pelo botão “Abrir navegação”.',
+      'Na HOME, as seções ficam no menu da esquerda — “Assistente”, “Preparar”, “Reuniões”, “Documentos”, “Acompanhamento” e “Conexões”. O menu abre ao levar o mouse à borda esquerda, ou pelo botão “Abrir navegação”.',
     ],
     limitacoes: ['Não há atalho de teclado para abrir a sidebar ou a HOME.'],
     rotulos: [
       'Abrir HOME',
       'Assistente',
+      'Preparar',
       'Reuniões',
       'Documentos',
+      'Acompanhamento',
       'Conexões',
       'Abrir navegação',
     ],

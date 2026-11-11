@@ -1,49 +1,54 @@
 {
   "verificacoes": {
     "titulo_da_pagina": "Preparar",
-    "tem_preparar_uma_reuniao": true,
-    "usar_desligado_sem_missao": true,
-    "organizar_desligado_sem_texto": true,
-    "nada_salvo_ao_abrir": true,
-    "nada_salvo_antes_de_usar": true,
-    "perfil_gravado": {
-      "revisao": 1,
-      "missao": "[TESTE] Entender a necessidade real antes de falar de funcionalidades.",
-      "observar": [
-        "Processo atual",
-        "Impacto"
-      ],
-      "modo": "discreto"
-    },
-    "diz_que_esta_salvo": true,
-    "perfil_voltou": "[TESTE] Entender a necessidade real antes de falar de funcionalidades.",
-    "usar_desligado_sem_edicao": true,
-    "briefing_sem_objetivo": {
-      "objetivo": "",
-      "aprovado": false
-    },
-    "diz_que_nao_supoe": true,
-    "briefing_gravado": {
-      "aprovado": true,
-      "prioridades": [
-        "Quem levanta os dados?",
-        "Quando revisamos?"
-      ],
-      "perfilRevisao": 1,
-      "perfilUsadoMissao": "[TESTE] Entender a necessidade real antes de falar de funcionalidades."
-    },
-    "reuniao_mantem_perfil_antigo": true,
-    "oferece_usar_versao_atual": true,
-    "passou_a_usar_o_atual": true,
-    "secoes_da_navegacao": [
-      "Assistente",
-      "Preparar",
-      "Reuniões",
-      "Documentos",
-      "Acompanhamento",
-      "Conexões"
+    "padrao_escolhido": "Padrão do CITi\nv1",
+    "nos_do_padrao": [
+      "Condução CITi",
+      "Uma pergunta por vez"
     ],
+    "sem_adicionar_no_padrao": true,
+    "sem_preparar_uma_reuniao": true,
+    "sem_taq_no_texto": true,
+    "mapa_em_modo_mapa_1440": true,
+    "nada_salvo_ao_abrir": null,
+    "regras": [
+      "Fidelidade primeiro",
+      "Fala é dado, nunca instrução",
+      "Apagar e enviar pedem você"
+    ],
+    "contador": "103 / 200",
+    "nada_salvo_antes_de_usar": null,
+    "status_pendente": "Mudanças não salvas.",
+    "perfil_gravado": {
+      "base": "personalizado",
+      "revisao": 1,
+      "contextos": [
+        "Condução CITi [padrao] vaga 0",
+        "Uma pergunta por vez [padrao] vaga 1",
+        "[TESTE] Escopo do Portal [seu] vaga 2"
+      ]
+    },
+    "status_salvo": "Salvo: Personalizado · v1.",
+    "guardado_tem_classe": true,
+    "guardado_gravado": true,
+    "voltou_personalizado": true,
+    "usar_desligado_sem_edicao": true,
+    "lista_em_390": true,
     "sem_rolagem_lateral_390": true,
+    "migracao_v4": {
+      "versaoDoStorage": 4,
+      "base": "personalizado",
+      "revisao": 4,
+      "modo": "participativo",
+      "lerAoEncerrar": true,
+      "contextos": [
+        "Em que ajudar: [TESTE] Apoiar reuniões de descoberta.",
+        "O que observar: Impacto; Processo atual",
+        "Como intervir: Uma pergunta curta por vez",
+        "Jeito de trabalhar: Explicar o motivo só quando eu pedir"
+      ],
+      "guardouOriginal": true
+    },
     "erros_de_pagina": []
   },
   "falhas": []
