@@ -89,6 +89,16 @@ it('no padrão há um único "Personalizar a partir deste", com ou sem item esco
   expect(quantos()).toBe(1);
 });
 
+/* Em 390 px a contagem quebrava entre "3 de 8" e "vagas". Cada parte é um bloco
+   que não quebra por dentro; o separador fica fora, onde a linha pode quebrar. */
+it('a contagem do mapa é feita de partes inteiras, separadas fora delas', async () => {
+  await montar();
+  await clicar(botao('Personalizar a partir deste'));
+  const partes = [...host.querySelectorAll('.tq-mapa-cab .tq-sem-quebra')].map((s) => s.textContent);
+  expect(partes.at(-1)).toMatch(/^\d+ de 8 vagas$/);
+  expect(partes.every((p) => !p!.includes('·'))).toBe(true);
+});
+
 it('personalizar dá uma cópia do padrão, e nada é salvo até "Usar este assistente"', async () => {
   await montar();
   await clicar(botao('Personalizar a partir deste'));

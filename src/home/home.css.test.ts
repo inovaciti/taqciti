@@ -120,3 +120,22 @@ describe('o texto exibido não é selecionável, o rascunho é', () => {
     );
   });
 });
+
+/*
+ * O reset do botão não pode vencer as classes de botão. Escrito como
+ * `.tq-home button` (0,1,1), ele apagava a moldura do `.tq-acao`, o verde do
+ * `.tq-acao-principal` e o vermelho do `.tq-acao-perigo`: "Reproduzir",
+ * "Pedir alteração" e "Aplicar ao meu assistente" viravam texto solto
+ * (varredura de 11/11/2026). Com `:where`, o reset tem especificidade zero na raiz.
+ */
+describe('o reset do botão perde para qualquer classe de botão', () => {
+  it('o reset mora em :where(.tq-home), não em .tq-home', () => {
+    expect(bloco(':where(.tq-home) button')).toMatch(/border:\s*0/);
+    expect(css).not.toMatch(/(^|[,}])\s*\.tq-home button\s*\{/m);
+  });
+
+  it('as classes de ação dizem moldura e cor, que agora valem', () => {
+    expect(bloco('.tq-acao')).toMatch(/border:\s*1px solid/);
+    expect(bloco('.tq-acao-principal')).toMatch(/background:/);
+  });
+});

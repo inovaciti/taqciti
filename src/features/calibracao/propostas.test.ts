@@ -78,6 +78,20 @@ describe('proporAjustes', () => {
     expect(p!.feedbackIds).toHaveLength(3);
   });
 
+  /* "2 dos seus últimos 2 retornos" soava a conta de formulário (varredura de
+     11/11/2026): quando todos dizem o mesmo, a frase diz isso. */
+  it('quando todos os retornos dizem o mesmo, a frase não repete o número', () => {
+    const [p] = proporAjustes({ feedback: varios('tarde_demais', 2), perfil: perfil('discreto'), decisoes: {} });
+    expect(p!.porque).toBe('Seus últimos 2 retornos disseram que a sugestão veio “tarde demais”.');
+  });
+
+  it('sem "Jeito de trabalhar" ainda, o "Hoje" diz isso em palavras, sem jargão', () => {
+    const f = varios('ja_respondido', LIMIAR_PARA_CONFERIR_O_RESPONDIDO);
+    const [p] = proporAjustes({ feedback: f, perfil: perfil('discreto'), decisoes: {} });
+    expect(p!.antes).toBe('Jeito de trabalhar: ainda sem orientação');
+    expect(p!.antes).not.toContain('contexto');
+  });
+
   it('já no "só quando eu chamar", não há como sugerir menos', () => {
     expect(proporAjustes({ feedback: varios('descartada', 5), perfil: perfil('sob_demanda'), decisoes: {} })).toEqual([]);
   });

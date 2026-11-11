@@ -2758,6 +2758,8 @@
   background: rgb(0 0 0 / 0.25);
   border: 1px solid rgb(255 255 255 / 0.14);
   border-radius: 6px;
+  /* A lista aberta também escura: sem isto ela sai branca sobre o grafite. */
+  color-scheme: dark;
 }
 
 .tq-side .tq-estado-fonte-botao,

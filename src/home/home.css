@@ -94,7 +94,16 @@ html {
   box-sizing: border-box;
 }
 
-.tq-home button {
+/*
+ * O reset do botão com especificidade ZERO na raiz (`:where`). Como
+ * `.tq-home button` (0,1,1), ele vencia toda classe de botão (0,1,0): o
+ * `.tq-acao` perdia a moldura e a cor, o `.tq-acao-principal` perdia o verde
+ * cheio, o `.tq-acao-perigo` perdia o vermelho — e "Reproduzir", "Pedir
+ * alteração", "Baixar PDF", "Aplicar ao meu assistente" saíam como texto solto
+ * (varredura de 11/11/2026). Agora o reset só vale onde nenhuma classe disse
+ * outra coisa.
+ */
+:where(.tq-home) button {
   background: none;
   border: 0;
   color: inherit;
@@ -2002,6 +2011,12 @@ body .tq-home [role='dialog'] button {
   .tq-conversas-lista {
     width: min(280px, calc(100vw - 32px));
   }
+  /* A trilha da conversa é fixa a 12px da borda e tem 20px de largura; com a
+     margem lateral de 22px, ela encostava na borda direita dos cartões. As
+     falas recuam o bastante para a trilha ficar no vão, como na sidebar. */
+  .tq-conversa:has(.tq-trilha) .tq-turnos {
+    padding-right: 14px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3295,15 +3310,34 @@ body .tq-home [role='dialog'] button {
   margin: 8px 0 0;
 }
 
-.tq-prep .tq-c-campo select {
+/* O select da HOME. O "Onde alterar" do documento personalizado era o select
+   cru do navegador (fundo claro numa tela escura); usa este mesmo. O
+   `color-scheme` deixa a lista aberta escura também. */
+.tq-prep .tq-c-campo select,
+.tq-personalizado-alterar select {
   width: 100%;
+  min-height: var(--alt-controle);
   padding: 6px 8px;
   border-radius: 8px;
   border: 1px solid rgb(255 255 255 / 0.14);
   background: rgb(0 0 0 / 0.18);
   color: rgb(232 235 238);
+  color-scheme: dark;
   font: inherit;
   font-size: var(--fs-corpo);
+}
+
+.tq-personalizado-alterar label {
+  display: grid;
+  gap: 6px;
+  max-width: 360px;
+  font-size: var(--fs-ui);
+  color: var(--e-cinza);
+}
+
+/* A grade estica os filhos; o botão fica do tamanho do texto, à esquerda. */
+.tq-personalizado-alterar .tq-acao {
+  justify-self: start;
 }
 
 .tq-prep .tq-c-acoes {
@@ -3432,6 +3466,12 @@ body .tq-home [role='dialog'] button {
   font-size: var(--fs-meta);
   color: rgb(var(--c-muted));
   font-variant-numeric: tabular-nums;
+}
+
+/* Cada parte da contagem ("3 de 8 vagas") inteira numa linha: a quebra
+   acontece entre as partes, nunca deixando "vagas" sozinho. */
+.tq-mapa-cab .tq-sem-quebra {
+  white-space: nowrap;
 }
 
 .tq-levar .tq-mapa-caixa {

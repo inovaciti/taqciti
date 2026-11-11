@@ -36,7 +36,7 @@
     "lista_em_390": true,
     "sem_rolagem_lateral_390": true,
     "sem_ajustes_sem_retorno": true,
-    "ajuste_proposto": "Conferir se já foi respondido\n\n2 dos seus últimos 2 retornos disseram que o ponto “já estava respondido”.\n\nHoje: Jeito de trabalhar: (nenhum contexto)\nPassaria a: Jeito de trabalhar: Antes de sugerir uma pergunta, conferir se a conversa já a respondeu\n\nAplicar ao meu assistente\nAgora não",
+    "ajuste_proposto": "Conferir se já foi respondido\n\nSeus últimos 2 retornos disseram que o ponto “já estava respondido”.\n\nHoje: Jeito de trabalhar: ainda sem orientação\nPassaria a: Jeito de trabalhar: Antes de sugerir uma pergunta, conferir se a conversa já a respondeu\n\nAplicar ao meu assistente\nAgora não",
     "ajuste_nao_gravou_ao_aparecer": true,
     "ajuste_aplicado": {
       "revisaoAntes": 2,

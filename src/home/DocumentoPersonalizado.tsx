@@ -393,7 +393,7 @@ export function DocumentoPersonalizado({ documento, registros, onVoltar, onIrPar
               <Icon name="arrowDown" size={14} />
               {baixandoWord ? 'Gerando o Word…' : 'Baixar Word'}
             </button>
-            <button type="button" className="tq-acao" onClick={() => void apagar()}>
+            <button type="button" className="tq-acao tq-acao-perigo" onClick={() => void apagar()}>
               Apagar documento
             </button>
           </div>

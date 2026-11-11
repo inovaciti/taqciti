@@ -232,7 +232,7 @@ describe('ajustes sugeridos', () => {
     await comPerfilParticipativo(retornos('descartada', 3, 1_000));
     await montar();
     expect(host.textContent).toContain('Sugerir menos vezes');
-    expect(host.textContent).toContain('3 dos seus últimos 3 retornos');
+    expect(host.textContent).toContain('Seus últimos 3 retornos foram');
     expect(host.textContent).toContain('Hoje: Participativo');
     expect(host.textContent).toContain('Passaria a: Discreto');
     // Nada mudou só por a proposta existir.

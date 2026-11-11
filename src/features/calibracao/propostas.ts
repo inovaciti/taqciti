@@ -99,7 +99,7 @@ export function proporAjustes(p: {
     propostas.push({
       tipo: 'intervir_menos',
       titulo: 'Sugerir menos vezes',
-      porque: `${menos.length} dos seus últimos ${total} retornos foram “descartar” ou “não fazia sentido”.`,
+      porque: `${retornos(menos.length, total, FORAM)} “descartar” ou “não fazia sentido”.`,
       feedbackIds: menos.map((f) => f.id),
       antes: ROTULO_DO_MODO[modo],
       depois: ROTULO_DO_MODO[abaixo],
@@ -114,7 +114,7 @@ export function proporAjustes(p: {
     propostas.push({
       tipo: 'intervir_mais',
       titulo: 'Avisar mais cedo',
-      porque: `${mais.length} dos seus últimos ${total} retornos disseram que a sugestão veio “tarde demais”.`,
+      porque: `${retornos(mais.length, total, DISSERAM)} que a sugestão veio “tarde demais”.`,
       feedbackIds: mais.map((f) => f.id),
       antes: ROTULO_DO_MODO[modo],
       depois: ROTULO_DO_MODO[acima],
@@ -134,15 +134,29 @@ export function proporAjustes(p: {
     propostas.push({
       tipo: 'conferir_o_respondido',
       titulo: 'Conferir se já foi respondido',
-      porque: `${respondido.length} dos seus últimos ${total} retornos disseram que o ponto “já estava respondido”.`,
+      porque: `${retornos(respondido.length, total, DISSERAM)} que o ponto “já estava respondido”.`,
       feedbackIds: respondido.map((f) => f.id),
-      antes: jeito ? `${JEITO_DE_TRABALHAR}: ${jeito.texto}` : `${JEITO_DE_TRABALHAR}: (nenhum contexto)`,
+      // Sem o contexto ainda, o "Hoje" diz isso em palavras: "(nenhum contexto)" era jargão.
+      antes: jeito ? `${JEITO_DE_TRABALHAR}: ${jeito.texto}` : `${JEITO_DE_TRABALHAR}: ainda sem orientação`,
       depois: `${JEITO_DE_TRABALHAR}: ${depois}`,
       mudanca: { tipo: 'preferencia', texto: PREFERENCIA_DO_JA_RESPONDIDO },
     });
   }
   return propostas;
 }
+
+/**
+ * O sujeito da frase do "porque": "3 dos seus últimos 6 retornos foram…". Quando
+ * todos os retornos da janela dizem o mesmo, "2 dos seus últimos 2" soava a
+ * conta de formulário — vira "Seus últimos 2 retornos". O verbo concorda.
+ */
+function retornos(n: number, total: number, verbo: { um: string; varios: string }): string {
+  if (n === total) return total === 1 ? `Seu último retorno ${verbo.um}` : `Seus últimos ${total} retornos ${verbo.varios}`;
+  return `${n} dos seus últimos ${total} retornos ${n === 1 ? verbo.um : verbo.varios}`;
+}
+
+const FORAM = { um: 'foi', varios: 'foram' };
+const DISSERAM = { um: 'disse', varios: 'disseram' };
 
 /** O contexto onde a preferência aprovada entra (o nome que a migração da versão 1 usa). */
 const JEITO_DE_TRABALHAR = 'Jeito de trabalhar';

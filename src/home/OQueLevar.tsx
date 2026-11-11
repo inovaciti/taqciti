@@ -31,7 +31,7 @@
  * (os mesmos botões, em coluna): na prévia ele rolava de lado num celular, e
  * um mapa que só se lê rolando de lado não mostra o caminho a ninguém.
  */
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { Fragment, useEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   MAX_CONTEXTOS,
   MAX_NOME_DO_CONTEXTO,
@@ -670,12 +670,23 @@ export function OQueLevar({ conducao, emAndamento }: { conducao: Conducao; emAnd
 
   const ligados = contextos.filter((c) => c.ligado).length;
   // "3 de 8" sozinho não dizia de quê: são as vagas do mapa, levados e
-  // guardados juntos.
-  const contagem = personalizado
-    ? `${ligados} ${ligados === 1 ? 'contexto levado' : 'contextos levados'} · ${contextos.length - ligados} ${
-        contextos.length - ligados === 1 ? 'guardado' : 'guardados'
-      } · busca ${r.buscaNaInternet ? 'ligada' : 'desligada'} · ${contextos.length} de ${MAX_CONTEXTOS} vagas`
-    : `${contextos.length} contextos · definido pelo CITi`;
+  // guardados juntos. Cada parte é um bloco que não quebra por dentro: em 390 px
+  // a linha quebrava entre "3 de 8" e "vagas". Quebra só entre as partes.
+  const partes = personalizado
+    ? [
+        `${ligados} ${ligados === 1 ? 'contexto levado' : 'contextos levados'}`,
+        `${contextos.length - ligados} ${contextos.length - ligados === 1 ? 'guardado' : 'guardados'}`,
+        `busca ${r.buscaNaInternet ? 'ligada' : 'desligada'}`,
+        `${contextos.length} de ${MAX_CONTEXTOS} vagas`,
+      ]
+    : [`${contextos.length} contextos`, 'definido pelo CITi'];
+  // O separador fica FORA do bloco: é nos espaços dele que a linha pode quebrar.
+  const contagem = partes.map((p, i) => (
+    <Fragment key={p}>
+      {i > 0 && ' · '}
+      <span className="tq-sem-quebra">{p}</span>
+    </Fragment>
+  ));
 
   const emUso = emAndamento ? perfilEmUsoDaReuniao(conducao, emAndamento.reuniaoId) : null;
   const escolhido = personalizado ? (r.seus ?? []).find((c) => c.id === selecao) ?? null : null;
