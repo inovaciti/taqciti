@@ -157,7 +157,7 @@ A ordem segue o risco, dividido pelo esforço. Uma regra de deploy, já registra
 1. **E1:**
    - `ui/*` só é aceito se `sender.id === chrome.runtime.id` **e** `sender.url` vier de `chrome.runtime.getURL('')`, com uma lista curta de exceções vindas da aba do Meet: `ui/openSidePanel`, `panel/mounted`, `ui/openHome`.
    - `meet/*` só é aceito de `https://meet.google.com/` com `frameId === 0`.
-   - Schema estrito em `ui/history/restore`.
+   - Schema estrito em `ui/history/restore`. **Feito no `832da29`** (11/11/2026): `.strict()` na mensagem e no registro, com os campos do `MeetingRecord` listados (`src/shared/types/messages.ts:263-290`).
    - `storage.session` volta para `TRUSTED_CONTEXTS`.
 2. **E2:**
    - Reduzir `content_scripts.matches` a `https://meet.google.com/*`. Antes, confirmar que a UI persistente em outras páginas não é mais requisito: o comentário no manifesto ainda descreve o desenho antigo.
@@ -168,7 +168,7 @@ A ordem segue o risco, dividido pelo esforço. Uma regra de deploy, já registra
    - Cartão de confirmação para `delete_conversation` e `delete_meeting`, como já existe para o e-mail.
 4. **I2:** mostrar a descrição inteira na prévia, incluí-la em `chaveDe(...)` e recusar URLs na descrição.
 5. **I6:** mostrar o domínio ao lado de cada link vindo do modelo e remover a query string de domínios fora da allowlist.
-6. **E3:** shadow `closed`, testando antes foco e eventos do React, e `isTrusted` nos botões de consentimento.
+6. **E3:** shadow `closed`, testando antes foco e eventos do React, e `isTrusted` nos botões de consentimento. **`isTrusted` feito nos dois botões:** na cápsula (`Capsula.tsx:54`, `923ea5a`) e no botão da barra do Meet (`botaoNaBarra.ts`, `gestoReal`, `832da29`). O shadow `closed` não está commitado.
 7. **E4:** o `vite build` em modo production falha se a URL não for https ou se a chave for a de dev.
 8. **I7:**
    - Retenção configurável (padrão de N dias) para o acervo local.

@@ -252,8 +252,11 @@ Abra a HOME → **Conexões**. O que você deve ver:
 Isto é independente do caminho de entrega, e **hoje impede o botão de
 funcionar com reunião real** — nos dois caminhos.
 
-Enquanto `DOCCITI_DATA_POLICY=training` estiver em `server/.env.local`, o
-`/api/generate` recusa transcrição que não se declare sintética. A extensão
+**Em desenvolvimento**, enquanto `DOCCITI_DATA_POLICY=training` estiver em
+`server/.env.local`, o `/api/generate` recusa transcrição que não se declare
+sintética. **Em produção** a variável é obrigatória (`private` para chave paga;
+sem ela as rotas respondem 503) e `training` recusa sempre: ver
+`server/docs/deploy.md`, seção 4. A extensão
 captura reunião de verdade, então não pode se declarar sintética. A trava
 existe porque o free tier do Gemini manda todo o conteúdo enviado para
 treinamento do provedor, com revisão humana.
@@ -274,7 +277,7 @@ cada chave mostra o projeto e o plano.
 
 ### Quando estiver paga
 
-1. remova `DOCCITI_DATA_POLICY=training` de `server/.env.local`;
+1. em desenvolvimento, troque `DOCCITI_DATA_POLICY=training` por `private` (ou remova a linha) em `server/.env.local`; **em produção** defina `DOCCITI_DATA_POLICY=private` nas variáveis do host (ver `server/docs/deploy.md`, seção 4);
 2. reinicie o servidor — `.env.local` é lido no boot.
 
 ---
