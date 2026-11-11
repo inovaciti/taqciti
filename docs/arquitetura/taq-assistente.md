@@ -156,7 +156,8 @@ próprio fluxo. Instrução dentro de transcrição não tem ferramenta para usa
 ## 5. Memória, contexto e economia de contexto
 
 - Contexto inicial **magro** (`contexto.ts`): data, escopo, o que a tela selecionou
-  (com trecho), perfil e briefing de condução, retomada, memória, documentos já
+  (com trecho), os contextos ligados do assistente e o briefing da reunião, quando há
+  (`conducao/contexto.ts`), retomada, memória, documentos já
   produzidos na conversa (até 5) e **índice** das 8 reuniões e 8 documentos mais
   recentes (título, data, tamanho). Sem transcrição. O conteúdo entra depois, pelas
   ferramentas, em fatias.
@@ -192,17 +193,23 @@ Todos moram no navegador; o modelo, quando usado, passa pelo mesmo `POST
   decide se aparece: no máximo uma na tela, validade em falas, sem repetir ponto,
   intervalo e limite por hora por modo (`discreto`: 150 s e 4/h; `participativo`:
   75 s e 12/h; `sob_demanda` nunca age sozinho), mínimo de 6 falas e 80 palavras para
-  avaliar. `laco.ts` junta tudo; as 2 últimas falas esperam consolidar. Sem perfil de
-  condução ou em `sob_demanda`, o modelo não é chamado.
+  avaliar. `laco.ts` junta tudo; as 2 últimas falas esperam consolidar. Em
+  `sob_demanda` (o modo do Padrão do CITi, e de quem não escolheu outro), o modelo não é
+  chamado sozinho.
 - **Calibração** (`features/calibracao/`): `propostas.ts` transforma o feedback da
   pessoa em propostas de ajuste (antes e depois) com limiar mínimo de retornos
   (janela de 10); nada muda sem aprovação. `historico.ts` reproduz uma reunião
   passada por cortes de tempo (passo de 60 s, até 12 avaliações) em id próprio
   `teste:<id>`, sem gravar nada na reunião real.
-- **Condução** (`features/conducao/`, `conducao-v1`): perfil de condução e briefing
-  por reunião, versionados, com conflito por revisão; `proposta.ts` organiza o texto
-  livre num perfil editável (não salva); `retomada.ts` lista combinados em aberto e
-  decisões de encontros que a pessoa escolheu por id.
+- **Condução** (`features/conducao/`): o assistente é um mapa de até 8 contextos, cada um
+  ligado (vai ao modelo) ou guardado (não vai); versionado, com conflito por revisão.
+  `padrao.ts` é o Padrão do CITi, usado sem nada configurado (só leitura; quem personaliza
+  parte dele). A reunião em andamento fica com a versão com que começou
+  (`fixarPerfilDaReuniao`). Briefings de reuniões antigas seguem no storage e vão ao
+  modelo para a reunião deles (`contexto.ts`). `retomada.ts` lista combinados em aberto e
+  decisões de encontros que a pessoa escolheu por id. Não há mais chamada ao modelo para
+  montar o perfil (a extensão deixou de pedir `conducao-v1` no `6df3da6`; o servidor ainda o
+  mapeia, `instrucoes.ts:74`); a tela é `src/home/OQueLevar.tsx`.
 - **Estado dos pontos** (`features/estado/`, `estado-v1`): um estado por ponto
   (`a_esclarecer`, `discutido`, `a_confirmar`, `decidido`, `adiado`), até 10 pontos,
   com fala citada conferida em código (`mesclar`). Só roda por botão (lê as últimas
@@ -264,7 +271,7 @@ desconhecida".
 | communication / scheduling | `communication-v3` / `scheduling-v3` | v1, v2 |
 | meeting_copilot | `copilot-v2` | v1 |
 | analyst, commitments, continuity, handoff, memory, context | `analyst-v1`, `commitments-v1`, `continuity-v1`, `handoff-v1`, `memory-v1`, `context-v1` | — |
-| Subsistemas | `intervencao-v1`, `estado-v1`, `acompanhamento-v1`, `conducao-v1` | — |
+| Subsistemas | `intervencao-v1`, `estado-v1`, `acompanhamento-v1`; `conducao-v1` (só o servidor mapeia; a extensão não pede desde `6df3da6`) | — |
 
 **Regra de publicação**: ao subir versão nova de instruções, publicar o servidor
 **antes** da extensão. O deploy é manual; o estado atual da publicação: não
@@ -292,4 +299,5 @@ npx vitest run src/features/taq/taq.live.test.ts
   O adaptador declara `sintetica: true`, só nesses testes. Asserções conferem o que
   o código garante; o texto do modelo é impresso para leitura humana. Reiniciar o
   servidor após mudar prompts ou código dele.
-- Verificação visual: scripts `scripts/verify-*.cjs` (não verificados aqui).
+- Verificação visual: scripts `scripts/verify-*.cjs` (não verificados aqui). A reunião ao
+  vivo com o Taq é `scripts/verify-ao-vivo.cjs`, que nunca foi executado.

@@ -198,6 +198,7 @@ e nenhuma chamada de IA. Saídas (capturas e JSON) vão para `docs/verification/
 | `verify-meetings-documents.cjs` | fluxo de reuniões e documentos | `dist` |
 | `verify-preparar.cjs` | página "Preparar" (HOME larga e estreita) | build de desenvolvimento |
 | `verify-trabalho.cjs` | cartões do Taq e página "Acompanhamento" | build de desenvolvimento |
+| `verify-ao-vivo.cjs` | reunião ao vivo sintética no Meet simulado: captura de legendas, cartão de apoio e "O que falta fechar", com servidor e modelo de verdade (exige servidor local e chave; as falas são inventadas). **Nunca foi executado**: o resultado ao vivo continua não verificado | build de desenvolvimento |
 
 Exemplo: `npx vite build --mode development --outDir <pasta>` e depois
 `node scripts/verify-preparar.cjs <playwright-core> <pasta>`. O Chrome
@@ -278,20 +279,21 @@ nenhum). Nenhum é assinado: SmartScreen e Gatekeeper avisam, e é esperado. O
   declarado nas rotas de geração, e na Vercel vale como teto de função
   (`300` em `generate`, `ai/secao`, `ai/bench`, `documentos/gerar` e
   `documentos/editar`; `60` em `taq/turno`).
-- `server/docs/deploy.md` ainda descreve o corpo do runbook com os cliques do
-  Railway (host anterior); use-o como lista do **que** configurar, não de onde
-  clicar. A seção 5 dele (tempo de execução) está desatualizada em relação à
-  Vercel, e os comentários "INERTE" nas rotas voltaram a ser falsos: ainda não
-  revistos.
+- `server/docs/deploy.md` é o runbook da Vercel (o Railway, host anterior, aparece
+  só como histórico). Os comentários "INERTE no Railway" nas rotas de geração
+  voltaram a ser falsos e ainda não foram revistos no código.
 - `DATABASE_URL` tem que ser o endereço do **pooler** da Supabase, não a
   conexão direta (o texto de erro de `lib/conector/banco.ts` ainda cita o
   Railway). O pool é criado de forma preguiçosa, um por processo.
 - A chave do provedor precisa ser **paga**: no free tier o conteúdo vai para
-  treinamento; `DOCCITI_DATA_POLICY=training` exige `sintetica: true`, que a
-  extensão não envia (400 em toda geração). Não definir em produção.
+  treinamento. `DOCCITI_DATA_POLICY` é **obrigatória** em produção
+  (`VERCEL_ENV=production`): `private` para a chave paga; ausente, 503 nas rotas
+  de geração; `training`, 400 (o `sintetica: true` do cliente não vale em
+  produção). Ver a seção 4 de `server/docs/deploy.md`.
 - Depois de qualquer deploy: `node scripts/smokePdf.mjs` em `server/` com
   `SMOKE_BASE_URL` e `DOCCITI_SHARED_KEY`. Não gasta cota. Um 200 na home não
-  prova nada.
+  prova nada. O script só manda `x-docciti-key`: depois de
+  `DOCCITI_CHAVE_LEGADA=recusar` ele recebe 401.
 - Variável de ambiente só vale a partir do próximo deploy. Trocar
   `DOCCITI_SHARED_KEY` exige reconstruir a extensão (o valor está no bundle).
 
@@ -338,7 +340,7 @@ documento.
   de fumaça contra `next start` pega.
 - **PGlite nos testes do servidor**: boot lento em paralelo, daí os timeouts altos.
 - **Prompts no servidor**: instruções de sistema são versionadas no servidor e
-  a extensão pede pelo nome; versão nova (ex.: `conducao-v1`, `copilot-v2`)
+  a extensão pede pelo nome; versão nova (ex.: `estado-v1`, `copilot-v2`)
   exige **publicar o servidor antes da extensão**, senão "Versão de instruções
   desconhecida". Lista de pendentes em `docs/segundo-cerebro.md`.
 - **Tag com dois números** não dispara a release.

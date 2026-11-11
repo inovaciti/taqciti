@@ -4,33 +4,29 @@ Runbook completo. Nenhuma chave aparece aqui: tudo é variável de ambiente, e o
 mesmo procedimento serve para a sua chave hoje e para a da empresa depois —
 troca-se o valor, não o código.
 
-> ⚠️ **Produção mudou, e o corpo deste runbook ainda não.**
+> **Produção atual: Vercel.** Desde **22/09/2026** o servidor roda na **Vercel**, em
+> `<URL-DO-SERVIDOR-DE-PRODUCAO>` — é o endereço que o `.env` da extensão aponta.
+> **O deploy é manual**: nenhum push publica nada sozinho. O host anterior foi o
+> Railway (até 22/09/2026); onde o texto abaixo menciona o Railway, é histórico ou
+> comparação.
 >
-> Desde **22/09/2026** o servidor roda na **Vercel**, em
-> `<URL-DO-SERVIDOR-DE-PRODUCAO>` — é o endereço que o `.env` da
-> extensão aponta —, e **o deploy é manual**: nenhum push publica nada sozinho.
-> As seções abaixo descrevem os cliques do **Railway**, o host anterior, e não
-> foram reescritas. Use-as como referência de *o que* precisa estar
-> configurado (Root Directory, variáveis, a prova de fumaça), não de *onde*
-> clicar.
->
-> Duas armadilhas conhecidas da casa nova, que o corpo abaixo não cobre:
+> Pontos que valem na Vercel hoje:
 >
 > - **`DATABASE_URL` tem que ser o endereço do _pooler_ da Supabase**, não o da
->   conexão direta. O texto de erro em `lib/conector/banco.ts` ainda fala do
->   plugin de Postgres do Railway.
-> - **O teto de função voltou a existir.** A seção 5 explica por que ele não
->   valia no Railway (processo Node de vida longa); na Vercel cada rota é
->   serverless de novo, e os comentários que dizem "INERTE no Railway" em
->   `app/api/generate/route.ts`, `app/api/ai/bench/route.ts` e
->   `app/api/ai/secao/route.ts` voltaram a valer. Isso ainda não foi revisto no
->   código.
+>   conexão direta. O texto de erro em `lib/conector/banco.ts` (quando a variável
+>   falta) ainda cita o plugin de Postgres do Railway; é texto de código, a
+>   corrigir numa mudança do servidor.
+> - **O teto de função vale** (`maxDuration`, seção 5) e a região `gru1` de
+>   `server/vercel.json` também (seção 8).
+> - **`DOCCITI_DATA_POLICY` é obrigatória em produção** (seção 4). Sem ela, as
+>   rotas de geração respondem 503. "Produção", para o código, é
+>   `VERCEL_ENV=production`: defina a variável no ambiente **Production** do
+>   projeto na Vercel (um deploy de *Preview* não é produção e não tem a trava).
 >
-> Este documento já se chamou `deploy-vercel.md` e descrevia a Vercel do começo
-> ao fim muito depois de a produção ter saído de lá — inclusive mandando rodar
-> a prova de fumaça contra um endereço que não existia mais. O nome do arquivo
-> perdeu o host de propósito, para não rotular errado de novo; o aviso no topo
-> é que precisa acompanhar a mudança.
+> **Para publicar** (manual): defina as variáveis da seção 2 no ambiente
+> Production, dispare o deploy de produção (no painel, *Redeploy* do último
+> deploy promovido a produção, ou `vercel deploy --prod` com o projeto ligado) e
+> rode a prova de fumaça da seção 6.
 >
 > O app continua sendo um Next.js (App Router) comum, sem `output: 'export'` e
 > sem nada que exija hospedagem especial — qualquer host Node/Next serve. O que
@@ -53,10 +49,10 @@ servidor em `server/`. O host precisa saber disso.
 extensão (Vite) achando que é o app Next, e o deploy falha ou publica a coisa
 errada. É ajuste de projeto, no painel — não dá para configurar por arquivo.
 
-O Railway **redeployava sozinho** a cada push na branch conectada (`main`) —
-~1 minuto nas duas vezes medidas em 22/08/2026. **Na Vercel, hoje, não.** O
-deploy é manual, e é por isso que `docs/publicar-release.md` manda publicar o
-servidor **antes** de cortar a tag: nada o atualiza no caminho.
+No Railway (host anterior), o redeploy era automático a cada push na branch
+conectada (`main`) — ~1 minuto nas duas vezes medidas em 22/08/2026. **Na Vercel,
+hoje, não.** O deploy é manual, e é por isso que `docs/publicar-release.md` manda
+publicar o servidor **antes** de cortar a tag: nada o atualiza no caminho.
 
 ---
 
@@ -72,16 +68,27 @@ de host para host.
 | `ANTHROPIC_API_KEY` | não | Só se trocar o provedor em `lib/ai/config.ts`. |
 | `XAI_API_KEY` | não | Idem. |
 | `DOCCITI_MAX_TRANSCRIPT_CHARS` | não | Teto por requisição. Padrão 400000. |
-| `DOCCITI_DATA_POLICY` | **não defina em produção** | Ver a seção 4. |
+| `DOCCITI_DATA_POLICY` | **sim, em produção** | `private` (chave paga, sem treinamento) ou `training` (chave que treina). Em produção (`VERCEL_ENV=production`), ausente → as rotas de geração respondem 503 e o Taq fica pendente (503). Com `training` → a geração é recusada (400) e o Taq também (403): em produção o `"sintetica": true` do cliente não vale. Fora de produção (inclusive *Preview*) é opcional. Ver a seção 4 (`lib/ai/config.ts`, `lib/taq/config.ts`). |
 | `DOCCITI_LEITOR` / `DOCCITI_AUDITOR` (`DOCCITI_PENSANTE` ainda vale pelo Leitor) | não | `provedor:modelo`, para trocar de modelo sem recompilar. |
 | `DATABASE_URL` | sim, para o conector/sincronização | Postgres do acervo sincronizado (`lib/conector/banco.ts`). Na Supabase, o endereço do _pooler_. |
-| `GOOGLE_OAUTH_WEB_CLIENT_ID` | para a identidade por Google | Cliente OAuth "Aplicativo da Web" que o servidor confere ao validar o token (`lib/identidade/google.ts`). Ver `docs/google-oauth-setup.md`. |
-| `TAQCITI_DOMINIO_PERMITIDO` | não | Restringe o domínio de e-mail aceito na identidade (`lib/identidade/dominio.ts`). |
+| `GOOGLE_OAUTH_WEB_CLIENT_ID` | sim, para a identidade por Google | Cliente OAuth "Aplicativo da Web" que o servidor confere (campo `aud`) ao validar o token. Sem ela, a identidade recusa tudo — falha fechada (`lib/identidade/google.ts`). Ver `docs/google-oauth-setup.md`. |
+| `TAQCITI_DOMINIO_PERMITIDO` | não | Domínio de e-mail aceito para entrar e para o token do conector. Padrão `citi.org.br`: deixá-la de fora **não** abre o produto. Aceita com ou sem `@`. `*` desliga a restrição — só para desenvolvimento (`lib/identidade/dominio.ts`). |
+| `TAQCITI_EXIGIR_HD` | não | `sim` passa a exigir o domínio hospedado (`hd`) que o Google informa no token, recusando conta pessoal com e-mail do CITi. Ausente: aceita conta sem `hd` (`lib/identidade/dominio.ts`). |
+| `DATABASE_CA` | recomendada | O certificado da CA do banco (PEM, com `\n` escapados se for uma linha). Com ela, a conexão valida o servidor; sem ela, TLS sem validação do certificado e um aviso no log a cada instância (`lib/conector/banco.ts`). |
+| `DOCCITI_CHAVE_LEGADA` | não | Ponte do segredo antigo (`x-docciti-key`) para extensões que ainda não mandam o token do Google. Ausente ou diferente de `recusar`: a ponte fica aberta. `recusar` a desliga (`lib/guardaDeIa.ts`). |
+| `TAQCITI_IA_CHAMADAS_DIA` / `TAQCITI_IA_CARACTERES_DIA` | não | Cota diária de IA **por pessoa** (chamadas a modelo e caracteres enviados), contada na tabela `uso_de_ia`. Padrões: 2.000 chamadas e 80 milhões de caracteres. Passou, 429 (`lib/guardaDeIa.ts`). |
+| `DOCCITI_DIAGNOSTICO` | não | `ligado` reabre as rotas de diagnóstico (`/api/ai/bench`, `/smoke`, `/secao`), que em produção respondem 404. Só para uma verificação pontual; depois, remova (`lib/apiGuard.ts`). |
 | `TAQCITI_COTA_MB` / `TAQCITI_LIMITE_BANCO_MB` | não | Cota por pessoa e limite do banco do acervo sincronizado (`lib/conector/`). |
 | `GROQ_API_KEY` / `GROQ_TPM_LIMIT` | só com o provedor Groq | Chave e limite de tokens por minuto usados pela camada Groq. |
 | `LLM_PROVIDER` | não | Provedor padrão da camada de IA (`lib/ai/config.ts`). |
 | `DOCCITI_RATE_LIMIT_RETRIES` | não | Quantas esperas por 429 do provedor a camada tolera (`lib/ai/providers/shared.ts`). |
 | `DOCCITI_TIMEZONE` | não | Fuso usado para a data da reunião (`lib/dataDaReuniao.ts`). |
+| `TAQ_ORQUESTRADOR` | não | Modelo do Taq, `provedor:modelo`. Padrão `google:gemini-3.5-flash`; só `google` e `groq` têm adaptador com ferramentas, outro provedor deixa o Taq pendente (`lib/taq/config.ts`). |
+| `TAQ_MAX_CONTEXTO_CHARS` | não | Teto do pedido do Taq, em caracteres. Padrão 300000 (`lib/taq/atender.ts`). |
+| `OPENAI_API_KEY` | só com o provedor OpenAI | Chave do provedor (`lib/ai/providers/openai.ts`). |
+| `DOCCITI_PROMPTS` | não | `anteriores` volta às versões de prompt anteriores sem deploy de código (`lib/prompts/index.ts`). |
+| `DOCUMENTOS_RACIOCINIO_GERACAO` / `DOCUMENTOS_RACIOCINIO_EDICAO` | não | Esforço de raciocínio (`low`, `medium`, `high`) ao gerar e ao editar documento personalizado. Padrões `medium` e `low` (`lib/documentos/gerar.ts`). |
+| `TAQCITI_TOKEN_INATIVO_DIAS` / `TAQCITI_MAX_ITENS_POR_TIPO` | não | Dias sem uso até um token do conector expirar (padrão 90, `lib/identidade/tokenDoConector.ts`) e teto de itens por tipo no acervo (padrão 5000, `lib/conector/projecoes.ts`). |
 | `MOCK_LLM` | **nunca em produção** | Força o provedor `mock` em todos os agentes; é a tranca dos testes (`vitest.setup.ts`). |
 
 > A lista acima sai de uma busca por `process.env` no código do servidor; o
@@ -96,13 +103,18 @@ openssl rand -hex 24
 ```
 
 > Este segredo **não é autenticação**. Ele viaja dentro do bundle da extensão,
-> que qualquer pessoa consegue abrir. Serve para barrar varredura e uso
-> acidental da cota — não para tratar quem chama como confiável. Ver
-> `lib/apiGuard.ts`.
+> que qualquer pessoa consegue abrir. Quem identifica a pessoa é o **token do
+> Google** (`Authorization: Bearer <id_token>`): as rotas que gastam modelo
+> (`/api/generate`, `/api/documentos/*`, `/api/taq/*`) passam por `autorizarIa`
+> (`lib/guardaDeIa.ts`), que confere o domínio do CITi e conta a **cota diária por
+> pessoa**. Sem o token, o segredo antigo ainda vale enquanto `DOCCITI_CHAVE_LEGADA`
+> não for `recusar` — é só uma ponte para extensões antigas. A ordem para fechá-la:
+> todos na extensão nova, depois `DOCCITI_CHAVE_LEGADA=recusar`, depois rotacionar
+> `DOCCITI_SHARED_KEY` (rotacionar antes quebra quem não atualizou). Ver
+> `lib/apiGuard.ts` e `docs/plano-de-seguranca.md`.
 >
 > E não conte com o CORS para ajudar: ele reflete **qualquer** origem, de
-> propósito, porque o painel é um content script declarado para `<all_urls>` e
-> uma lista de origens permitidas precisaria conter a internet. O bloco de
+> propósito, e CORS é regra de navegador, que `curl` e scripts ignoram. O bloco de
 > `corsHeaders` explica por extenso.
 
 ---
@@ -110,8 +122,10 @@ openssl rand -hex 24
 ## 3. Variáveis da BUILD DA EXTENSÃO
 
 O endereço do servidor e o segredo entram **no bundle, na hora da build** —
-não são lidos em runtime. Uma extensão construída sem eles aponta para
-`http://localhost:3000`, que é o padrão de desenvolvimento.
+não são lidos em runtime. Sem eles, o padrão de desenvolvimento é
+`http://localhost:3000`. Desde o commit `923ea5a`, `npm run build` (produção)
+**recusa** URL que não seja `https://` e chave ausente ou de desenvolvimento
+(`vite.config.ts`); para testar contra o servidor local use `npm run build:dev`.
 
 Foi exatamente o que aconteceu com os instaladores da `v2.0.0`: saíram
 apontando para localhost, e só funcionariam para quem estivesse rodando o
@@ -143,17 +157,25 @@ A configuração de free tier do Gemini manda todo o conteúdo enviado para
 **treinamento do provedor, com revisão humana**. Transcrição de reunião é
 exatamente o tipo de dado que os termos desaconselham mandar para lá.
 
-O servidor tem uma trava para isso: com `DOCCITI_DATA_POLICY=training`, a rota
-**exige** `"sintetica": true` no corpo. E a extensão **não envia esse campo** —
-ela captura reunião de verdade, então enviá-lo seria mentira. Resultado:
+A política de dados é **declarada** pela variável `DOCCITI_DATA_POLICY`, e em
+produção ela é **obrigatória** (`lib/ai/config.ts`, `politicaDeDadosNaoDeclarada`):
 
-- com `DOCCITI_DATA_POLICY=training` → a extensão recebe **400** em toda
-  geração;
-- sem ela, e com chave de free tier → conversa real de cliente vai para
-  treinamento.
+- `private` — o servidor afirma que a chave é **paga**, sem treinamento. É o
+  valor de produção.
+- `training` — a chave é de free tier e **treina** com o conteúdo. Em produção,
+  as rotas de geração **recusam** (400; o Taq, 403): o `"sintetica": true` do corpo só vale
+  fora de produção (`aceitaSinteticaDoCliente`), e a extensão não o envia, porque
+  captura reunião de verdade.
+- ausente, em produção → 503 nas rotas de geração, e o Taq aparece como pendente.
+
+"Em produção" quer dizer `VERCEL_ENV=production`, que a Vercel só define no
+ambiente Production. Fora dele (desenvolvimento, *Preview*) a variável é opcional. O aviso de treinamento também dispara
+quando o modelo configurado é de uma entrada da matriz que treina
+(`usesContentForTraining`), mesmo com `private` — então declarar `private` não
+basta se o modelo escolhido for de treinamento.
 
 Não há terceira opção com chave gratuita. **Use uma chave paga em produção e
-não defina `DOCCITI_DATA_POLICY`.**
+declare `DOCCITI_DATA_POLICY=private`.**
 
 Limite prático da chave gratuita, para referência: **20 requisições por dia,
 por modelo**. Uma Ata completa consome quase tudo.
@@ -162,27 +184,24 @@ por modelo**. Uma Ata completa consome quase tudo.
 
 ## 5. Tempo de execução
 
-**O teto de 300s não existe mais.** Ele era da Vercel, e vale a pena dizer por
-extenso porque a versão anterior deste documento o tratava como o maior risco
-aberto do projeto:
+**O teto de função vale na Vercel.** As rotas de geração (`app/api/generate`,
+`app/api/documentos/gerar`, `app/api/documentos/editar`, `app/api/ai/secao`,
+`app/api/ai/bench`) declaram `export const maxDuration = 300`; `app/api/taq/turno`
+declara 60. Na Vercel, cada uma é função serverless com esse teto por requisição.
+Alguns comentários nesses arquivos (`generate`, `ai/bench`, `ai/secao`) ainda dizem
+"INERTE no Railway": são do host anterior e estão desatualizados. O comentário de
+`app/api/generate/route.ts` diz que 300 s é o máximo do plano Hobby, confirmado
+por deploy que falhou com 600 (17/08/2026) — não verificado de novo nesta
+revisão.
 
-> "A medição mais recente estima uma Ata completa em ~360s. No Hobby, uma
-> geração de verdade tem boa chance de estourar o limite da função."
+Histórico: no Railway, o app rodava como processo Node de vida longa (`next
+start`), e o `maxDuration` era inerte. Esse é o motivo de a versão anterior deste
+documento tratar o teto como não existente.
 
-Isso está certo **na Vercel**, onde cada rota vira uma função serverless com
-teto duro por requisição, e onde as duas únicas saídas eram plano Pro ou
-redesenhar a geração como job assíncrono. Nenhuma das duas foi feita, e nenhuma
-das duas é necessária hoje: no Railway o app roda como processo Node de vida
-longa (`next start`), não como função serverless. `export const maxDuration` é
-**diretiva da Vercel** — o Next a compila em configuração de função, e em
-qualquer outro host Node ela é inerte. Os três `maxDuration = 300` no código
-não limitam nada aqui.
-
-**O que ainda NÃO foi medido:** nunca rodei uma geração completa de ~360s
-através do proxy do Railway nesta configuração. O teto de função sumiu; o que
-um proxy HTTP tolera de resposta lenta é outra pergunta, e ela continua sem
-resposta medida. Antes de prometer prazo a alguém, gere uma Ata de verdade e
-cronometre — é o único teste que exercita a coisa inteira.
+**O que ainda NÃO foi medido:** uma geração completa de Ata na Vercel, com o
+pipeline atual (Leitor + Auditor, duas chamadas, segundo o comentário de `lib/generateStep.ts`). A estimativa antiga, de ~360 s,
+era do pipeline de nove seções e não vale mais. Antes de prometer prazo a alguém,
+gere uma Ata de verdade e cronometre — é o único teste que exercita a coisa toda.
 
 E o teto que **continua valendo em qualquer host** é o do próprio código:
 transcrição acima de `DOCCITI_MAX_TRANSCRIPT_CHARS` (padrão 400.000
@@ -215,8 +234,15 @@ Prova de fumaça OK: build de produção renderiza PDF com a Barlow embutida.
 prova nada: o defeito que mais custou caro aqui era a rota respondendo **200
 sem PDF**, em silêncio, só em build de produção.
 
+O script autentica só com `x-docciti-key`, e `/api/answers` passa por
+`autorizarIa`: ele funciona enquanto a ponte do segredo antigo estiver aberta.
+Depois de `DOCCITI_CHAVE_LEGADA=recusar`, o script recebe 401 mesmo com o deploy
+saudável — aí é preciso um `Authorization: Bearer <id_token>` de uma conta do
+domínio permitido, que o script ainda não envia.
+
 Para provar o pipeline inteiro (aí sim consumindo cota), `POST /api/generate`
-com `x-docciti-key` e um `transcript`.
+com um `transcript` e a mesma autenticação (`x-docciti-key` enquanto a ponte
+existir, ou o token do Google).
 
 Para conferir só que o deploy subiu — sem chave nenhuma — um `OPTIONS` basta,
 e distingue "no ar" de "no ar com a versão nova":
@@ -235,9 +261,10 @@ curl -sI -X OPTIONS \
 Nada de código muda.
 
 1. Painel do host → variáveis de ambiente → editar `GOOGLE_API_KEY`.
-2. **Redeploy** — variável de ambiente só vale a partir do próximo deploy. No
-   Railway, salvar a variável já dispara um; confirme que ele terminou antes de
-   testar, ou você mede contra o processo antigo.
+2. **Redeploy** — variável de ambiente só vale a partir do próximo deploy. Na
+   Vercel o deploy é manual: dispare um e confirme que terminou antes de testar,
+   ou você mede contra o deploy antigo. (No Railway, salvar a variável já
+   disparava um.)
 3. Rodar a prova de fumaça da seção 6.
 
 Se o `DOCCITI_SHARED_KEY` também mudar, é preciso **reconstruir a extensão**
@@ -245,21 +272,14 @@ Se o `DOCCITI_SHARED_KEY` também mudar, é preciso **reconstruir a extensão**
 
 ---
 
-## 8. O que sobrou da Vercel, e por que fica
+## 8. Artefatos específicos da Vercel
 
-Dois artefatos no repositório só fazem sentido na Vercel. Nenhum atrapalha o
-Railway, e os dois ficam como porta de volta — mas nenhum dos dois está
-surtindo efeito hoje, o que importa saber antes de confiar neles:
+Dois artefatos do repositório são da Vercel, e hoje valem na produção:
 
-| Artefato | O que faz na Vercel | Hoje |
+| Artefato | O que faz | Hoje |
 | --- | --- | --- |
-| `server/vercel.json` | fixa a região em `gru1` (São Paulo) | **inerte.** O Railway responde de `mia1` (Miami) — dá para confirmar no header `x-railway-edge` de qualquer resposta. A intenção de servir do Brasil não está sendo cumprida; se latência importar, a região se ajusta no painel do Railway. |
-| `maxDuration = 300` em `app/api/generate`, `/api/ai/secao`, `/api/ai/bench` | teto da função serverless | **inerte** (ver seção 5). |
+| `server/vercel.json` | fixa a região em `gru1` (São Paulo) | **vale** na Vercel (produção atual). Histórico (afirmação antiga do runbook, não verificada no código): no Railway, a região não era aplicada. |
+| `maxDuration = 300` nas rotas de geração | teto da função serverless | **vale** na Vercel (ver seção 5). |
 
-Se voltar para a Vercel, os dois voltam a valer sozinhos — e a seção 5 volta a
-ser o maior risco aberto do projeto.
-
-> **E foi o que aconteceu.** A produção voltou para a Vercel em 22/09/2026 (ver
-> o aviso no topo). Esta seção descreve os dois artefatos como inertes porque
-> foi escrita na casa anterior: hoje os dois estão **valendo**, e a frase acima
-> deixou de ser hipótese. A seção 5 é, de novo, o maior risco aberto.
+A seção 5 segue sendo o principal ponto de atenção: o teto de 300 s é o limite
+da função, e o tempo de uma Ata completa na Vercel ainda não foi medido.

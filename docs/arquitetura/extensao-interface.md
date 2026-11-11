@@ -43,8 +43,8 @@ Documentos, Acompanhamento, Conexões.
   botão de brasas do fundo, botão de pausar movimento, menu de conversas
   (`ConversasMenu.tsx`).
 - **Seções** (arquivos): Assistente = `AssistantView.tsx` (+ `WaveField.tsx`, só
-  montada nesta seção); Preparar = `Preparar.tsx` (perfil de condução e briefing
-  da reunião); Reuniões = `Paginas.tsx` (lista, transcrição, `NotasDaReuniao`,
+  montada nesta seção); Preparar = `Preparar.tsx` (o mapa de contextos do
+  assistente, `OQueLevar.tsx`, com os ajustes sugeridos e o teste numa reunião passada); Reuniões = `Paginas.tsx` (lista, transcrição, `NotasDaReuniao`,
   `PrintsDaReuniao`, `GerarDocumento`); Documentos = `Documentos.tsx` e
   `DocumentoPersonalizado.tsx`; Acompanhamento = `Acompanhamento.tsx` (abas
   Compromissos, Decisões, Achados; mesma fonte `taq:trabalho` dos cartões do Taq);
@@ -240,4 +240,5 @@ Relevantes: `home/HomePage.test.tsx`, `rota.test.ts`, `GerarDocumento.test.tsx`,
 
 Verificação na tela (não faz parte do `npm test`): `scripts/verify-ajuda.cjs`,
 `verify-meetings-documents.cjs`, `verify-preparar.cjs`, `verify-trabalho.cjs`,
-`verify-apagar.cjs`, que usam Playwright fora das dependências do projeto.
+`verify-apagar.cjs`, e `verify-ao-vivo.cjs` (reunião ao vivo sintética; nunca executado),
+que usam Playwright fora das dependências do projeto.

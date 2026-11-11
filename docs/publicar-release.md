@@ -42,14 +42,12 @@ errado.
 
 ### 1. Servidor no ar, e respondendo
 
-> ⚠️ **Produção mudou de host, e o runbook ainda não.** Desde 22/09/2026 o
-> servidor roda na **Vercel**, em `<URL-DO-SERVIDOR-DE-PRODUCAO>` — é
-> o que o `.env` deste repositório aponta —, e **o deploy é manual**: nenhum
-> push redeploya nada sozinho. `server/docs/deploy.md` ainda descreve o
-> Railway passo a passo, e não foi reescrito. O endereço real de produção
-> não é registrado neste arquivo (público): peça ao time ou leia o painel do
-> host. Vale a regra de deploy manual daqui; trate os cliques do runbook como histórico até alguém
-> refazê-lo contra o painel da Vercel.
+> **Produção é a Vercel.** Desde 22/09/2026 o servidor roda lá, em
+> `<URL-DO-SERVIDOR-DE-PRODUCAO>` — é o que o `.env` deste repositório
+> aponta —, e **o deploy é manual**: nenhum push redeploya nada sozinho.
+> `server/docs/deploy.md` já foi reescrito para a Vercel (o Railway aparece só
+> como histórico). O endereço real de produção não é registrado neste arquivo
+> (público): peça ao time ou leia o painel do host.
 
 O runbook do deploy é `server/docs/deploy.md`. O mínimo, em qualquer host:
 **Root Directory = `server`**, `DOCCITI_SHARED_KEY` e a chave do provedor nas

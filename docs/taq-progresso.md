@@ -1,7 +1,7 @@
 # Taq — relatório de progresso e matriz de cobertura
 
 Rodadas ao vivo registradas até 03/10/2026; capacidades e bloqueios revisados
-contra o código em 21/10/2026 (as rodadas ao vivo não foram refeitas).
+contra o código em 11/11/2026 (as rodadas ao vivo não foram refeitas).
 Arquitetura e contratos: `docs/taq-agentes.md`; visão geral:
 `docs/arquitetura/taq-assistente.md`. Ajuda: `docs/ajuda-do-taqciti.md`.
 
@@ -143,6 +143,10 @@ As duas cotas diárias do Groq (200 mil tokens por modelo) acabaram de novo.
 
 ## Verificação visual
 
+`scripts/verify-ao-vivo.cjs` (Meet simulado, com a extensão e o servidor de verdade;
+existe desde 28/10/2026) **nunca foi executado**: o cartão de apoio e o "O que falta
+fechar" ao vivo seguem não verificados.
+
 `scripts/verify-trabalho.cjs` (Edge, perfil isolado, dados `[TESTE]`, sem IA)
 → `docs/verification/trabalho/`: cartões na HOME e na sidebar, página
 Acompanhamento, painel "O que o Taq faz", HOME a 390 px sem rolagem lateral,
@@ -153,13 +157,22 @@ de agenda sem convidados, nenhum botão "Enviar"/"Agendar".
 
 1. **Cota do provedor.** A chave atual é free tier e de treinamento: registros
    reais não vão ao modelo, e as jornadas longas batem na cota. Para usar de
-   verdade: chave com política privada (remover `DOCCITI_DATA_POLICY`).
-2. **Deploy.** A extensão desta build pede `taq-v7`, `documents-v4`,
-   `app-assistant-v5`, `communication-v3`, `scheduling-v3`, `copilot-v2`,
-   `intervencao-v1`, `estado-v1`, `acompanhamento-v1` e `conducao-v1`. O deploy é
-   manual e o servidor precisa ser publicado ANTES da extensão: versão que ele não
-   conhece volta como "Versão de instruções desconhecida". Qual versão está
-   publicada agora: não verificado.
+   verdade: chave paga, com `DOCCITI_DATA_POLICY=private` (em produção a variável
+   é obrigatória; ver `server/docs/deploy.md`, seção 4).
+2. **Deploy.** A extensão desta build pede quinze versões de instruções:
+   `taq-v7` (`modelo.ts`); as onze dos especialistas (`especialistas.ts`:
+   `documents-v4`, `app-assistant-v5`, `analyst-v1`, `commitments-v1`,
+   `continuity-v1`, `handoff-v1`, `communication-v3`, `scheduling-v3`,
+   `memory-v1`, `context-v1`, `copilot-v2`); e as três dos subsistemas
+   (`intervencao-v1`, `estado-v1`, `acompanhamento-v1`). Os prompts do pipeline
+   de documentos (`redator`, `leitor`, `auditor`) são escolhidos só pelo servidor.
+   A extensão deixou de pedir `conducao-v1` com o
+   commit `6df3da6`, junto com o novo mapa do Preparar. O servidor ainda mapeia
+   `conducao-v1` (`server/lib/taq/instrucoes.ts:74`, teste em `taq.test.ts:271`), mas
+   a extensão não o pede mais. O deploy é manual e o
+   servidor precisa ser publicado ANTES da extensão: versão que ele não conhece
+   volta como "Versão de instruções desconhecida". Qual versão está publicada
+   agora: não verificado.
 3. **Envio de e-mail e calendário.** Implementados atrás de confirmação por
    clique (o modelo só prepara; ver `docs/arquitetura/taq-assistente.md`). Sem a
    conta do CITi conectada ou sem os escopos, o Taq cai no rascunho copiável e no
