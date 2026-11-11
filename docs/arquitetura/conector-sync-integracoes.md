@@ -126,6 +126,8 @@ Pontos de projeto:
 
 CORS via `corsHeaders` de `lib/apiGuard.ts` (commit `365ef8c`): só a extensão lê a resposta. Sem configuração vale qualquer origem `chrome-extension://<id>`; `DOCCITI_ORIGENS_PERMITIDAS` restringe a origens exatas. Página web (inclusive o Meet) não recebe `Access-Control-Allow-Origin`. Requisição sem `Origin` (curl, scripts) não é afetada pelo CORS: a autenticação é que a recusa. O MCP (`/api/mcp`) é chamado pelo servidor da Claude ou do ChatGPT, sem `Origin`, e segue por token.
 
+Fluxo de gerar endereço na tela (Conexões, `src/home/Conexoes.tsx`): "Conectar" no tile do assistente, "Gerar endereço" (`POST /api/conector/token`), e o valor em claro aparece **uma vez**, na resposta da criação (`EnderecoNovo`). Desde o commit `21550f4`, o tile permanece enquanto mostra esse endereço recém-gerado; antes, a lista recarregada já trazia o novo token e o tile sumia levando o endereço junto. O fluxo é fotografado, com a rota interceptada, por `scripts/verify-estados.cjs`.
+
 ## 5. Sincronização
 
 Código da extensão: `src/features/sync/` (`sincronizacao.ts`, `restauracao.ts`,

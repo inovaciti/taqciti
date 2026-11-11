@@ -50,6 +50,23 @@ Documentos, Acompanhamento, Conexões.
   Compromissos, Decisões, Achados; mesma fonte `taq:trabalho` dos cartões do Taq);
   Conexões = `Conexoes.tsx` + `ContaDoCiti.tsx` (sincronização, conector, conta do
   CITi).
+- **Reset de botão com `:where`** (`src/home/home.css:97-111`, commit `f8c769e`): o reset
+  da HOME é `:where(.tq-home) button` (especificidade zero na raiz). Com
+  `.tq-home button` (0,1,1) ele vencia toda classe de botão (0,1,0): `.tq-acao` perdia a
+  moldura e a cor, `.tq-acao-principal` o verde e `.tq-acao-perigo` o vermelho, e botões
+  como "Reproduzir", "Pedir alteração", "Baixar PDF" e "Aplicar ao meu assistente" saíam
+  como texto solto (varredura de 11/11/2026). Regra: o reset só vale onde nenhuma classe
+  disse outra coisa; ao criar uma classe de botão, não é preciso vencer o reset. O inverso
+  também vale: `.tq-home .tq-pilula` (0,2,0) é mais específica que `.tq-acao-principal` e
+  apagava o verde, por isso o botão "Entrar" de "Sua conta" não leva `tq-pilula`
+  (`Conexoes.tsx`, `SuaConta`).
+- **Tile do conector em Conexões** (`Conexoes.tsx`, `PaginaConexoes`, commit `21550f4`): o
+  tile de Claude ou ChatGPT some quando o assistente já tem endereço, **mas não enquanto
+  mostra o endereço recém-gerado** (`temEndereco(...) || criadoPara === '...'`). O valor
+  em claro só existe na resposta da criação; a lista recarregada já traz o novo token, e o
+  tile ia embora levando o `EnderecoNovo` junto, então o endereço nunca chegava à tela. Na
+  conta conectada, "Sair" e o ✓ ocupam uma coluna só da grade (`tq-acoes tq-hub-fim`).
+  Coberto por `scripts/verify-estados.cjs` (`endereco_novo_na_tela`).
 - **Animação**: `useAnimacao(pausadaPeloUsuario)` devolve `animando`, `movimentoReduzido`,
   `motivo` (`preferencia`, `aba-oculta`, `usuario`). Respeita `prefers-reduced-motion`
   e aba oculta. A onda tem três estados: `escrita`, `captando`, `repouso`.
@@ -240,5 +257,8 @@ Relevantes: `home/HomePage.test.tsx`, `rota.test.ts`, `GerarDocumento.test.tsx`,
 
 Verificação na tela (não faz parte do `npm test`): `scripts/verify-ajuda.cjs`,
 `verify-meetings-documents.cjs`, `verify-preparar.cjs`, `verify-trabalho.cjs`,
-`verify-apagar.cjs`, e `verify-ao-vivo.cjs` (reunião ao vivo sintética; nunca executado),
-que usam Playwright fora das dependências do projeto.
+`verify-apagar.cjs`, `verify-estados.cjs` (Conexões em vários estados, cartões de ação
+externa, confirmações, carregando e erro; a 1440 e 390 px; sem IA nem servidor) e
+`verify-ao-vivo.cjs` (reunião ao vivo sintética; nunca executado),
+que usam Playwright fora das dependências do projeto. Detalhes de cada um em
+`docs/arquitetura/build-release-operacao.md`.
