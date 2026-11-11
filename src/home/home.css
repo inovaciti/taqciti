@@ -2618,6 +2618,13 @@ body .tq-home [role='dialog'] button {
   margin-top: 8px;
 }
 
+/* Sem isto o `max-width: 640px` da caixinha limitava o próprio flex-basis: ela
+   cabia AO LADO dos botões em tela larga e empurrava a fileira para o meio
+   ("Gerando Ata de Reunião…", 11/11/2026). Aqui ela desce, como o resultado. */
+.tq-acoes-reuniao .tq-caixa-ia {
+  max-width: none;
+}
+
 /* `.tq-gerar` é `display: contents`: sem caixa própria, o `absolute` do
    resultado ancorava no ancestral errado e o cartão saía da tela. */
 .tq-acoes-reuniao .tq-gerar-resultado {
@@ -3203,6 +3210,26 @@ body .tq-home [role='dialog'] button {
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+/* As capacidades da Conta do CITi são uma lista DENTRO de um item da lista.
+   Sem regra própria, cada uma herdava a grade de cima (`40px 1fr auto`) e o
+   nome ("Colegas da organização") ficava espremido na coluna de 40px do
+   ícone, uma palavra por linha. Aqui: nome, situação, e o "Desligar" na ponta. */
+.tq-hub-lista .tq-hub-capacidades {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.tq-hub-lista .tq-hub-capacidades li {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 4px 12px;
+  padding: 6px 0;
+}
+
+.tq-hub-lista .tq-hub-capacidades li > span {
+  font-size: 13px;
+}
+
 /* "G" era a Conta Google e também o ChatGPT, lado a lado. A sigla de três
    letras precisa de corpo menor para caber na placa. */
 .tq-hub-sigla {
@@ -3242,6 +3269,11 @@ body .tq-home [role='dialog'] button {
 .tq-hub-ok {
   padding-right: 8px;
   color: var(--voz-clara);
+}
+
+/* A ponta da linha "Conectado": "Sair" e o ✓ juntos, na mesma altura. */
+.tq-hub-fim {
+  align-items: center;
 }
 
 .tq-hub-muitos {

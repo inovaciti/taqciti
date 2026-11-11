@@ -382,29 +382,35 @@ function SuaConta() {
             )}
             {erro && <small className="tq-hub-falha">{erro}</small>}
           </div>
+          {/* Conectado: o ✓ e o "Sair" ocupam UMA coluna da grade. Soltos,
+              eram quatro filhos numa grade de três, e o ✓ caía para a linha
+              de baixo, debaixo do ícone. */}
           {dentro ? (
-            !login.pelaSincronizacao && (
-              <button type="button" className="tq-linkish" disabled={ocupado} onClick={aoSair}>
-                Sair
-              </button>
-            )
+            <span className="tq-acoes tq-hub-fim">
+              {!login.pelaSincronizacao && (
+                <button type="button" className="tq-linkish" disabled={ocupado} onClick={aoSair}>
+                  Sair
+                </button>
+              )}
+              <span className="tq-hub-ok" aria-label="conectado">
+                <Icon name="check" size={16} />
+              </span>
+            </span>
           ) : (
             login !== null &&
             login.situacao !== 'sem-oauth' && (
+              // Sem `tq-pilula`: `.tq-home .tq-pilula` é mais específica que
+              // `.tq-acao-principal` e apagava o verde — "Entrar" saía como uma
+              // pílula escura, sem cara da única ação da linha.
               <button
                 type="button"
-                className="tq-acao tq-acao-principal tq-pilula"
+                className="tq-acao tq-acao-principal"
                 disabled={ocupado}
                 onClick={aoEntrar}
               >
                 {ocupado ? 'Abrindo o Google…' : 'Entrar com o Google'}
               </button>
             )
-          )}
-          {dentro && (
-            <span className="tq-hub-ok" aria-label="conectado">
-              <Icon name="check" size={16} />
-            </span>
           )}
         </li>
       </ul>
@@ -652,10 +658,14 @@ export function PaginaConexoes({
           },
         ]
       : []),
-    ...(!temEndereco('Claude')
+    // O tile some quando o assistente já tem endereço — MAS não enquanto mostra
+    // o endereço que acabou de gerar. A lista recarregada já traz o novo, e o
+    // tile ia embora levando o `EnderecoNovo` junto: o endereço, que só existe
+    // nessa resposta, nunca chegava à tela (varredura de 11/11/2026).
+    ...(!temEndereco('Claude') || criadoPara === 'Claude'
       ? [{ id: 'claude', nome: 'Claude', faz: 'Responde sobre as suas reuniões dentro do Claude.', icone: <span>C</span>, fluxo: fluxoDoAssistente('Claude') }]
       : []),
-    ...(!temEndereco('ChatGPT')
+    ...(!temEndereco('ChatGPT') || criadoPara === 'ChatGPT'
       ? [{ id: 'chatgpt', nome: 'ChatGPT', faz: 'Busca e abre as suas reuniões no ChatGPT.', icone: <span className="tq-hub-sigla">GPT</span>, fluxo: fluxoDoAssistente('ChatGPT') }]
       : []),
     ...(!conta.conexao

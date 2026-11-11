@@ -968,7 +968,9 @@ function CartaoDeAcaoExterna({
       )}
       {cartao.link && (
         <div className="tq-c-acoes">
-          <a href={cartao.link} target="_blank" rel="noreferrer">
+          {/* Mesma pílula do "Abrir no Google Agenda" da sugestão de horário:
+              sem a classe, este saía como texto solto, sem cara de ação. */}
+          <a className="tq-c-botao-link" href={cartao.link} target="_blank" rel="noreferrer">
             Abrir no Google Agenda
           </a>
         </div>
