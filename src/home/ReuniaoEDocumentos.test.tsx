@@ -398,6 +398,15 @@ describe('em largura estreita', () => {
     ).toBe('true');
   });
 
+  /* A aba "Transcrição" já nomeia a coluna; o título da coluna embaixo dela
+     era o mesmo rótulo duas vezes (varredura de 11/11/2026). Lado a lado, sem
+     abas, o título volta. */
+  it('não repete "Transcrição" embaixo da aba de mesmo nome', async () => {
+    await montar({ url: '/?record=m-1', largura: 560 });
+    const coluna = q<HTMLElement>('.tq-coluna[aria-label="Transcrição"]');
+    expect(coluna.querySelector('.tq-coluna-topo h2')).toBeNull();
+  });
+
   it('a coluna escondida sai do alcance do teclado', async () => {
     await montar({ url: '/?record=m-1', largura: 560 });
 

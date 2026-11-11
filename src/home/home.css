@@ -1177,6 +1177,13 @@ html {
   transition: background 0.25s;
 }
 
+/* O título editável é um `<input>`: não quebra linha. Título maior que a tela
+   era cortado no meio da palavra, sem sinal de que continuava. As reticências
+   somem ao editar (o campo rola com o cursor). */
+input.tq-titulo-editavel {
+  text-overflow: ellipsis;
+}
+
 .tq-titulo-editavel:hover,
 .tq-titulo-editavel:focus {
   background: rgb(255 255 255 / 0.04);
