@@ -48,7 +48,7 @@ em código.
   `docs/arquitetura/taq-assistente.md`.
 - Tela "Preparar" no navegador: `node scripts/verify-preparar.cjs <playwright-core> <pasta da build de desenvolvimento>` (resultado em `docs/verification/preparar/`).
 - Contra o provedor real, com reunião **sintética** (chave gratuita só aceita dado inventado): subir o servidor (`cd server; npx next build; npx next start -p 3100`) e rodar os arquivos `*.live.test.ts` com `TAQ_LIVE_URL` e `TAQ_LIVE_KEY` (ver o cabeçalho de cada um). Cobrem: `intervencao-v1` (varredura, laço completo, retirada), `estado-v1`, `copilot-v2`, `acompanhamento-v1` (`juiz.live.test.ts`), histórico por cortes. (A extensão não referencia mais `conducao-v1` em `src/`; o servidor ainda o mapeia em `server/lib/taq/instrucoes.ts:74`.)
-- Reunião ao vivo sintética, com a extensão rodando: `scripts/verify-ao-vivo.cjs` (captura de legendas, cartão de apoio e "O que falta fechar", contra uma página do Meet simulada). **Nunca rodou**; ver a seção de pendências.
+- Reunião ao vivo sintética, com a extensão rodando: `scripts/verify-ao-vivo.cjs` (captura de legendas, cartão de apoio e "O que falta fechar", contra uma página do Meet simulada). **Nunca rodou**; ver a seção de pendências. O trecho do consentimento foi reescrito em 11/11/2026 (responde pela sidebar, porque o shadow root da cápsula é `closed`) e ainda não foi executado: exige chave de IA.
 
 ## Publicação: servidor antes da extensão
 
@@ -65,7 +65,9 @@ quais já foram publicadas: não verificado.
 - **Não visto no navegador:** o cartão de apoio, o cartão "O que falta fechar" e o laço ao vivo
   (precisam de uma reunião do Meet em andamento). `scripts/verify-ao-vivo.cjs` existe para isso,
   mas nunca foi executado: continua **não visto no navegador**. A tela "Preparar" (mapa de
-  contextos) foi verificada no Edge com `verify-preparar.cjs`; capturas em `docs/verification/preparar/`.
+  contextos) foi verificada no Edge com `verify-preparar.cjs`, que desde 11/11/2026 cobre também
+  "Ajustes sugeridos", "Aplicar ao meu assistente" e "Agora não"; o "Reproduzir" só teve o
+  rótulo conferido, sem clique (envia trechos ao provedor). Capturas em `docs/verification/preparar/`.
 - **Provedor real só com o plano gratuito e dado sintético.** Limiares (intervalos, limites,
   conteúdo mínimo, janelas, limiares de feedback) são **ponto de partida**, não medição.
   A latência observada foi de 1 a 20 s por chamada neste provedor.

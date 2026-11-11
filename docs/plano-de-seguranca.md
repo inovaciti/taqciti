@@ -168,7 +168,7 @@ A ordem segue o risco, dividido pelo esforço. Uma regra de deploy, já registra
    - Cartão de confirmação para `delete_conversation` e `delete_meeting`, como já existe para o e-mail.
 4. **I2:** mostrar a descrição inteira na prévia, incluí-la em `chaveDe(...)` e recusar URLs na descrição.
 5. **I6:** mostrar o domínio ao lado de cada link vindo do modelo e remover a query string de domínios fora da allowlist.
-6. **E3:** shadow `closed`, testando antes foco e eventos do React, e `isTrusted` nos botões de consentimento. **`isTrusted` feito nos dois botões:** na cápsula (`Capsula.tsx:54`, `923ea5a`) e no botão da barra do Meet (`botaoNaBarra.ts`, `gestoReal`, `832da29`). O shadow `closed` não está commitado.
+6. **E3:** shadow `closed`, testando antes foco e eventos do React, e `isTrusted` nos botões de consentimento. **`isTrusted` feito nos dois botões:** na cápsula (`Capsula.tsx:54`, `923ea5a`) e no botão da barra do Meet (`botaoNaBarra.ts`, `gestoReal`, `832da29`). **Shadow `closed` feito no `c4bc823`** (`src/content/ui/mount.ts:63-67`; teste em `src/content/index.test.ts`). E3 está fechado.
 7. **E4:** o `vite build` em modo production falha se a URL não for https ou se a chave for a de dev.
 8. **I7:**
    - Retenção configurável (padrão de N dias) para o acervo local.
@@ -207,7 +207,7 @@ A ordem segue o risco, dividido pelo esforço. Uma regra de deploy, já registra
 2. **D4:** `inputs.versao` passa por `env:` e é validado com `^\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$` em `resolve-version.sh`.
 3. **D1 (parte imediata):**
    - Publicar `SHA256SUMS` na Release e no Drive, e o guia passa a conferir o hash.
-   - Reduzir a SA do Drive para `drive.file`, ou para acesso só à pasta.
+   - Reduzir a SA do Drive para `drive.file`, ou para acesso só à pasta. **Em ensaio (`c4bc823`):** o canal de teste do `release.yml` (job que publica o `TaqCiti-teste.zip`) já usa `drive.file` (`release.yml:~452`); o job oficial segue com `drive` (`:338`). O oficial só troca depois de um `workflow_dispatch` do canal de teste confirmar que ele **encontra e atualiza** o zip, sem criar um duplicado. Ainda não executado.
    - Assinar o `.exe` (Authenticode) e o `.pkg` (Developer ID + notarização) quando houver certificado.
 4. **D3:** payload do macOS em diretório só de root (`/Library/Application Support/TaqCiti/payload`), ou `mktemp -d` com conferência de dono, e cópia com `cp -RP`.
 5. **D5:** `vitest@4.1.12` nos dois pacotes, `vite@6.4.5` (pular a 6.4.4, que tem advisory próprio) e `npm audit fix`.

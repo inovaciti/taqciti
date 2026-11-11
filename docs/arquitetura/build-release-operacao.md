@@ -196,9 +196,9 @@ e nenhuma chamada de IA. Saídas (capturas e JSON) vão para `docs/verification/
 | `verify-ajuda.cjs` | rótulos da referência de ajuda (`src/features/taq/ajuda.ts`) contra a interface; grava `resultado.json` que o `ajuda.test.ts` usa | build de desenvolvimento |
 | `verify-apagar.cjs` | botões de apagar da HOME (documento, conversa, notas) | `dist` |
 | `verify-meetings-documents.cjs` | fluxo de reuniões e documentos | `dist` |
-| `verify-preparar.cjs` | página "Preparar" (HOME larga e estreita) | build de desenvolvimento |
+| `verify-preparar.cjs` | página "Preparar" (HOME larga e estreita), incluindo "Ajustes sugeridos", "Aplicar ao meu assistente" e "Agora não". "Reproduzir" só teve o rótulo, a habilitação e o aviso de privacidade conferidos (não é clicado: envia trechos ao provedor de IA) | build de desenvolvimento |
 | `verify-trabalho.cjs` | cartões do Taq e página "Acompanhamento" | build de desenvolvimento |
-| `verify-ao-vivo.cjs` | reunião ao vivo sintética no Meet simulado: captura de legendas, cartão de apoio e "O que falta fechar", com servidor e modelo de verdade (exige servidor local e chave; as falas são inventadas). **Nunca foi executado**: o resultado ao vivo continua não verificado | build de desenvolvimento |
+| `verify-ao-vivo.cjs` | reunião ao vivo sintética no Meet simulado: captura de legendas, cartão de apoio e "O que falta fechar", com servidor e modelo de verdade (exige servidor local e chave; as falas são inventadas). **Nunca foi executado**: o resultado ao vivo continua não verificado. O trecho do consentimento foi reescrito em 11/11/2026 (shadow root `closed`): responde pela sidebar, e a presença da cápsula é conferida pelo host `taqciti-root` e por um print; esse trecho também não foi executado (exige chave de IA) | build de desenvolvimento |
 
 Exemplo: `npx vite build --mode development --outDir <pasta>` e depois
 `node scripts/verify-preparar.cjs <playwright-core> <pasta>`. O Chrome

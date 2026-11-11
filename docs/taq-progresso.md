@@ -145,7 +145,9 @@ As duas cotas diárias do Groq (200 mil tokens por modelo) acabaram de novo.
 
 `scripts/verify-ao-vivo.cjs` (Meet simulado, com a extensão e o servidor de verdade;
 existe desde 28/10/2026) **nunca foi executado**: o cartão de apoio e o "O que falta
-fechar" ao vivo seguem não verificados.
+fechar" ao vivo seguem não verificados. O trecho do consentimento foi reescrito em
+11/11/2026 para responder pela sidebar (a cápsula ficou com shadow root `closed`) e
+também não foi executado: exige chave de IA.
 
 `scripts/verify-trabalho.cjs` (Edge, perfil isolado, dados `[TESTE]`, sem IA)
 → `docs/verification/trabalho/`: cartões na HOME e na sidebar, página
