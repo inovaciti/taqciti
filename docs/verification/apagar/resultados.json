@@ -1,7 +1,7 @@
 {
-  "quando": "2026-09-22T15:10:34.308Z",
+  "quando": "2026-11-11T08:30:19.613Z",
   "checks": [
-    "Documentos: a lixeira é irmã do item, visível e à direita dele",
+    "Documentos: a lixeira é irmã do item, com alvo de verdade, no canto da miniatura",
     "Documentos: cancelar devolve o item e não apaga nada",
     "Documentos: apagar tira só o documento; a reunião de origem fica",
     "Notas: o ícone mora no topo da coluna, fora do campo",

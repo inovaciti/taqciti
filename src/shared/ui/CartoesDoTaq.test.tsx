@@ -106,7 +106,7 @@ describe('compromissos', () => {
     );
     await montar([{ tipo: 'compromissos', ids: [criados[0]!.id, 'k-inexistente'] }]);
     expect(palco.textContent).toContain('origem indisponível');
-    expect(palco.textContent).toMatch(/1 compromisso\(s\) desta resposta não está mais guardado/);
+    expect(palco.textContent).toMatch(/1 compromisso desta resposta já não está entre os registros/);
   });
 
   it('sugestões: nada é gravado até “Registrar selecionados”, e o desmarcado fica de fora', async () => {
@@ -128,7 +128,7 @@ describe('compromissos', () => {
       await new Promise((r) => setTimeout(r, 0));
     });
     expect((await lerTrabalho()).compromissos.map((c) => c.descricao)).toEqual(['Enviar o relatório']);
-    expect(palco.textContent).toContain('Registrado(s): 1.');
+    expect(palco.textContent).toContain('1 registrado.');
   });
 });
 
@@ -186,6 +186,9 @@ describe('sem integração, sem botão de integração', () => {
     const link = [...palco.querySelectorAll('a')].find((a) => a.textContent === 'Abrir no Google Agenda')!;
     expect(new URL(link.href).searchParams.has('add')).toBe(false);
     expect(botao('Agendar')).toBeUndefined();
+    // O fuso aparece com nome de gente, não como o identificador IANA cru.
+    expect(palco.textContent).toContain('Brasília');
+    expect(palco.textContent).not.toContain('America/Recife');
   });
 });
 

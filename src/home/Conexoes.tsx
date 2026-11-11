@@ -106,7 +106,7 @@ function EnderecoNovo({ criado }: { criado: TokenRecemCriado }) {
     <div className="tq-conector-novo">
       <p className="tq-aviso">
         <strong>Copie agora — este endereço não aparece de novo.</strong> O servidor
-        guarda só um resumo dele, não o valor. Cole-o na Claude ou no ChatGPT seguindo o
+        guarda só um resumo dele, não o valor. Cole-o no Claude ou no ChatGPT seguindo o
         passo a passo abaixo. Se perder, gere outro e revogue este.
       </p>
       <div className="tq-conector-endereco">
@@ -131,12 +131,12 @@ function EnderecoNovo({ criado }: { criado: TokenRecemCriado }) {
  *
  * ── Duas regras que este guia obedece ────────────────────────────────────
  *
- * **1. Diz o LUGAR, não só o rótulo.** Os nomes de menu da Claude e do
+ * **1. Diz o LUGAR, não só o rótulo.** Os nomes de menu do Claude e do
  * ChatGPT mudam sem aviso. "Clique exatamente em X" e a pessoa não achar X é
  * pior do que descrever onde procurar e o que o botão faz.
  *
  * **2. Antecipa o que vai dar errado.** O aviso "não foi possível verificar
- * o servidor" da Claude apareceu em uso real, e quem não foi avisado
+ * o servidor" do Claude apareceu em uso real, e quem não foi avisado
  * interpreta como "quebrou" e desiste — quando a resposta certa é seguir. Um
  * guia que só descreve o caminho feliz falha exatamente na hora em que
  * alguém precisa dele.
@@ -146,7 +146,7 @@ function ComoConectar({ so }: { so: 'Claude' | 'ChatGPT' }) {
     <div className="tq-guia">
       {so === 'Claude' && (
       <details open>
-        <summary>Conectar na Claude</summary>
+        <summary>Conectar no Claude</summary>
         <ol className="tq-passos">
           <li>
             Copie o endereço acima (é o botão <strong>Copiar</strong>).
@@ -191,7 +191,7 @@ function ComoConectar({ so }: { so: 'Claude' | 'ChatGPT' }) {
           </li>
           <li>
             Numa conversa, ative o conector do TaqCiti nas ferramentas antes de perguntar.
-            O ChatGPT não o usa sozinho como a Claude faz.
+            O ChatGPT não o usa sozinho como o Claude faz.
           </li>
         </ol>
         <p className="tq-meta">
@@ -205,7 +205,7 @@ function ComoConectar({ so }: { so: 'Claude' | 'ChatGPT' }) {
 
       {so === 'Claude' && (
       <details>
-        <summary>Por que a Claude avisa que “não verificou” o servidor</summary>
+        <summary>Por que o Claude avisa que “não verificou” o servidor</summary>
         <p>
           Porque ela procura um sistema de login completo (um servidor OAuth, como o do
           Notion ou do Google) e não encontra — este servidor não tem um, de propósito.
@@ -259,7 +259,7 @@ function ComoConectar({ so }: { so: 'Claude' | 'ChatGPT' }) {
 /**
  * Conexões é um HUB curto: em cima o que falta conectar, embaixo o que já
  * está. Cada "Conectar" abre o caminho certo ali mesmo, no próprio tile — o
- * login do Google, o endereço do conector para a Claude ou o ChatGPT. O que
+ * login do Google, o endereço do conector para o Claude ou o ChatGPT. O que
  * não existe nesta versão não aparece: nem como "Em breve" (18/10/2026) — um
  * item que não inicia fluxo real seria decorativo.
  */
@@ -653,7 +653,7 @@ export function PaginaConexoes({
         ]
       : []),
     ...(!temEndereco('Claude')
-      ? [{ id: 'claude', nome: 'Claude', faz: 'Responde sobre as suas reuniões dentro da Claude.', icone: <span>C</span>, fluxo: fluxoDoAssistente('Claude') }]
+      ? [{ id: 'claude', nome: 'Claude', faz: 'Responde sobre as suas reuniões dentro do Claude.', icone: <span>C</span>, fluxo: fluxoDoAssistente('Claude') }]
       : []),
     ...(!temEndereco('ChatGPT')
       ? [{ id: 'chatgpt', nome: 'ChatGPT', faz: 'Busca e abre as suas reuniões no ChatGPT.', icone: <span className="tq-hub-sigla">GPT</span>, fluxo: fluxoDoAssistente('ChatGPT') }]
@@ -920,7 +920,7 @@ export function PaginaConexoes({
         <details>
           <summary>Sem conectar: o caminho manual</summary>
           <p>
-            Baixe a transcrição em <code>.txt</code> e anexe na Claude ou no ChatGPT — funciona
+            Baixe a transcrição em <code>.txt</code> e anexe no Claude ou no ChatGPT — funciona
             sempre, inclusive com a sincronização desligada.
           </p>
           {comConteudo.length === 0 ? (

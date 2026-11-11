@@ -923,7 +923,7 @@ export const FUNCIONALIDADES: readonly Funcionalidade[] = [
     passos: [
       'HOME → “Conexões” → “Ligar sincronização” e escolha a conta Google na tela de login.',
       'Depois, “Gerar endereço” e clique em “Copiar” — o endereço não aparece de novo.',
-      'Siga o passo a passo de “Conectar na Claude” ou “Conectar no ChatGPT”, na mesma página.',
+      'Siga o passo a passo de “Conectar no Claude” ou “Conectar no ChatGPT”, na mesma página.',
       'Para parar de enviar: “Desligar”. Para tirar o acesso de um assistente: “Revogar”, no endereço.',
     ],
     preRequisitos: [
@@ -942,7 +942,7 @@ export const FUNCIONALIDADES: readonly Funcionalidade[] = [
       'Ligar sincronização',
       'Gerar endereço',
       'Copiar',
-      'Conectar na Claude',
+      'Conectar no Claude',
       'Conectar no ChatGPT',
       'Desligar',
       'Revogar',

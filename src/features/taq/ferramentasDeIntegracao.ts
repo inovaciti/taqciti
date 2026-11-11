@@ -66,6 +66,7 @@ import { documentoNoEscopo, hash, instante, reuniaoNoEscopo } from './ferramenta
 import { podeLerReuniao } from './politica';
 import { acharSensiveis, avisosDeExposicao } from './privacidade';
 import { ErroDeFerramenta, type ContextoDeFerramenta, type DefinicaoDeFerramenta } from './tipos';
+import { contar } from '@/shared/ui/format';
 
 /** A capacidade externa de que cada ferramenta desta família depende. */
 export const CAPACIDADE_DA_FERRAMENTA: Readonly<Record<string, CapacidadeExterna>> = {
@@ -310,7 +311,7 @@ export const searchDirectory: DefinicaoDeFerramenta<z.infer<typeof buscaSchema>>
       throw comoErroDeFerramenta(e);
     }
   },
-  resumir: (s) => `${s.total as number} pessoa(s) no diretório`,
+  resumir: (s) => `${contar(s.total as number, 'pessoa', 'pessoas')} no diretório`,
 };
 
 // ---------------------------------------------------------------- send_email
@@ -386,7 +387,7 @@ async function montarAnexos(ctx: ContextoDeFerramenta, pedidos: readonly AnexoPe
       const graves = revisarDocumento(d, reunioesDoEscopo).problemas.filter((x) => x.gravidade === 'alta');
       if (graves.length)
         avisos.push(
-          `“${d.title}” ainda tem ${graves.length} pendência(s) grave(s): ${graves.map((x) => x.texto).join(' ')}`,
+          `“${d.title}” ainda tem ${contar(graves.length, 'pendência grave', 'pendências graves')}: ${graves.map((x) => x.texto).join(' ')}`,
         );
       // O conteúdo EDITÁVEL (com a edição humana), nunca o HTML da geração.
       const ext = d.formato === 'texto' ? 'txt' : 'md';
@@ -769,7 +770,7 @@ export const listAvailability: DefinicaoDeFerramenta<z.infer<typeof disponibilid
       throw comoErroDeFerramenta(e);
     }
   },
-  resumir: (s) => `${(s.por_pessoa as unknown[] | undefined)?.length ?? 0} agenda(s) consultada(s)`,
+  resumir: (s) => contar((s.por_pessoa as unknown[] | undefined)?.length ?? 0, 'agenda consultada', 'agendas consultadas'),
 };
 
 // ---- create_event

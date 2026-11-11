@@ -336,7 +336,7 @@ export function Capsula({
                 hour: '2-digit',
                 minute: '2-digit',
               })}{' '}
-              · {gravacaoAnterior.segmentos} fala(s).
+              · {gravacaoAnterior.segmentos} {gravacaoAnterior.segmentos === 1 ? 'fala' : 'falas'}.
             </p>
           )}
 

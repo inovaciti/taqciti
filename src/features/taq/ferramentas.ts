@@ -32,6 +32,7 @@ import { transcriptToText } from '@/features/history/export';
 import { gerarPersonalizado } from '@/features/documents/personalizado/cliente';
 import { guardarGeracao } from '@/features/documents/personalizado/documento';
 import { MOTIVOS_DE_PERGUNTA, type FichaDeAgente, type Pergunta, type Tarefa } from './contratos';
+import { contar } from '@/shared/ui/format';
 import {
   exigirDocumento,
   exigirReuniao,
@@ -251,7 +252,7 @@ export const searchRecords: DefinicaoDeFerramenta<z.infer<typeof buscaSchema>> =
         : {}),
     };
   },
-  resumir: (s) => `${s.total as number} resultado(s)`,
+  resumir: (s) => contar(s.total as number, 'resultado', 'resultados'),
 };
 
 // -------------------------------------------------------------- read_meeting
@@ -356,7 +357,7 @@ export const readMeeting: DefinicaoDeFerramenta<z.infer<typeof leituraDeReuniaoS
         ...(restantes.length ? { proximo: restantes[0] } : {}),
       };
     },
-    resumir: (s) => `${(s.segmentos as unknown[]).length} segmento(s)`,
+    resumir: (s) => contar((s.segmentos as unknown[]).length, 'trecho', 'trechos'),
   };
 
 // ------------------------------------------------------------- read_document
@@ -412,7 +413,7 @@ export const readDocument: DefinicaoDeFerramenta<
       ...(fim < d.content.length ? { proximo: fim } : {}),
     };
   },
-  resumir: (s) => `${((s.trecho as { texto: string }).texto ?? '').length} caractere(s)`,
+  resumir: (s) => contar(((s.trecho as { texto: string }).texto ?? '').length, 'caractere', 'caracteres'),
 };
 
 // --------------------------------------------------------- read_conversation
@@ -606,7 +607,7 @@ export const listDocumentTypes: DefinicaoDeFerramenta<Record<string, never>> = {
       })),
     };
   },
-  resumir: (s) => `${(s.tipos as unknown[]).length} tipo(s)`,
+  resumir: (s) => contar((s.tipos as unknown[]).length, 'tipo', 'tipos'),
 };
 
 // ----------------------------------------------------------- create_document

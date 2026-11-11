@@ -55,6 +55,7 @@ import { podeLerReuniao } from './politica';
 import { acharSensiveis, avisosDeExposicao, NOME_DO_TIPO, ocultarSensiveis } from './privacidade';
 import { revisarDocumento } from './revisao';
 import { ErroDeFerramenta, type ContextoDeFerramenta, type DefinicaoDeFerramenta } from './tipos';
+import { contar } from '@/shared/ui/format';
 
 const dataIso = z
   .string()
@@ -395,7 +396,7 @@ async function julgarOsCompromissos(
     if (conferidos.length > vagas)
       throw new ErroDeFerramenta(
         'julgamento_indisponivel',
-        `Há ${conferidos.length} candidatos para ${vagas} vaga(s) e não há como julgar quais ficam. Nada foi feito.`,
+        `Há ${conferidos.length} candidatos para ${contar(vagas, 'vaga', 'vagas')} e não há como julgar quais ficam. Nada foi feito.`,
       );
     return { aprovados: [...conferidos], julgamento: { vagas } };
   }
@@ -465,7 +466,7 @@ export const suggestCommitments: DefinicaoDeFerramenta<z.infer<typeof compromiss
       aviso: 'Nada foi registrado. O cartão deixa a pessoa revisar e registrar os que quiser.',
     };
   },
-  resumir: (s) => `${s.sugeridos as number} compromisso(s) sugerido(s)`,
+  resumir: (s) => contar(s.sugeridos as number, 'compromisso sugerido', 'compromissos sugeridos'),
 };
 
 export const registerCommitments: DefinicaoDeFerramenta<z.infer<typeof compromissosSchema>> = {
@@ -498,7 +499,7 @@ export const registerCommitments: DefinicaoDeFerramenta<z.infer<typeof compromis
     };
   },
   resumir: (s) =>
-    `${(s.registrados as unknown[]).length} registrado(s), ${(s.ja_existiam as unknown[]).length} já existia(m)`,
+    `${contar((s.registrados as unknown[]).length, 'registrado', 'registrados')}, ${(s.ja_existiam as unknown[]).length} já ${(s.ja_existiam as unknown[]).length === 1 ? 'existia' : 'existiam'}`,
 };
 
 async function compromissoParaModelo(ctx: ContextoDeFerramenta, c: Compromisso, todos: readonly Compromisso[]) {
@@ -551,7 +552,7 @@ export const listCommitments: DefinicaoDeFerramenta<z.infer<typeof listaDeCompro
         : {}),
     };
   },
-  resumir: (s) => `${s.total as number} compromisso(s)`,
+  resumir: (s) => contar(s.total as number, 'compromisso', 'compromissos'),
 };
 
 const atualizacaoDeCompromissoSchema = z.object({
@@ -858,7 +859,7 @@ export const listFindings: DefinicaoDeFerramenta<{ estado: 'aberto' | 'resolvido
     if (pagina.length) ctx.registrarCartao({ tipo: 'achados', ids: pagina.map((a) => a.id) });
     return { total: filtrados.length, achados: await Promise.all(pagina.map((a) => achadoParaModelo(ctx, a))) };
   },
-  resumir: (s) => `${s.total as number} achado(s)`,
+  resumir: (s) => contar(s.total as number, 'achado', 'achados'),
 };
 
 const resolucaoSchema = z.object({
@@ -1016,7 +1017,7 @@ export const checkDocument: DefinicaoDeFerramenta<{ documento_id: string }> = {
       aviso: '"conferida" quer dizer que o trecho está na fonte, não que a frase o interprete bem.',
     };
   },
-  resumir: (s) => `${(s.problemas as unknown[]).length} problema(s)`,
+  resumir: (s) => contar((s.problemas as unknown[]).length, 'problema', 'problemas'),
 };
 
 // -------------------------------------------------------------- comunicação
@@ -1104,7 +1105,7 @@ export const prepareMessage: DefinicaoDeFerramenta<z.infer<typeof mensagemSchema
         'Nada foi enviado e não há como enviar daqui. Diga que o rascunho está no cartão para revisar, copiar ou abrir no e-mail. Se um destinatário ficou ambíguo, pergunte qual.',
     };
   },
-  resumir: (s) => `rascunho preparado (${(s.destinatarios as unknown[]).length} destinatário(s))`,
+  resumir: (s) => `rascunho preparado (${contar((s.destinatarios as unknown[]).length, 'destinatário', 'destinatários')})`,
 };
 
 // ------------------------------------------------------------------- agenda
@@ -1204,7 +1205,7 @@ export const reviewPrivacy: DefinicaoDeFerramenta<{ texto: string }> = {
       aviso: 'Reconhece formatos, não contexto. Diga que é uma revisão de apoio, não uma garantia.',
     };
   },
-  resumir: (s) => `${(s.achados as unknown[]).length} tipo(s) sensível(is)`,
+  resumir: (s) => contar((s.achados as unknown[]).length, 'tipo sensível', 'tipos sensíveis'),
 };
 
 export const FERRAMENTAS_DE_TRABALHO: readonly DefinicaoDeFerramenta[] = [

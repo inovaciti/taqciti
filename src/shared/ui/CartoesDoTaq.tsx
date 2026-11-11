@@ -21,6 +21,7 @@
  * não texto de ninguém — que o código aceita como confirmação.
  */
 import { useState, type ReactNode } from 'react';
+import { contar, nomeDoFuso } from '@/shared/ui/format';
 import { cancelarRascunho } from '@/features/integracoes/registroDeAcoes';
 import type { CartaoDaResposta } from '@/features/taq/contratos';
 import type { ResultadoDaConfirmacao } from '@/features/taq/orquestrador';
@@ -244,10 +245,11 @@ export function ItemDeCompromisso({
   );
 }
 
-function Indisponiveis({ n, nome }: { n: number; nome: string }) {
+function Indisponiveis({ n, um, varios }: { n: number; um: string; varios: string }) {
   return n ? (
     <p className="tq-c-mudo">
-      {n} {nome} desta resposta não {n === 1 ? 'está' : 'estão'} mais guardado(s).
+      {/* Sem "guardado(s)": a frase não tem gênero, e serve a compromisso e a decisão. */}
+      {contar(n, um, varios)} desta resposta já não {n === 1 ? 'está' : 'estão'} entre os registros.
     </p>
   ) : null;
 }
@@ -264,7 +266,7 @@ function CartaoDeCompromissos({ ids, onAbrirFonte }: { ids: string[]; onAbrirFon
           <ItemDeCompromisso key={c.id} c={c} todos={trabalho.compromissos} versoes={versoes} onAbrirFonte={onAbrirFonte} />
         ))}
       </ul>
-      <Indisponiveis n={ids.length - itens.length} nome="compromisso(s)" />
+      <Indisponiveis n={ids.length - itens.length} um="compromisso" varios="compromissos" />
     </Cartao>
   );
 }
@@ -298,7 +300,7 @@ function CartaoDeSugestoes({
         { origem: 'pessoa' },
       );
       setEstado(
-        `Registrado(s): ${r.criados.length}.${r.jaExistiam.length ? ` Já estavam registrados: ${r.jaExistiam.length}.` : ''}`,
+        `${contar(r.criados.length, 'registrado', 'registrados')}.${r.jaExistiam.length ? ` Já estavam registrados: ${r.jaExistiam.length}.` : ''}`,
       );
     } catch {
       setErro('Não foi possível registrar. Nada foi gravado.');
@@ -406,7 +408,7 @@ function CartaoDeDecisoes({ ids, onAbrirFonte }: { ids: string[]; onAbrirFonte: 
           <ItemDeDecisao key={d.id} d={d} todas={trabalho.decisoes} versoes={versoes} onAbrirFonte={onAbrirFonte} />
         ))}
       </ul>
-      <Indisponiveis n={ids.length - itens.length} nome="decisão(ões)" />
+      <Indisponiveis n={ids.length - itens.length} um="decisão" varios="decisões" />
     </Cartao>
   );
 }
@@ -526,7 +528,7 @@ function CartaoDeAchados({ ids, onAbrirFonte }: { ids: string[]; onAbrirFonte: (
           <ItemDeAchado key={a.id} a={a} versoes={versoes} onAbrirFonte={onAbrirFonte} />
         ))}
       </ul>
-      <Indisponiveis n={ids.length - itens.length} nome="achado(s)" />
+      <Indisponiveis n={ids.length - itens.length} um="achado" varios="achados" />
     </Cartao>
   );
 }
@@ -835,7 +837,7 @@ function CartaoDeEvento({ cartao }: { cartao: Extract<CartaoDaResposta, { tipo: 
   const detalhes = (o: { rotulo: string }) =>
     [
       cartao.titulo,
-      `${o.rotulo} (${cartao.fuso}), ${cartao.duracaoMin} min`,
+      `${o.rotulo} (${nomeDoFuso(cartao.fuso)}), ${cartao.duracaoMin} min`,
       cartao.participantes.length ? `Participantes: ${cartao.participantes.join(', ')}` : '',
       cartao.descricao ?? '',
     ]
@@ -845,7 +847,7 @@ function CartaoDeEvento({ cartao }: { cartao: Extract<CartaoDaResposta, { tipo: 
     <Cartao titulo={cartao.titulo} selo="Sugestão de horário — disponibilidade não verificada">
       <p className="tq-c-meta">
         <span>{cartao.duracaoMin} min</span>
-        <span>Fuso: {cartao.fuso}</span>
+        <span>{nomeDoFuso(cartao.fuso)}</span>
         {cartao.participantes.length > 0 && <span>{cartao.participantes.join(', ')}</span>}
       </p>
       <ul className="tq-c-lista">
@@ -887,7 +889,7 @@ function CartaoDeCaptura({ cartao }: { cartao: Extract<CartaoDaResposta, { tipo:
     <Cartao titulo={`Captura — ${cartao.titulo}`} selo={ROTULO_DA_SITUACAO[cartao.situacao]}>
       <p className="tq-c-meta">
         <span className="tq-c-pilula">{ROTULO_DA_AVALIACAO[cartao.avaliacao]}</span>
-        <span>{cartao.segmentos} segmento(s)</span>
+        <span>{contar(cartao.segmentos, 'trecho', 'trechos')}</span>
         {cartao.ultimaAtualizacao && (
           <span>Último trecho: {new Date(cartao.ultimaAtualizacao).toLocaleTimeString('pt-BR')}</span>
         )}

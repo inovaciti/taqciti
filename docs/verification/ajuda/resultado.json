@@ -1,6 +1,6 @@
 {
-  "quando": "2026-11-11T04:54:03.083Z",
-  "build": "..\\AppData\\Local\\Temp\\taq-build-dev",
+  "quando": "2026-11-11T08:28:28.722Z",
+  "build": "..\\AppData\\Local\\Temp\\taq-build-final",
   "browser": "157.0.4341.42",
   "dados": "[TESTE] sintéticos; geração simulada, sem IA",
   "vistos": [
@@ -123,6 +123,7 @@
     "Nova conversa": "HOME · menu Conversas",
     "Nova": "HOME · menu Conversas",
     "Apagar esta conversa": "HOME · menu Conversas",
+    "Fechar": "HOME · navegação",
     "Transcrição": "HOME · reunião",
     "Baixar": "HOME · reunião",
     "Nome da reunião": "HOME · reunião",
@@ -135,7 +136,6 @@
     "Cancelar": "HOME · confirmar apagar reunião",
     "Apagar as notas desta reunião": "HOME · notas",
     "Reunião": "HOME · menu Criar documento",
-    "Fechar": "HOME · menu Criar documento",
     "Ata de Reunião": "HOME · menu Criar documento",
     "Doc Conversa (X1)": "HOME · menu Criar documento",
     "Resumo completo": "HOME · menu Criar documento",
@@ -524,7 +524,7 @@
       "nao_vistos": [
         "Ligar sincronização",
         "Gerar endereço",
-        "Conectar na Claude",
+        "Conectar no Claude",
         "Conectar no ChatGPT",
         "Revogar"
       ]
@@ -604,7 +604,14 @@
         "Usar este assistente",
         "Ajustes sugeridos",
         "Aplicar ao meu assistente",
-        "Agora não",
+        "Agora não"
+      ],
+      "nao_vistos": []
+    },
+    {
+      "id": "reproduzir_reuniao_passada",
+      "vistos": [
+        "Preparar",
         "Testar o assistente numa reunião passada",
         "Reproduzir"
       ],
@@ -807,6 +814,7 @@
     "aparencia",
     "capacidades_do_taq",
     "preparar_assistente",
+    "reproduzir_reuniao_passada",
     "rascunho_de_mensagem",
     "revisar_documento",
     "revisar_exposicao",
@@ -826,7 +834,5 @@
     },
     "texto_da_conversa_na_tela": 0
   },
-  "falhas": [
-    "HOME: anexar: locator.click: Timeout 5000ms exceeded."
-  ]
+  "falhas": []
 }

@@ -40,7 +40,7 @@ import {
   adicionarFonteAoContexto,
   removerFonteDoContexto,
 } from '@/home/conversations';
-import { formatElapsedClock } from '@/shared/ui/format';
+import { formatElapsedClock, contar } from '@/shared/ui/format';
 import { versaoDaReuniao } from './armazenamento';
 import { ASSUNTOS, capacidadesDoApp, guiaDeUso } from './ajuda';
 import { FERRAMENTAS_BASE } from './ferramentas';
@@ -578,7 +578,7 @@ export const deleteConversation: DefinicaoDeFerramenta<z.infer<typeof apagarConv
     };
   },
   resumir: (s) =>
-    s.apagada ? `${(s.conversas as unknown[]).length} conversa(s) apagada(s)` : 'nada apagado',
+    s.apagada ? contar((s.conversas as unknown[]).length, 'conversa apagada', 'conversas apagadas') : 'nada apagado',
 };
 
 // --------------------------------------------------------------- exportar
@@ -899,7 +899,7 @@ export const getAppCapabilities: DefinicaoDeFerramenta<
   async executar(args) {
     return capacidadesDoApp(await ferramentasRegistradas(), args.assunto);
   },
-  resumir: (s) => `${(s.funcionalidades as unknown[]).length} funcionalidade(s)`,
+  resumir: (s) => contar((s.funcionalidades as unknown[]).length, 'funcionalidade', 'funcionalidades'),
 };
 
 const guiaSchema = z.object({
@@ -925,7 +925,7 @@ export const getUsageGuide: DefinicaoDeFerramenta<z.infer<typeof guiaSchema>> = 
   async executar(args) {
     return guiaDeUso(args.pergunta, await ferramentasRegistradas(), args.assunto);
   },
-  resumir: (s) => `${(s.guias as unknown[]).length} guia(s) de uso`,
+  resumir: (s) => contar((s.guias as unknown[]).length, 'guia de uso', 'guias de uso'),
 };
 
 export const FERRAMENTAS_DE_APP: readonly DefinicaoDeFerramenta[] = [

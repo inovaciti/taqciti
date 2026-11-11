@@ -54,20 +54,25 @@ const documento = (id, title) => ({
   title,
   content: `# ${title}\n\n[TESTE] Conteúdo de verificação.`,
   formato: 'markdown',
-  createdAt: 1,
+  createdAt: Date.parse('2026-09-20T14:00:00Z'),
   updatedAt: Date.parse('2026-09-20T14:00:00Z'),
   meetingId: REUNIAO.id,
   tipo: 'Ata de Reunião',
   origem: 'gerado',
 });
 
-const conversa = (id, title, at) => ({
-  id,
-  title,
-  createdAt: at,
-  updatedAt: at,
-  messages: [{ id: `m-${id}`, role: 'user', text: title, at }],
-});
+// `ordem` só decide quem é mais recente; a data vira um instante plausível. Com
+// o número cru (1, 2), o menu mostrava "31 de dez. de 1969" no print versionado.
+const conversa = (id, title, ordem) => {
+  const at = Date.parse('2026-09-20T15:00:00Z') + ordem * 60_000;
+  return {
+    id,
+    title,
+    createdAt: at,
+    updatedAt: at,
+    messages: [{ id: `m-${id}`, role: 'user', text: title, at }],
+  };
+};
 
 (async () => {
   const context = await chromium.launchPersistentContext(profile, {

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Formatação de apresentação (datas, durações, iniciais) — helpers puros de UI.
  */
 import type { Participant } from '@/shared/types/domain';
@@ -84,4 +84,29 @@ export function countWords(texts: readonly string[]): number {
 export function formatCount(value: number): string {
   if (value < 1000) return String(value);
   return `${(value / 1000).toFixed(1).replace('.', ',')} mil`;
+}
+
+/**
+ * "1 compromisso", "3 compromissos": a contagem com plural de verdade. "compromisso(s)"
+ * lia como formulário, e o texto passa pela tela e pela atividade do Taq.
+ */
+export function contar(n: number, um: string, varios: string): string {
+  return `${n} ${n === 1 ? um : varios}`;
+}
+
+/**
+ * O fuso com nome de gente: "America/Recife" vira "Horário Padrão de Brasília".
+ * O identificador IANA cru aparecia no cartão de horário como jargão. Se o
+ * motor não souber nomear (ou o id for inválido), devolve o próprio id: nunca
+ * esconde o fuso.
+ */
+export function nomeDoFuso(fuso: string, quando: number = Date.now()): string {
+  try {
+    const nome = new Intl.DateTimeFormat('pt-BR', { timeZone: fuso, timeZoneName: 'longGeneric' })
+      .formatToParts(quando)
+      .find((p) => p.type === 'timeZoneName')?.value;
+    return nome || fuso;
+  } catch {
+    return fuso;
+  }
 }

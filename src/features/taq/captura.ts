@@ -17,6 +17,7 @@
  *     intervalos vêm dos tempos dos próprios segmentos.
  */
 import type { MeetingRecord, MeetingState } from '@/shared/types/domain';
+import { contar } from '@/shared/ui/format';
 
 /** Intervalo entre falas a partir do qual vale mencionar. */
 export const INTERVALO_NOTAVEL_MS = 3 * 60_000;
@@ -49,11 +50,6 @@ export interface AvaliacaoDaCaptura {
   lacunasConhecidas: Array<{ tipo: 'reconexao' | 'descartados' | 'leitura_degradada'; quantidade: number }>;
   ultimaAtualizacao?: number;
   segmentos: number;
-}
-
-/** "1 vez", "2 vezes": plural de verdade. "vez(es)" lia como formulário. */
-function contar(n: number, um: string, varios: string): string {
-  return `${n} ${n === 1 ? um : varios}`;
 }
 
 function minutos(ms: number): string {

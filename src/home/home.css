@@ -122,7 +122,7 @@ html {
  * aparece no estado focado.
  *
  * O foco continua anunciado, por três sinais que não são moldura: o caret
- * aparece, o "+"/enviar e a dica de teclas saem da transparência
+ * aparece, o enviar e a dica de teclas saem da transparência
  * (`:focus-within`, abaixo) e a onda sobe. Para um campo de texto, o caret
  * visível é o indicador de foco que o próprio sistema usa.
  */
@@ -2385,7 +2385,8 @@ body .tq-home [role='dialog'] button {
 /*
  * O compositor: o texto nasce direto na página, grande, na Barlow. Sem placa e
  * sem botão de enviar à vista — Enter envia. O botão continua no DOM, só para
- * leitor de tela e teclado; o "+" de anexar continua, e gira ao abrir.
+ * leitor de tela e teclado. (O "+" de anexar saiu; anexar não existe nesta
+ * versão — ver a entrada `anexar_arquivo` da ajuda.)
  */
 .tq-campo textarea {
   font-family: var(--font-titulo);

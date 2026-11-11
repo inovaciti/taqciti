@@ -908,7 +908,7 @@ describe('registro da execução', () => {
       conversaId: 'c-1',
       estado: 'concluido',
       uso: { entrada: 200, saida: 40 },
-      ferramentas: [{ nome: 'read_meeting', ok: true, resumo: '4 segmento(s)' }],
+      ferramentas: [{ nome: 'read_meeting', ok: true, resumo: '4 trechos' }],
     });
     const gravado = JSON.stringify(storage.local.values[STORAGE_KEYS.taqExecucoes]);
     expect(gravado).not.toContain('Decidido');

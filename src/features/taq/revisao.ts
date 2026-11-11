@@ -18,6 +18,7 @@ import type { DocumentoGuardado } from '@/features/documents/store';
 import { CATALOGO_DE_DOCUMENTOS, type TipoDeDocumento } from '@/features/documents/catalogo';
 import type { MeetingRecord } from '@/shared/types/domain';
 import { normalizar } from './busca';
+import { contar } from '@/shared/ui/format';
 
 export interface ProblemaDaRevisao {
   gravidade: 'alta' | 'media' | 'baixa';
@@ -135,7 +136,7 @@ export function revisarDocumento(
     problemas.push({
       gravidade: 'media',
       tipo: 'a_confirmar',
-      texto: `${aConfirmar} ponto(s) ainda “A confirmar”.`,
+      texto: `${contar(aConfirmar, 'ponto ainda', 'pontos ainda')} “A confirmar”.`,
     });
 
   const vistos = new Map<string, number>();
@@ -149,7 +150,7 @@ export function revisarDocumento(
     problemas.push({
       gravidade: 'baixa',
       tipo: 'repeticao',
-      texto: `${repetidos} parágrafo(s) aparecem repetidos.`,
+      texto: `${contar(repetidos, 'parágrafo aparece repetido', 'parágrafos aparecem repetidos')}.`,
     });
 
   const citados = new Set<number>();

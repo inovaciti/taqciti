@@ -311,7 +311,9 @@ const options = {
       path.join(output, 'resultados.json'),
       JSON.stringify(
         {
-          profile,
+          // Só o nome da pasta: o caminho inteiro traz o usuário do Windows, e
+          // este JSON vai para um repositório público.
+          profile: path.basename(profile),
           browser: await context.browser().version(),
           checks,
           generation: 'SIMULADA; sem IA; dados [TESTE]',
