@@ -2,6 +2,7 @@
 @import './glass.css';
 @import './fontes.css';
 @import './scrollbar.css';
+@import './tipografia.css';
 
 @tailwind base;
 @tailwind components;
