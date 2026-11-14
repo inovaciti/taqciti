@@ -4,89 +4,33 @@ A extensão funciona tanto no **Google Chrome** quanto no **Microsoft Edge**
 (os dois são baseados em Chromium e carregam extensões do mesmo jeito) — em
 Windows, macOS ou Linux.
 
-Existem dois caminhos:
+Existem dois caminhos, e os dois entregam a mesma extensão:
 
-- **Instalador automático** (recomendado) — um `.exe` (Windows), `.pkg`
-  (macOS) ou `.run` (Linux) que copia os arquivos pra você e abre um guia
-  visual com o passo a passo já preenchido.
-- **Instalação manual** — baixar o `.zip` da extensão e carregar a pasta
-  direto no navegador. Útil se você não recebeu um instalador, ou prefere
-  não rodar um executável.
+- **Pedir a um assistente de IA** (recomendado) — o Claude ou o ChatGPT, com
+  acesso ao seu computador ou navegador, faz os passos por você.
+- **Instalação manual** — você mesmo baixa o `.zip` e carrega a pasta no
+  navegador. São quatro passos, descritos abaixo.
 
-Os dois entregam a mesma extensão; a diferença é só o quanto de trabalho o
-instalador automático faz por você.
+> Até 13/11/2026 havia instaladores nativos (`.exe`, `.pkg`, `.run`) e um
+> guia `COMECE_AQUI.html`. Eles foram abandonados: carregar a pasta da
+> extensão é mais simples do que qualquer instalador, e um assistente faz isso
+> sozinho.
 
 ---
 
-## 1. Instalador automático (recomendado)
+## 1. Pedindo a um assistente de IA (recomendado)
 
-O caminho normal é o **`TaqCiti.zip`** da pasta do Drive do time: baixe,
-extraia, abra a pasta `TaqCiti` e dê dois cliques em **`COMECE_AQUI.html`**. O
-guia abre no navegador, pergunta o seu sistema e conduz tudo — achar o
-instalador certo, passar pelo aviso do sistema, e os passos finais no
-navegador. Se você for por ali, não precisa do resto desta seção.
+Diga ao assistente algo como:
 
-O passo a passo abaixo é o mesmo conteúdo em forma de texto, para quem já sabe
-o que está fazendo ou pegou o instalador solto pela GitHub Release
-(`TaqCiti-instalador-windows-*.exe`, `TaqCiti-instalador-mac-*.pkg`,
-`TaqCiti-instalador-linux-*.run`).
+> Instale a extensão TaqCiti no meu Chrome (ou Edge): baixe o
+> `taqciti-vX.Y.Z.zip` da última release em
+> https://github.com/lupusbit-coder/taqciti/releases, extraia numa pasta
+> fixa que eu não vá apagar, e carregue essa pasta em `chrome://extensions`
+> com o Modo do desenvolvedor e "Carregar sem compactação".
 
-### Windows
-
-1. Dê duplo-clique no `.exe`.
-2. **Se você tiver Chrome e Edge instalados**, o instalador pergunta qual
-   dos dois usar — escolha e clique em "Avançar". Se só tiver um dos dois,
-   ele segue direto com esse, sem perguntar nada.
-3. A instalação é silenciosa: sem tela de licença, sem escolha de pasta. Ao
-   terminar, uma aba abre no navegador escolhido com o guia visual — os
-   dois passos finais (ativar o "Modo do desenvolvedor" e "Carregar sem
-   compactação") já vêm com o caminho da pasta preenchido e copiado pra
-   área de transferência.
-
-> O Windows SmartScreen pode avisar "Windows protegeu o seu PC" — é
-> esperado, o `.exe` não tem certificado de assinatura de código. Clique em
-> "Mais informações" → "Executar assim mesmo".
-
-### macOS
-
-1. Dê duplo-clique no `.pkg`.
-2. **É esperado que o Gatekeeper bloqueie na primeira vez**, com algo como
-   `"taqciti-instalador-mac-X.Y.Z.pkg" não pode ser aberto porque é de um
-   desenvolvedor não identificado` — não é um problema com o arquivo, é só a
-   ausência de uma
-   assinatura de desenvolvedor Apple (conta paga, fora do escopo atual).
-   O caminho que a Apple documenta hoje, depois do aviso aparecer:
-   1. Abra **Ajustes do Sistema** → **Privacidade e Segurança** e role até o
-      fim.
-   2. Clique em **Abrir Mesmo Assim** (o botão traz o nome do arquivo que
-      acabou de ser bloqueado; ele some depois de um tempo, então se não
-      estiver lá, dê dois cliques no `.pkg` de novo).
-   3. No aviso que volta, clique em **Abrir**.
-   4. Só precisa fazer isso na primeira vez que abrir *esse* arquivo
-      específico — versões futuras do instalador vão pedir de novo, porque
-      cada arquivo é avaliado à parte.
-
-   > Em **macOS 14 ou anterior** também funciona clicar no `.pkg` com
-   > Control pressionado e escolher **Abrir**. A partir do **macOS 15
-   > (Sequoia)** esse atalho deixou de liberar software sem assinatura, e
-   > só o caminho pelos Ajustes funciona.
-   >
-   > Libere só este arquivo. Não desligue a proteção do Mac inteiro por
-   > Terminal — não é necessário, e vale para tudo que você abrir depois.
-3. O instalador vai pedir a senha do seu usuário (padrão de qualquer
-   `.pkg`, assinado ou não) e depois abre o guia visual com o passo a
-   passo preenchido, no navegador que já é o padrão do seu Mac.
-
-### Linux
-
-1. Dê permissão de execução e rode:
-   ```bash
-   chmod +x TaqCiti-instalador-linux-*.run
-   ./TaqCiti-instalador-linux-*.run
-   ```
-2. Copia os arquivos, copia o caminho pra área de transferência (se
-   `xclip` ou `xsel` estiverem instalados) e abre o guia visual no
-   navegador padrão do sistema.
+Alguns assistentes não conseguem mexer na página `chrome://extensions` (o
+navegador protege as páginas internas). Nesse caso eles deixam a pasta
+pronta e você faz só os passos 2 a 4 da seção abaixo.
 
 ---
 
@@ -97,7 +41,9 @@ endereço da página de extensões.
 
 ### 1. Baixe e descompacte
 
-Salve o `taqciti-vX.X.X.zip` (gerado por `npm run package`) numa pasta fixa do computador (ex.: área de
+Baixe o `taqciti-vX.Y.Z.zip` da [última
+release](https://github.com/lupusbit-coder/taqciti/releases) (ou gere com
+`npm run package`), salve numa pasta fixa do computador (ex.: área de
 trabalho) e extraia. **Não apague nem mova essa pasta depois** — é dela
 que o navegador vai ler os arquivos direto; movê-la ou apagá-la quebra a
 extensão.

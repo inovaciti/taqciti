@@ -63,9 +63,9 @@ Severidade: **C** crítica, **A** alta, **M** média, **B** baixa.
 
 | # | Sev | Fragilidade | Onde |
 |---|---|---|---|
-| D1 | **A** | O ZIP e os instaladores não têm assinatura nem hash publicado. O `TaqCiti.zip` tem nome fixo e é sobrescrito no Drive. A extensão unpacked fica numa pasta que o usuário pode alterar, então qualquer processo do usuário injeta código com `<all_urls>` + `gmail.send`. A Service Account do Drive tem o escopo `drive` inteiro. | `installer/**`, `scripts/package-distribution.mjs:104`, `release.yml:311` |
+| D1 | **A** | *(13/11/2026: instaladores, pacote do Drive e Service Account saíram; a release publica só o zip da extensão com `SHA256SUMS.txt`. O resto do item — pasta unpacked alterável — continua.)* O ZIP e os instaladores não têm assinatura nem hash publicado. O `TaqCiti.zip` tem nome fixo e é sobrescrito no Drive. A extensão unpacked fica numa pasta que o usuário pode alterar, então qualquer processo do usuário injeta código com `<all_urls>` + `gmail.send`. A Service Account do Drive tem o escopo `drive` inteiro. | `installer/**`, `scripts/package-distribution.mjs:104`, `release.yml:311` |
 | D2 | M | Actions são referenciadas por tag móvel (inclusive `softprops/action-gh-release` e `google-github-actions/auth`, que recebem segredos). Não há `permissions:` no topo dos workflows. `npx wait-on` e `choco`/`apt` rodam sem versão fixa. | `.github/workflows/*.yml` |
-| D3 | M | O `postinstall` do macOS roda como root a partir de `/private/tmp/taqciti-installer-payload`, um caminho fixo e previsível. Isso permite que outro usuário local plante arquivos. | `installer/macos/build-installer.sh:67`, `postinstall:35-103` |
+| D3 | M | *(Encerrado em 13/11/2026: o instalador do macOS foi removido.)* O `postinstall` do macOS roda como root a partir de `/private/tmp/taqciti-installer-payload`, um caminho fixo e previsível. Isso permite que outro usuário local plante arquivos. | `installer/macos/build-installer.sh:67`, `postinstall:35-103` |
 | D4 | B | `${{ inputs.versao }}` é interpolado direto em `run:`, sem validar o formato (injeção de comando por quem pode disparar o workflow). | `release.yml:82-383`, `.github/scripts/resolve-version.sh` |
 | D5 | B | Dependências de build com advisories: `vitest` (crítica), `vite` 6.4.3, `tailwind` → `braces`/`micromatch`. Nenhuma entra no bundle. | `package.json`, `server/package.json` |
 | D6 | B | Não há mecanismo de atualização: as correções só chegam a quem baixar e recarregar a extensão manualmente. | (decisão de produto de 05/10) |
@@ -206,11 +206,13 @@ A ordem segue o risco, dividido pelo esforço. Uma regra de deploy, já registra
    - Versões fixas para `wait-on`, `innosetup` e `makeself`.
    - Secrets num *environment* com aprovação.
 2. **D4:** `inputs.versao` passa por `env:` e é validado com `^\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$` em `resolve-version.sh`.
-3. **D1 (parte imediata):**
+3. **D1 (parte imediata):** *(13/11/2026: com os instaladores abandonados, o Drive, a
+   Service Account e a assinatura de `.exe`/`.pkg` deixaram de existir; a Release publica
+   o zip da extensão e o `SHA256SUMS.txt`. Os itens abaixo ficam como registro.)*
    - Publicar `SHA256SUMS` na Release e no Drive, e o guia passa a conferir o hash.
    - Reduzir a SA do Drive para `drive.file`, ou para acesso só à pasta. **Em ensaio (`c4bc823`):** o canal de teste do `release.yml` (job que publica o `TaqCiti-teste.zip`) já usa `drive.file` (`release.yml:~452`); o job oficial segue com `drive` (`:338`). O oficial só troca depois de um `workflow_dispatch` do canal de teste confirmar que ele **encontra e atualiza** o zip, sem criar um duplicado. Ainda não executado.
    - Assinar o `.exe` (Authenticode) e o `.pkg` (Developer ID + notarização) quando houver certificado.
-4. **D3:** payload do macOS em diretório só de root (`/Library/Application Support/TaqCiti/payload`), ou `mktemp -d` com conferência de dono, e cópia com `cp -RP`.
+4. **D3:** *(encerrado: instalador do macOS removido em 13/11/2026.)* Payload do macOS em diretório só de root (`/Library/Application Support/TaqCiti/payload`), ou `mktemp -d` com conferência de dono, e cópia com `cp -RP`.
 5. **D5:** `vitest@4.1.12` nos dois pacotes, `vite@6.4.5` (pular a 6.4.4, que tem advisory próprio) e `npm audit fix`.
 
 ### Fase 5: estruturais (decisões do produto)

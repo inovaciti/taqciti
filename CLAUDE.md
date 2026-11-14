@@ -48,8 +48,7 @@ tocou. O CI roda os dois projetos a cada push (`.github/workflows/ci.yml`).
 > `VITE_DOCCITI_SHARED_KEY` faltar ou for a de desenvolvimento. Sem o `.env`, a build
 > local cairia em `http://localhost:3000` em silêncio. Para testar contra o servidor local,
 > use `npm run build:dev`. O CI passa valores fictícios no `env` dos passos de build
-> (`Extensão (raiz)` e `Instalador Windows`); um novo passo de build de produção precisa
-> repeti-los. Detalhe em `docs/arquitetura/build-release-operacao.md`.
+> (`Extensão (raiz)`); um novo passo de build de produção precisa repeti-los. Detalhe em `docs/arquitetura/build-release-operacao.md`.
 
 ## Onde mora o quê
 
@@ -63,7 +62,9 @@ tocou. O CI roda os dois projetos a cada push (`.github/workflows/ci.yml`).
   `documentos/`, `render/`, `ai/`, `prompts/`). Doc: `docs/arquitetura/servidor-documentos.md`.
 - **Conector MCP, sincronização, Google** → `server/lib/conector/`, `src/features/sync/`,
   `src/features/integracoes/`. Doc: `docs/arquitetura/conector-sync-integracoes.md`.
-- **Build, CI, release, instaladores, deploy** → `docs/arquitetura/build-release-operacao.md`.
+- **Build, CI, release, deploy** → `docs/arquitetura/build-release-operacao.md`. Não há
+  instaladores desde 13/11/2026 (decisão do usuário): instalar é pedir a um assistente de
+  IA ou seguir `INSTALL.md`, e a release publica só o zip da extensão.
 
 ## Convenções
 
@@ -163,8 +164,8 @@ Este repositório é **público**.
   obrigatória em produção, MCP somente leitura, expiração dos tokens do conector,
   delimitador de fonte). A fase 4 (cadeia de suprimento) foi feita em parte (`1d5dee5`:
   actions por SHA, permissões mínimas, versão validada, SHA256SUMS, payload do macOS);
-  faltam *environment* com aprovação, escopo da
-  conta do Drive e assinatura dos instaladores. A fase 5 (decisões estruturais) não começou. **Antes de publicar o servidor:** definir
+  falta o *environment* com aprovação — escopo da conta do Drive e assinatura dos
+  instaladores deixaram de existir com os instaladores (13/11/2026). A fase 5 (decisões estruturais) não começou. **Antes de publicar o servidor:** definir
   `DOCCITI_DATA_POLICY` no host de produção.
 - Documentos personalizados: `docs/documentos-personalizados.md`.
-- Release e instaladores: `docs/publicar-release.md`.
+- Release: `docs/publicar-release.md`. Instalação: `INSTALL.md`.

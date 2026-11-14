@@ -12,9 +12,13 @@ neste documento de propósito (o repositório é público).
 | --- | --- |
 | raiz | A **extensão** (Chrome/Edge, MV3): Vite + `@crxjs/vite-plugin`, React 18, Tailwind, Zod. `package.json` e `package-lock.json` próprios. |
 | `server/` | O **servidor** Next.js (App Router): geração de documentos, camada de IA, conector/sincronização, Postgres. `package.json` e `package-lock.json` próprios. |
-| `installer/` | Instaladores nativos (`windows/` Inno Setup, `macos/` pkgbuild, `linux/` makeself) e `guide/` (o `COMECE_AQUI.html`). |
-| `scripts/` | Utilitários da raiz: ícones, empacotamento, `verify-*.cjs`, `lib/` (motor de ZIP e PNG sem dependência). |
-| `.github/` | `workflows/ci.yml`, `workflows/release.yml` e `scripts/` (`check-release-env.sh`, `resolve-version.sh`, `upload-to-gdrive.sh`). |
+| `scripts/` | Utilitários da raiz: ícones, empacotamento do zip (`package-release.mjs`), `verify-*.cjs`, `lib/` (motor de ZIP e PNG sem dependência). |
+| `.github/` | `workflows/ci.yml`, `workflows/release.yml` e `scripts/` (`check-release-env.sh`, `resolve-version.sh`). |
+
+Não há mais `installer/`: os instaladores nativos (Inno Setup, pkgbuild, makeself), o
+guia `COMECE_AQUI.html`, o pacote de distribuição e o envio ao Drive foram removidos em
+13/11/2026, por decisão do usuário. Instalar é pedir a um assistente de IA ou seguir
+`INSTALL.md`.
 | `docs/` | Documentação; `docs/verification/` guarda saídas dos `verify-*.cjs` (capturas e JSON). |
 
 São **dois projetos independentes**: um `npm ci` na raiz não instala nada do
@@ -87,10 +91,10 @@ Pontos do `vite.config.ts` que importam na manutenção:
   `http://localhost:3000` e na chave pública de dev, em silêncio: sem TLS, a transcrição
   e o token do Google viajariam em claro. Para testar contra o servidor local, use
   `npm run build:dev`.
-  **CI:** os jobs `Extensão (raiz)` e `Instalador Windows` de `ci.yml` passam valores
-  fictícios no `env` do passo de build (`VITE_DOCCITI_SERVER_URL: https://ci.invalid`
-  e `VITE_DOCCITI_SHARED_KEY: ci-build-only`), porque ali só interessa que a build
-  COMPILE. Sem eles a trava recusaria e os dois jobs ficariam vermelhos. Quem acrescentar
+  **CI:** o job `Extensão (raiz)` de `ci.yml` passa valores fictícios no `env` do passo
+  de build (`VITE_DOCCITI_SERVER_URL: https://ci.invalid` e
+  `VITE_DOCCITI_SHARED_KEY: ci-build-only`), porque ali só interessa que a build
+  COMPILE. Sem eles a trava recusaria e o job ficaria vermelho. Quem acrescentar
   outro passo `npm run build` de produção no CI precisa repetir esse `env`.
 - O manifesto vem de `manifest.config.ts` (versão, permissões, `client_id`).
   `manifest.config.ts` lê `VITE_*` do `.env` à mão com `loadEnv` (o Vite não
@@ -124,10 +128,10 @@ configurado lá (não verificado se é intencional).
 
 Armadilhas registradas em `vite.config.ts` e nos docs: o `npm run dev` (dev
 server do @crxjs) não é o caminho usado de fato pelo time; não verificado aqui
-se ele funciona hoje. Quem instala pelo instalador recebe uma cópia
-descompactada em `TaqCITi (não apagar)` na Área de Trabalho; mover ou apagar
-essa pasta quebra a extensão. O Chrome não abre `chrome://extensions` por
-linha de comando de outro processo, por isso o guia manda colar o endereço.
+se ele funciona hoje. Quem instala a partir do zip da release extrai numa pasta
+fixa; mover ou apagar essa pasta quebra a extensão. O Chrome não deixa outro
+processo (nem a automação de navegador) abrir `chrome://extensions`, por isso o
+passo de "Carregar sem compactação" às vezes fica com a pessoa (ver `INSTALL.md`).
 
 ## 5. Estratégia de testes
 
@@ -212,64 +216,40 @@ Dispara em push (qualquer branch), pull request e manualmente. Node 20.
 | Job | Runner | Passos | Por que existe |
 | --- | --- | --- | --- |
 | `extensao` | ubuntu | `npm ci`, `typecheck`, `lint`, `test`, `build` | Antes, esses checks só rodavam na máquina de quem desenvolvia. |
-| `instalador-windows` | windows | `npm ci`, `build`, instala Inno Setup (choco), compila `taqciti.iss` com versão fictícia `0.0.0-ci` | Erro de sintaxe no `.iss` só aparecia na release (v2.0.0: comentário `{ ... }` citando `{pf32}`, que fecha o comentário no primeiro `}` em Pascal). |
-| `servidor` | ubuntu, `working-directory: server` | `npm ci`, `typecheck`, `test`, `build` (com `DOCCITI_SHARED_KEY` descartável), `npm run start` + `wait-on` + `node scripts/smokePdf.mjs` | O `build` não é redundante: o `pdfkit` lê arquivos do próprio pacote e, empacotado, quebrava só em produção (PDF ausente com resposta 200). Por isso `serverExternalPackages: ['pdfkit']` em `next.config.ts`. A prova de fumaça usa `POST /api/answers`, que renderiza HTML e PDF sem chamar modelo, e falha se não vier PDF válido com a Barlow embutida. |
+| `servidor` (nome exibido "Servidor (server/)") | ubuntu, `working-directory: server` | `npm ci`, `typecheck`, `test`, `build` (com `DOCCITI_SHARED_KEY` descartável), `npm run start` + `wait-on` (versão fixa) + `node scripts/smokePdf.mjs` | O `build` não é redundante: o `pdfkit` lê arquivos do próprio pacote e, empacotado, quebrava só em produção (PDF ausente com resposta 200). Por isso `serverExternalPackages: ['pdfkit']` em `next.config.ts`. A prova de fumaça usa `POST /api/answers`, que renderiza HTML e PDF sem chamar modelo, e falha se não vier PDF válido com a Barlow embutida. |
 
-Nenhuma chave real deve ir ao CI. O CI não cobre `lint` do servidor (não existe),
-nem os instaladores macOS e Linux (compilados só na release).
+Todas as actions estão fixadas por SHA e o workflow tem `permissions: contents: read`
+(plano de segurança, fase 4). Nenhuma chave real deve ir ao CI. O CI não cobre `lint` do
+servidor (não existe). O job `instalador-windows` saiu com os instaladores (13/11/2026).
 
 ## 7. Release
 
 Gatilho: tag `v*.*.*` (três números; `v2.1` não dispara nada, em silêncio) ou
 disparo manual de `release.yml`. Runbook completo: `docs/publicar-release.md`.
 
-1. Subir a versão em `package.json` e `manifest.config.ts` (independentes do
-   nome dos arquivos, que vem da tag).
+1. Subir a versão em `package.json` e `manifest.config.ts` (o workflow recusa
+   uma tag que não bata com o `package.json`, que dá nome ao zip).
 2. Publicar o servidor **antes** (deploy manual) e conferir com a prova de
    fumaça.
 3. Garantir no GitHub: variável `DOCCITI_SERVER_URL` (Variables) e segredo
-   `DOCCITI_SHARED_KEY` (Secrets). Para o Drive: `GDRIVE_SA_KEY` e
-   `GDRIVE_TAQCITI_FOLDER_ID` (Secrets).
+   `DOCCITI_SHARED_KEY` (Secrets). O repositório mudou para
+   `lupusbit-coder/taqciti` em 13/11/2026 e esses valores não vieram do antigo.
 4. Commit em `main`, tag, push da tag.
 
-Jobs do `release.yml`:
+O `release.yml` tem um job só, `extensao` (ubuntu): `npm ci`,
+`check-release-env.sh`, `resolve-version.sh` (argumento, tag ou `package.json`),
+conferência tag × `package.json`, `npm run package` (build de produção e
+`release/taqciti-v<versão>.zip`), `SHA256SUMS.txt`, artefato da run e — só em push
+de tag `v*` — a GitHub Release com o zip e o hash. Disparo manual só compila.
 
-- `build-windows`, `build-linux`, `build-macos` (runners windows/ubuntu/macos):
-  `npm ci`, `check-release-env.sh`, build, instalador, artefato.
-  `check-release-env.sh` recusa: variável ausente, URL com `localhost` ou
-  `127.0.0.1`, URL sem `https://` (conteúdo misto no Meet), URL terminando em
-  `/`. **Não toca a rede**: não prova que o servidor está no ar nem que a chave
-  confere (a v2.0.0 saiu verde com instaladores apontando para `localhost`).
-- `release`: só em push de tag `v*` ou `publicar=oficial`. Baixa os três
-  artefatos, monta `TaqCiti.zip` com `scripts/package-distribution.mjs`
-  (recusa pacote incompleto, instalador vazio, versões diferentes ou formato
-  falso: confere `MZ` + Inno Setup, `xar!`, shebang + Makeself; relê o ZIP
-  gravado) e publica a GitHub Release (três instaladores + ZIP).
-- `distribute-gdrive`: mesma condição; autentica como Service Account (escopo
-  `drive` explícito: o padrão `cloud-platform` dava 403), reconfere o ZIP e
-  sobe só `TaqCiti.zip` com nome fixo (sobrescreve pelo nome; o link
-  compartilhado nunca muda).
-- `distribuir-teste`: só com `publicar=teste`; sobe `TaqCiti-teste.zip` sem
-  GitHub Release, sem tocar no oficial.
+`check-release-env.sh` recusa: variável ausente, URL com `localhost` ou
+`127.0.0.1`, URL sem `https://` (conteúdo misto no Meet), URL terminando em
+`/`. **Não toca a rede**: não prova que o servidor está no ar nem que a chave
+confere (a v2.0.0 saiu verde apontando para `localhost`). O zip não é assinado.
 
-Disparo manual: `publicar` = `nao` (padrão, só artefatos), `teste` ou
-`oficial`; `versao` opcional (ordem em `resolve-version.sh`: campo, tag,
-`package.json`).
-
-### Instaladores
-
-| Sistema | Origem | Saída (`release/`) | Destino da extensão |
-| --- | --- | --- | --- |
-| Windows | `installer/windows/taqciti.iss` (Inno Setup 6, `ISCC /DAppVersion=...`) | `taqciti-instalador-windows-<versão>.exe` | `Área de Trabalho\TaqCITi (não apagar)`; guia em `%LOCALAPPDATA%\TaqCITi\guide` |
-| macOS | `installer/macos/build-installer.sh` + `postinstall` (`pkgbuild`) | `taqciti-instalador-mac-<versão>.pkg` | `~/Desktop/TaqCITi (não apagar)` (cai em `~/` se não houver Desktop); guia em `~/Library/Application Support/TaqCITi/guide` |
-| Linux | `installer/linux/build-installer.sh` + `install.sh` (`makeself`) | `taqciti-instalador-linux-<versão>.run` | `~/Desktop/TaqCITi (não apagar)` (idem); guia em `~/.local/share/taqciti/guide` |
-
-Todos copiam `installer/guide/COMECE_AQUI.html` **intocado** e gravam ao lado um
-`install-path.js` com o caminho real; nunca reescrevem o HTML. O Windows
-detecta Chrome e Edge (pergunta se houver os dois, aborta se não houver
-nenhum). Nenhum é assinado: SmartScreen e Gatekeeper avisam, e é esperado. O
-`.pkg` nunca foi instalado num Mac (ver `installer/macos/README.md` e o
-`roteiro-de-teste.md`): tratar como não verificado.
+Até 13/11/2026 a release compilava três instaladores nativos em três runners,
+montava um `TaqCiti.zip` com guia e os subia ao Drive do time por uma Service
+Account. Tudo isso saiu com a decisão de abandonar os instaladores.
 
 ## 8. Deploy do servidor
 
@@ -331,15 +311,10 @@ documento.
 
 ## 9. Armadilhas conhecidas (registradas em comentários e docs)
 
-- **Instalador quebrado por localhost** (v2.0.0): a URL e a chave entram no
-  bundle na build; sem as variáveis o padrão é `localhost:3000`. Um instalador
+- **Extensão quebrada por localhost** (v2.0.0): a URL e a chave entram no
+  bundle na build; sem as variáveis o padrão é `localhost:3000`. Um zip
   errado não tem conserto, só outra release. Conferir procurando `localhost:3000`
-  em `assets/*.js` da pasta instalada.
-- **Windows, Pascal Script do Inno**: comentário `{ ... }` não aninha, então
-  uma constante `{pf32}` dentro dele fecha o comentário (erro "Unknown
-  identifier 'costuma'"); não há `const` local em função, só `var`; o
-  `install-path.js` sai em ASCII (`\uXXXX`) porque a conversão por code page
-  estragava acentos.
+  em `assets/*.js` da pasta extraída.
 - **pdfkit em produção**: fora do bundle (`serverExternalPackages`); só a prova
   de fumaça contra `next start` pega.
 - **PGlite nos testes do servidor**: boot lento em paralelo, daí os timeouts altos.
@@ -348,15 +323,13 @@ documento.
   exige **publicar o servidor antes da extensão**, senão "Versão de instruções
   desconhecida". Lista de pendentes em `docs/segundo-cerebro.md`.
 - **Tag com dois números** não dispara a release.
-- **Drive**: `TaqCiti.zip` tem nome fixo e sobrescreve; instaladores soltos
-  antigos continuam lá e param de ser atualizados.
 - **Rotas de IA: identidade e cota, com ponte** (commit `09e99ab`): `autorizarIa`
   identifica quem chama pelo `id_token` do Google e conta o uso por pessoa por dia
   (`uso_de_ia`); o segredo compartilhado continua valendo só enquanto
   `DOCCITI_CHAVE_LEGADA` não for `recusar`. **Ordem de desligamento:** (1) todas as
   instalações na versão que manda o token; (2) `DOCCITI_CHAVE_LEGADA=recusar`; (3) só
   então rotacionar `DOCCITI_SHARED_KEY` (rotacionar antes quebra quem ainda não
-  atualizou, porque a chave está nos instaladores entregues). Não há `middleware.ts`
+  atualizou, porque a chave está compilada nas extensões já instaladas). Não há `middleware.ts`
   (conferido); a tranca é a chamada a `autorizarIa` em cada rota. As rotas de
   diagnóstico respondem 404 em produção.
 - **Anthropic e xAI** nunca foram exercitados contra a API real, só contra os
@@ -388,10 +361,10 @@ documento.
       `DOCCITI_SERVER_URL` com `https://`, sem `/` final.
 - [ ] Versão igual em `package.json` e `manifest.config.ts`; tag `vX.Y.Z`.
 - [ ] Decidir se a release deve levar os clientes OAuth (ver seção 3).
-- [ ] CI verde na tag, inclusive `instalador-windows`.
-- [ ] Baixar o `TaqCiti.zip`, conferir versão nos nomes dos três instaladores e
-      no `COMECE_AQUI.html`; instalar e procurar `localhost:3000` no bundle
-      (não pode aparecer).
+- [ ] CI verde na tag.
+- [ ] Baixar o `taqciti-vX.Y.Z.zip` da Release, conferir o hash com o
+      `SHA256SUMS.txt`, extrair e procurar `localhost:3000` no bundle (não pode
+      aparecer).
 - [ ] Rodar uma reunião de verdade até gerar o documento.
 - [ ] Antes de ampliar a distribuição: teto de gasto nas contas dos provedores
       e decisão sobre `bench`/`smoke` (pendências de `docs/publicar-release.md`).

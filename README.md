@@ -99,32 +99,21 @@ Para uma reunião de verdade, com o Meet no meio, o roteiro manual é
 
 ## Distribuição
 
+**Instalar:** peça a um assistente de IA (Claude, ChatGPT) que carregue a
+extensão no seu navegador, ou siga o passo a passo manual de
+[`INSTALL.md`](INSTALL.md). Não há mais instaladores nativos (abandonados em
+13/11/2026): carregar a pasta da extensão é mais simples que qualquer
+instalador.
+
+Cada tag `v*.*.*` dispara `.github/workflows/release.yml`, que builda a
+extensão e publica na **GitHub Release** da tag o zip
+(`taqciti-v<versão>.zip`) e o `SHA256SUMS.txt` dele.
+
 O passo a passo para publicar — servidor no ar, variáveis, tag, e como
-conferir que o instalador realmente fala com o servidor — está em
+conferir que a extensão realmente fala com o servidor — está em
 [`docs/publicar-release.md`](docs/publicar-release.md). Vale ler antes de
 cortar uma tag: a `v2.0.0` foi publicada apontando para `localhost` e só
 funcionava na máquina de quem construiu.
-
-Cada tag `v*.*.*` dispara `.github/workflows/release.yml`, que builda e
-compila três instaladores nativos (Windows `.exe`, Linux `.run`, macOS
-`.pkg` — ver `installer/`) e os publica em dois canais:
-
-- **GitHub Release da tag** — canal técnico/de auditoria. É onde os
-  artefatos ficam versionados de forma permanente, junto do changelog
-  gerado automaticamente; útil para debugar qual build gerou qual arquivo.
-- **Pasta do Google Drive do time** (`GDRIVE_TAQCITI_FOLDER_ID`) — **canal
-  oficial de distribuição pro time**, porque nem todo mundo tem acesso ao
-  GitHub ainda. Um upload repetido da mesma versão sobrescreve o arquivo
-  existente na pasta em vez de duplicar (ver
-  `.github/scripts/upload-to-gdrive.sh`).
-
-Os dois canais coexistem — a Release do GitHub nunca é removida ou
-substituída pelo Drive; o Drive é só um destino adicional.
-
-> As pastas que os instaladores criam no computador de quem instala continuam
-> se chamando `TaqCITi (não apagar)`. Renomeá-las junto com o produto criaria
-> uma segunda pasta a cada atualização, e o navegador continuaria apontando
-> para a antiga — o nome do diretório é um caminho, não um rótulo.
 
 ## Estrutura
 

@@ -21,12 +21,12 @@ armadilhas que os comentários do código guardam, e diz como testar a área.
 
 | Documento | Cobre |
 |---|---|
-| [`arquitetura/extensao-captura.md`](arquitetura/extensao-captura.md) | Captura da reunião no Meet: detecção da sala, legendas, portão de consentimento, estados, cápsula, abertura da sidebar, mensageria e persistência (atualizado em 11/11/2026) |
-| [`arquitetura/extensao-interface.md`](arquitetura/extensao-interface.md) | As telas (Home, sidebar, página do documento), o padrão de plataforma, componentes compartilhados, tema, fluxo de gerar documento (atualizado em 11/11/2026) |
-| [`arquitetura/taq-assistente.md`](arquitetura/taq-assistente.md) | O assistente Taq: ciclo do turno, ferramentas e seus limites, memória, subsistemas, servidor e prompts (atualizado em 11/11/2026) |
-| [`arquitetura/servidor-documentos.md`](arquitetura/servidor-documentos.md) | Geração de documentos: pipeline, agentes, modelo de dados, compilador e variantes visuais, guardas de fidelidade, camada de IA, rotas (atualizado em 11/11/2026) |
-| [`arquitetura/conector-sync-integracoes.md`](arquitetura/conector-sync-integracoes.md) | Conector MCP, sincronização, esquema do servidor, identidade, integrações Google e segurança (atualizado em 11/11/2026) |
-| [`arquitetura/build-release-operacao.md`](arquitetura/build-release-operacao.md) | Estrutura do repositório, builds, testes, CI, release, instaladores, deploy e checklist de publicação (atualizado em 11/11/2026) |
+| [`arquitetura/extensao-captura.md`](arquitetura/extensao-captura.md) | Captura da reunião no Meet: detecção da sala, legendas, portão de consentimento, estados, cápsula, abertura da sidebar, mensageria, persistência, revisão da transcrição por IA, importação de arquivo e automações pós-reunião (atualizado em 13/11/2026) |
+| [`arquitetura/extensao-interface.md`](arquitetura/extensao-interface.md) | As telas (Home, sidebar, página do documento), o padrão de plataforma, componentes compartilhados, tema e tipografia (DM Sans), fluxo de gerar documento, importar reunião e automações (atualizado em 13/11/2026) |
+| [`arquitetura/taq-assistente.md`](arquitetura/taq-assistente.md) | O assistente Taq: ciclo do turno, ferramentas e seus limites, memória, subsistemas, automações pós-reunião, servidor e prompts (atualizado em 13/11/2026) |
+| [`arquitetura/servidor-documentos.md`](arquitetura/servidor-documentos.md) | Geração de documentos: pipeline, agentes, modelo de dados, compilador e variantes visuais, guardas de fidelidade, camada de IA, rotas (atualizado em 13/11/2026) |
+| [`arquitetura/conector-sync-integracoes.md`](arquitetura/conector-sync-integracoes.md) | Conector MCP, sincronização, esquema do servidor, identidade, integrações Google e segurança (atualizado em 13/11/2026) |
+| [`arquitetura/build-release-operacao.md`](arquitetura/build-release-operacao.md) | Estrutura do repositório, builds, testes, CI, release, deploy e checklist de publicação (atualizado em 13/11/2026; sem instaladores desde então) |
 
 ## Produto e processo
 
@@ -46,10 +46,10 @@ armadilhas que os comentários do código guardam, e diz como testar a área.
 
 | Documento | Para quê |
 |---|---|
-| [`plano-de-seguranca.md`](plano-de-seguranca.md) | Mapa das fragilidades e plano de correção em fases (atualizado em 11/11/2026; as fases 1 a 3 estão commitadas: servidor, extensão e política de dados/conector; a 4 em parte, no `1d5dee5` — faltam *environment* com aprovação, escopo da conta do Drive e assinatura dos instaladores; a 5 depende de decisões) |
-| [`lgpd-rascunho.md`](lgpd-rascunho.md) | Rascunho da LGPD para decisão: base legal, provedores fora do Brasil, retenção, titulares e incidente (atualizado em 28/10/2026) |
-| [`google-oauth-setup.md`](google-oauth-setup.md) | Configuração do cliente OAuth do Google e dos escopos (atualizado em 11/11/2026) |
-| [`integracoes-google-workspace.md`](integracoes-google-workspace.md) | O que o Taq faz em Gmail, Agenda e Docs, e como (atualizado em 21/10/2026) |
+| [`plano-de-seguranca.md`](plano-de-seguranca.md) | Mapa das fragilidades e plano de correção em fases (atualizado em 11/11/2026; as fases 1 a 3 estão commitadas: servidor, extensão e política de dados/conector; a 4 em parte, no `1d5dee5` — falta o *environment* com aprovação; Drive e instaladores saíram em 13/11/2026; a 5 depende de decisões) |
+| [`lgpd-rascunho.md`](lgpd-rascunho.md) | Rascunho da LGPD para decisão: base legal, provedores fora do Brasil, retenção, titulares e incidente (atualizado em 13/11/2026) |
+| [`google-oauth-setup.md`](google-oauth-setup.md) | Configuração do cliente OAuth do Google e dos escopos, com o `npm run check:oauth` (atualizado em 13/11/2026) |
+| [`integracoes-google-workspace.md`](integracoes-google-workspace.md) | O que o Taq faz em Gmail, Agenda e Docs, e como (atualizado em 13/11/2026) |
 
 ## Servidor (`server/`)
 
@@ -66,9 +66,8 @@ armadilhas que os comentários do código guardam, e diz como testar a área.
 
 | Documento | Para quê |
 |---|---|
-| [`INSTALL.md`](../INSTALL.md) | Instalação da extensão (atualizado em 21/10/2026) |
-| [`publicar-release.md`](publicar-release.md) | Passo a passo para cortar e conferir uma release (atualizado em 11/11/2026) |
-| `installer/*/README.md` | Instaladores de Windows, macOS e Linux, e o guia do instalador (data não conferida nesta revisão) |
+| [`INSTALL.md`](../INSTALL.md) | Instalação da extensão (atualizado em 13/11/2026) |
+| [`publicar-release.md`](publicar-release.md) | Passo a passo para cortar e conferir uma release (atualizado em 13/11/2026: só o zip da extensão, sem instaladores nem Drive) |
 
 ## Como manter isto em dia
 
