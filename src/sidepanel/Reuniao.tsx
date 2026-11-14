@@ -62,6 +62,7 @@ import { derivarEstadoDaCaptura } from '@/shared/ui/estadoDaCaptura';
 import type { EstadoDaCaptura } from '@/shared/ui/MarcaDaEscuta';
 import { MarcaDoTaq } from '@/shared/ui/MarcaDoTaq';
 import { Markdown } from '@/shared/ui/Markdown';
+import { TextoCinetico } from '@/shared/ui/TextoCinetico';
 import {
   formatElapsedClock,
   formatOffset,
@@ -782,7 +783,9 @@ function PerguntaRapida({
           {fase === 'procurando' ? (
             <>
               {agente?.parcial ? (
-                <p className="tq-rapida-texto">{agente.parcial}</p>
+                <div className="tq-rapida-texto">
+                  <Markdown texto={agente.parcial.replace(/\s?\[r\d+\]/g, '')} />
+                </div>
               ) : (
                 <span className="tq-rapida-procurando">
                   {agente?.etapa ? `${agente.etapa}…` : 'Procurando nesta reunião…'}
@@ -915,6 +918,9 @@ function TranscricaoAoVivo({
         return;
       }
       voando.current = true;
+      // A janela da legenda abre antes de medir: a fala voa inteira, e não
+      // só as últimas linhas recortadas.
+      origem.closest('.tq-legenda')?.classList.add('voando');
       const a = origem.getBoundingClientRect();
       const b = destino.getBoundingClientRect();
       const escala = parseFloat(getComputedStyle(destino).fontSize) /
@@ -987,8 +993,17 @@ function TranscricaoAoVivo({
             <span className="tq-legenda-quem" ref={quemDaLegenda}>
               {speakerLabel(legenda.speaker ?? 'Alguém', selfName)}
             </span>
-            <span className="tq-legenda-texto" ref={textoDaLegenda}>
-              &ldquo;{legenda.text}&rdquo;
+            {/* A janela mostra as ÚLTIMAS linhas: a palavra que acabou de
+                entrar nunca fica escondida atrás de um corte. As aspas vão
+                coladas com WORD JOINER (U+2060) — sem ele, a aspa de fechamento
+                podia cair sozinha na linha de baixo, porque cada palavra
+                animada é uma caixa própria. */}
+            <span className="tq-legenda-janela">
+              <span className="tq-legenda-texto" ref={textoDaLegenda}>
+                {'“⁠'}
+                <TextoCinetico texto={legenda.text} vivo animarInicio />
+                {'⁠”'}
+              </span>
             </span>
           </div>
         )}
@@ -1023,6 +1038,8 @@ function ListaDeFalas({
 }) {
   const [marcas, setMarcas] = useState<MarcasDaReuniao>({});
   const [selecionado, setSelecionado] = useState<string | null>(null);
+  /** Quantas falas já existiam quando a lista montou: essas não entram animadas. */
+  const inicioAoVivo = useRef(segmentos.length);
   const noFim = useRef(true);
   // A lista que rola, como estado: a barra precisa renderizar quando ela existir.
   const [coluna, setColuna] = useState<HTMLDivElement | null>(null);
@@ -1111,7 +1128,15 @@ function ListaDeFalas({
                   </span>
                 )}
               </span>
-              <span className="tq-fala-texto">{s.text}</span>
+              {/* A fala cresce no lugar enquanto a pessoa fala: só as palavras
+                  novas entram animadas (ver TextoCinetico). As que já estavam
+                  na tela quando o painel abriu não são fala nova. */}
+              <TextoCinetico
+                className="tq-fala-texto"
+                texto={s.text}
+                vivo={i === segmentos.length - 1}
+                animarInicio={i >= inicioAoVivo.current}
+              />
             </button>
 
             {aberto && (

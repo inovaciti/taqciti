@@ -101,14 +101,13 @@
 }
 
 /*
- * Título de tela na Barlow — a voz da ata. 17px da Barlow ocupa a largura de
- * ~15px da fonte do sistema: o nome da reunião cresce em presença sem crescer
- * em largura, que é o recurso escasso aqui.
+ * Mesmo desenho de letra do corpo, com peso de ênfase. O tamanho e a caixa
+ * do título permanecem os do painel, que tem pouca largura disponível.
  */
 .tq-side h2 {
   font-family: var(--font-titulo);
   font-size: var(--fs-titulo);
-  font-weight: 700;
+  font-weight: var(--peso-enfase);
   line-height: 1.25;
   letter-spacing: -0.1px;
   margin: 0;
@@ -1372,10 +1371,16 @@
 .tq-fala-texto {
   display: block;
   font-size: var(--fs-leitura);
-  line-height: 1.55;
+  line-height: var(--lh-leitura);
   color: var(--s-texto);
   overflow-wrap: anywhere;
   text-wrap: pretty;
+}
+
+/* A fala AO VIVO cresce no lugar: `pretty` refazia as quebras das últimas
+   linhas a cada palavra, e o que já se lia pulava de linha. */
+.tq-fala-texto.tq-cinetico {
+  text-wrap: wrap;
 }
 
 .tq-fala-acoes {
@@ -1676,7 +1681,7 @@
   max-width: 88%;
   margin: 0;
   font-size: var(--fs-leitura);
-  line-height: 1.5;
+  line-height: var(--lh-corpo);
   color: var(--s-texto);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -1715,33 +1720,6 @@
   opacity: 0.9;
 }
 
-.tq-agente-nome {
-  font-size: var(--fs-meta);
-  font-weight: 600;
-  color: var(--s-cinza);
-  margin-bottom: 2px;
-}
-
-/*
- * `pre-wrap`: as quebras de linha da resposta são dela.
- *
- * Sem isto, uma resposta com lista vira um parágrafo único com marcadores no
- * meio da frase — que foi exatamente como a resposta de demonstração apareceu
- * na primeira conferência em tela. O mesmo tratamento que a mensagem de quem
- * escreve já recebia.
- */
-.tq-msg-ia {
-  font-size: var(--fs-leitura);
-  line-height: 1.65;
-  color: var(--s-texto-2);
-  margin: 0;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-.tq-msg-ia.tq-falhou {
-  color: rgb(240 198 160);
-}
 
 .tq-contexto-pendente {
   display: flex;
@@ -2209,8 +2187,33 @@
   color: var(--s-texto);
 }
 
+/*
+ * Fala longa não empurra a coluna: a JANELA tem quatro linhas e mostra as
+ * ÚLTIMAS, que é onde a palavra nova entra.
+ *
+ * Antes era `-webkit-line-clamp: 4`, que corta o FIM — numa fala longa as
+ * palavras novas nasciam escondidas atrás do corte, exatamente o que a
+ * legenda existe para mostrar. Com o conteúdo alinhado embaixo, as linhas
+ * antigas é que saem por cima, sempre numa fronteira de linha.
+ */
+.tq-legenda-janela {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  font-size: 21px;
+  line-height: 1.22;
+  max-height: calc(4 * 1.22em);
+  overflow: hidden;
+}
+
+/* No voo até a lista a janela abre: a fala pousa inteira. */
+.tq-legenda.voando .tq-legenda-janela {
+  max-height: none;
+  overflow: visible;
+}
+
 .tq-legenda-texto {
-  display: inline-block;
+  display: block;
   transform-origin: 0 0;
   font-family: var(--font-titulo);
   font-weight: 500;
@@ -2218,13 +2221,10 @@
   line-height: 1.22;
   letter-spacing: -0.2px;
   color: #fff;
-  text-wrap: balance;
+  /* `wrap`, não `balance`: com a fala crescendo, `balance` redistribuía as
+     linhas a cada palavra e o texto já lido trocava de linha. */
+  text-wrap: wrap;
   text-shadow: 0 2px 18px rgb(0 0 0 / 0.75);
-  /* Fala longa não empurra a coluna: a legenda mostra o fim, que é o novo. */
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 .tq-reuniao-parte {
   grid-area: 1 / 1;
@@ -2314,18 +2314,26 @@
   min-width: 0;
 }
 
-/* Dentro da conversa o assistente tem nome — em violeta, a cor das ideias. */
+/*
+ * Dentro da conversa o assistente tem nome — em violeta, a cor das ideias.
+ * Uma regra só: havia duas, com tamanho e cor diferentes, e qual valia
+ * dependia da ordem no arquivo.
+ */
 .tq-agente-nome {
   display: flex;
   align-items: center;
   gap: 6px;
   margin: 0;
+  font-size: var(--fs-meta);
+  font-weight: var(--peso-enfase);
+  line-height: var(--lh-rotulo);
   color: var(--s-ideia);
 }
 
-/* A resposta em lilás claro: é dela que se fala quando se diz "as ideias". */
+/* A resposta em lilás claro: é dela que se fala quando se diz "as ideias".
+   Também a que ainda está chegando, para não trocar de cor ao terminar. */
 .tq-side .tq-turno-agente .tq-resp-texto,
-.tq-side .tq-msg-ia {
+.tq-side .tq-agente-trabalhando .tq-resp-texto {
   color: rgb(214 207 250);
 }
 

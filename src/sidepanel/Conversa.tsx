@@ -47,6 +47,7 @@ import { Icon } from '@/shared/ui/Icon';
 import { BotaoCopiar } from '@/shared/ui/BotaoCopiar';
 import { TrilhaDaConversa, marcasDasMensagens } from '@/shared/ui/TrilhaDaConversa';
 import { MarcaDoTaq } from '@/shared/ui/MarcaDoTaq';
+import { Markdown } from '@/shared/ui/Markdown';
 import { formatDate } from '@/shared/ui/format';
 
 interface Props {
@@ -512,7 +513,16 @@ export function Conversa({
                               : 'Resposta cancelada.'}
                   </span>
                 )}
-                {agente.parcial && <p className="tq-msg-ia">{agente.parcial}</p>}
+                {/* O texto que chega usa o MESMO Markdown da resposta pronta:
+                    antes era texto cru, com `**` e `###` à vista, e tudo se
+                    reformatava de uma vez quando a resposta terminava. */}
+                {agente.parcial && (
+                  <div className="tq-resp">
+                    <div className="tq-resp-texto">
+                      <Markdown texto={agente.parcial} />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

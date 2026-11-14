@@ -107,6 +107,14 @@ describe('o cursor nativo e o desenhado nunca coexistem', () => {
     expect(regras).toHaveLength(1);
     expect(regras[0]).toContain('tq-pointer-in');
   });
+
+  // O I-beam e a alça de `resize: vertical` são informação que o ponto
+  // desenhado não substitui: nos campos, o cursor volta a ser o do sistema.
+  it('nos campos de texto o cursor é o do sistema', () => {
+    expect(css).toMatch(
+      /body\.tq-pointer-in \.tq-home\s*:is\([\s\S]*?textarea,[\s\S]*?\)\s*\{\s*cursor:\s*auto/,
+    );
+  });
 });
 
 describe('o texto exibido não é selecionável, o rascunho é', () => {

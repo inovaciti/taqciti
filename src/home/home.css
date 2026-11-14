@@ -159,12 +159,12 @@ html {
   padding: 16px 32px 8px;
 }
 
-/* A marca na Barlow, a mesma fonte da ata — ver `Wordmark.tsx`. */
+/* A marca conserva a Barlow; texto e títulos usam a família de leitura. */
 .tq-brand {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-family: var(--font-titulo);
+  font-family: var(--font-marca);
   font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.4px;
@@ -751,11 +751,14 @@ html {
   min-width: 0;
 }
 
+/* O nome do Taq sobre a resposta — uma regra só (havia uma base de 10px em
+   cinza e uma segunda, de 12px em violeta, que sempre a vencia). */
 .tq-agente-nome {
-  font-size: 10px;
-  letter-spacing: 0.05em;
-  color: rgb(152 155 158);
-  margin-bottom: 5px;
+  font-size: var(--fs-ui);
+  font-weight: var(--peso-enfase);
+  line-height: var(--lh-rotulo);
+  color: var(--ideia);
+  margin-bottom: 4px;
 }
 
 .tq-indisponivel {
@@ -1909,6 +1912,8 @@ body.tq-pointer-in .tq-halo {
   box-shadow: 0 0 0 1px rgb(0 0 0 / 0.22);
   transition:
     transform 0.4s,
+    scale 0.25s,
+    opacity 0.25s,
     border-color 0.25s,
     box-shadow 0.25s;
 }
@@ -1931,6 +1936,31 @@ body.tq-pointer-in .tq-halo {
 }
 
 /*
+ * Sobre o que é do Taq: o anel se abre em dois arcos, no violeta das ideias
+ * (o mesmo `--ideia` do nome "Taq" na conversa). O giro de entrada é o
+ * `transition: transform` do rotor; parado sobre a resposta, ele fica parado.
+ */
+.tq-halo.sobre-taq .tq-rotor {
+  border-color: rgb(155 130 245 / 0.85);
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+}
+
+/*
+ * Sobre um campo, o cursor do sistema volta (regra abaixo): o ponto sai e o
+ * anel encolhe, para o I-beam ser o protagonista e não haver dois cursores.
+ * O `scale` do anel já vem do JS no `transform` do halo — aqui é o rotor.
+ */
+body.tq-pointer-in .tq-dot.sobre-campo {
+  opacity: 0;
+}
+
+.tq-halo.sobre-campo .tq-rotor {
+  scale: 0.72;
+  opacity: 0.7;
+}
+
+/*
  * O cursor do sistema some SÓ enquanto o desenhado está na tela.
  *
  * Esta é a correção do cursor aparecendo (e sumindo) onde não devia. Antes a
@@ -1950,6 +1980,31 @@ body.tq-pointer-in .tq-halo {
   body.tq-pointer-in .tq-home,
   body.tq-pointer-in .tq-home * {
     cursor: none;
+  }
+
+  /*
+   * Onde se digita o cursor é do SISTEMA: o I-beam diz onde o texto entra, e
+   * a alça de `resize: vertical` dos campos de nota precisa da seta dupla.
+   * `auto` deixa o navegador escolher cada um. O conjunto é o mesmo de
+   * `CAMPOS` em PointerLayer.tsx, que apaga o ponto desenhado nesses campos.
+   */
+  body.tq-pointer-in .tq-home
+    :is(
+      input:not(
+          [type='button'],
+          [type='submit'],
+          [type='reset'],
+          [type='checkbox'],
+          [type='radio'],
+          [type='range'],
+          [type='color'],
+          [type='file']
+        ),
+      textarea,
+      select,
+      [contenteditable]:not([contenteditable='false'])
+    ) {
+    cursor: auto;
   }
 }
 
@@ -2226,7 +2281,7 @@ body .tq-home [role='dialog'] button {
 .tq-pagina h1,
 .tq-pagina-topo h1 {
   font-family: var(--font-titulo);
-  font-weight: 700;
+  font-weight: var(--peso-enfase);
   font-size: clamp(30px, 4vw, 42px);
   line-height: 1.02;
   letter-spacing: -0.6px;
@@ -2241,7 +2296,7 @@ body .tq-home [role='dialog'] button {
 .tq-reuniao .tq-titulo-editavel,
 .tq-documento-topo .tq-titulo-editavel {
   font-family: var(--font-titulo);
-  font-weight: 700;
+  font-weight: var(--peso-enfase);
   font-size: clamp(28px, 3.6vw, 40px);
   line-height: 1.05;
   letter-spacing: -0.5px;
@@ -2372,29 +2427,15 @@ body .tq-home [role='dialog'] button {
 .tq-turno-voce .tq-bolha {
   color: var(--e-texto);
   font-size: 15px;
-  line-height: 1.5;
+  line-height: var(--lh-corpo);
 }
 
-.tq-turno-agente .tq-agente-nome {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0;
-  color: var(--ideia);
-}
-
+/* O destaque dentro da resposta (negrito, títulos, marcadores) vem da regra
+   compartilhada em respostaDoTaq.css — o mesmo lilás aqui e na sidebar. */
 .tq-turno-agente .tq-resp-texto,
 .tq-turno-agente .tq-indisponivel {
   color: rgb(214 207 250);
   font-size: 15px;
-}
-
-.tq-turno-agente .tq-md strong,
-.tq-turno-agente .tq-md h3 {
-  color: rgb(236 232 254);
-}
-
-.tq-turno-agente .tq-md h4 {
-  color: var(--ideia-clara);
 }
 
 /*
@@ -2792,8 +2833,8 @@ body .tq-home [role='dialog'] button {
 
 .tq-fala-texto {
   margin: 3px 0 0;
-  font-size: 16px;
-  line-height: 1.6;
+  font-size: var(--fs-leitura);
+  line-height: var(--lh-leitura);
   color: var(--e-texto);
   overflow-wrap: anywhere;
   text-wrap: pretty;
@@ -4409,3 +4450,27 @@ body .tq-home [role='dialog'] button {
 .tq-prep-silencio {
   color: rgb(166 169 173);
 }
+
+/* Controles do acervo seguem os campos e ações já usados em Conexões. */
+.tq-busca-acervo { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin: 18px 0 10px; }
+.tq-busca-acervo label, .tq-filtro-participante, .tq-opcoes-acervo form > label,
+.tq-conversas-confirma label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; min-width: 0; }
+.tq-busca-acervo label:first-child { flex: 1 1 180px; }
+.tq-busca-acervo input, .tq-filtro-participante input, .tq-opcoes-acervo form input,
+.tq-conversas-confirma input {
+  box-sizing: border-box; max-width: 100%; min-width: 0; padding: 9px 13px; border-radius: 11px;
+  border: 1px solid rgb(255 255 255 / 0.1); background: rgb(20 21 23 / 0.75); color: rgb(214 217 221);
+  font: inherit;
+}
+.tq-filtro-participante { max-width: 340px; margin-bottom: 20px; }
+.tq-opcoes-acervo { margin: 12px 0; font-size: 13px; line-height: 1.6; }
+.tq-opcoes-acervo summary { cursor: pointer; width: fit-content; }
+.tq-opcoes-acervo form { display: flex; flex-direction: column; gap: 12px; max-width: 560px; }
+.tq-opcoes-acervo form > button { align-self: flex-start; }
+.tq-opcoes-acervo p { margin: 10px 0; }
+.tq-opcoes-acervo li { margin: 8px 0; overflow-wrap: anywhere; }
+.tq-conversas-lista li button.tq-conversas-renomear {
+  flex: 0 0 auto; width: auto; padding: 0 6px; color: rgb(168 171 175); font-size: 11px;
+}
+.tq-conversas-lista .tq-busca-acervo { padding: 0 10px; }
+.tq-conversas-lista li .tq-conversas-confirma button { width: auto; display: inline-flex; margin-top: 8px; }
