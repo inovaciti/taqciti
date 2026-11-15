@@ -4,8 +4,6 @@ import { describe, expect, it } from 'vitest';
 import {
   PERFIL_CITI_PROVISORIO,
   perfilSchema,
-  problemasDoPerfil,
-  resolverPerfil,
   resolverVariante,
   diagnosticarVariante,
   varianteAplicavel,
@@ -20,7 +18,7 @@ import {
   validarArvore,
   type ContentTree,
 } from './contentTree';
-import { documentBriefSchema, prontoParaBaixar, type RenderManifest } from './contratos';
+import { documentBriefSchema } from './contratos';
 
 const arvore = (over: Partial<ContentTree> = {}): ContentTree =>
   contentTreeSchema.parse({
@@ -38,7 +36,6 @@ describe('perfil documental', () => {
   it('o perfil provisório é válido, provisório e não tem validador', () => {
     expect(() => perfilSchema.parse(PERFIL_CITI_PROVISORIO)).not.toThrow();
     expect(PERFIL_CITI_PROVISORIO.estado).toBe('provisorio');
-    expect(problemasDoPerfil(PERFIL_CITI_PROVISORIO)).toEqual([]);
   });
 
   it('tem as variantes ata (padrão) e editorial', () => {
@@ -132,17 +129,6 @@ describe('perfil documental', () => {
     expect(PERFIL_CITI_PROVISORIO.observacoes.join(' ')).toContain('ESTILO VISUAL');
   });
 
-  it('validado sem quem validou é inconsistente, e provisório com validação também', () => {
-    expect(problemasDoPerfil({ ...PERFIL_CITI_PROVISORIO, estado: 'validado' })).toHaveLength(1);
-    expect(
-      problemasDoPerfil({ ...PERFIL_CITI_PROVISORIO, validacao: { por: 'x', em: '2026-10-08' } }),
-    ).toHaveLength(1);
-  });
-
-  it('perfil inexistente falha em vez de cair em padrão inventado', () => {
-    expect(resolverPerfil('citi').id).toBe('citi');
-    expect(() => resolverPerfil('outro')).toThrow();
-  });
 });
 describe('ContentTree', () => {
   it('não aceita bloco de HTML livre nem tipo desconhecido', () => {
@@ -289,19 +275,4 @@ describe('contratos', () => {
     expect(brief).toMatchObject({ perfilId: 'citi', idioma: 'pt-BR', camposPendentes: [] });
   });
 
-  it('só está pronto para baixar com artefato da revisão corrente', () => {
-    const manifesto: RenderManifest = {
-      revisaoDoConteudo: 3,
-      perfilId: 'citi',
-      perfilVersao: 1,
-      perfilEstado: 'provisorio',
-      rendererVersao: '1',
-      ativosEFontes: [],
-      formatos: [{ formato: 'pdf', hash: 'a'.repeat(64) }],
-    };
-    expect(prontoParaBaixar(manifesto, 3, 'pdf')).toBe(true);
-    expect(prontoParaBaixar(manifesto, 4, 'pdf')).toBe(false);
-    expect(prontoParaBaixar(manifesto, 3, 'docx')).toBe(false);
-    expect(prontoParaBaixar(undefined, 3, 'pdf')).toBe(false);
-  });
 });

@@ -15,7 +15,6 @@ const {
   codigoDasFontes,
   neutralizarDelimitador,
 } = await import('./gerar');
-const { prontoParaBaixar } = await import('./contratos');
 
 const reply = (parsed: unknown) => ({
   text: JSON.stringify(parsed),
@@ -81,7 +80,6 @@ describe('gerarDocumentoPersonalizado', () => {
     expect(r.pdf.subarray(0, 5).toString()).toBe('%PDF-');
     expect(r.manifesto.paginas).toBeGreaterThanOrEqual(2);
     expect(r.manifesto.revisaoDoConteudo).toBe(r.arvore.revisao);
-    expect(prontoParaBaixar(r.manifesto, r.arvore.revisao, 'pdf')).toBe(true);
     expect(r.arvore.blocos[0]).toMatchObject({ tipo: 'capa', cliente: 'Aurora', autor: 'CITi', data: '08/10/2026' });
     expect(r.lacunas).toEqual([{ campo: 'Prazo do piloto', pergunta: 'Qual é o prazo previsto para o piloto?' }]);
     expect(r.relatorio.problemas).toEqual([]);
@@ -455,7 +453,7 @@ describe('editarDocumentoPersonalizado', () => {
     expect(r.arvore.blocos[0]).toMatchObject({ tipo: 'capa', titulo: 'Novo título', cliente: 'Aurora', autor: 'CITi' });
     expect(r.arvore.blocos.slice(1)).toEqual(base.arvore.blocos.slice(1));
     expect(r.manifesto.revisaoDoConteudo).toBe(r.arvore.revisao);
-    expect(prontoParaBaixar(r.manifesto, base.arvore.revisao, 'pdf')).toBe(false);
+    expect(r.manifesto.revisaoDoConteudo).not.toBe(base.arvore.revisao);
   });
 
   it('operação fora do escopo é recusada e nada muda', async () => {

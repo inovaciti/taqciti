@@ -21,6 +21,8 @@ import { join } from 'node:path';
 export const VERSAO_DAS_INSTRUCOES = 'taq-v7';
 
 const ARQUIVO_POR_VERSAO: Record<string, string> = {
+  'automacoes-v1': 'automacoes-v1.md',
+  'transcricao-v1': 'transcricao-v1.md',
   'taq-v1': 'v1.md',
   /** v2: o fluxo de documentos pelo catálogo e os pedidos fora dele. */
   'taq-v2': 'v2.md',

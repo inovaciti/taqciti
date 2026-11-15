@@ -23,10 +23,6 @@ export function bufferDoAtivo(variante: VarianteVisual, ativoId: string): Buffer
   return null;
 }
 
-export function ativosDeImagem(variante: VarianteVisual): string[] {
-  return variante.ativos.filter((a) => bufferDoAtivo(variante, a.id) !== null).map((a) => a.id);
-}
-
 /** PNG ou JPEG, pelos primeiros bytes — o que o Word precisa saber. */
 export function tipoDaImagem(buffer: Buffer): 'png' | 'jpg' {
   return buffer[0] === 0x89 && buffer[1] === 0x50 ? 'png' : 'jpg';

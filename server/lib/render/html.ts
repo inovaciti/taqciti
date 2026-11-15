@@ -376,13 +376,6 @@ export const RODAPE = [
   'Centro de Informática, Universidade Federal de Pernambuco- CIn, UFPE',
 ];
 
-/** Esta seção ganha `<h2>` no HTML, ou título de seção no PDF? Exportado
- *  pelo mesmo motivo de `RODAPE` — `pdf.ts` precisa da mesma resposta, e
- *  duas listas hardcoded divergem cedo ou tarde. */
-export function temCabecalho(sectionId: string): boolean {
-  return (SECTION_RENDERERS[sectionId] ?? GENERIC_RENDERER).cabecalho;
-}
-
 export interface RenderHtmlInput {
   documentType: DocumentType;
   data: DocumentData;

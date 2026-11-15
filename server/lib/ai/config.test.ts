@@ -11,13 +11,14 @@ import {
   parseOverride,
   politicaDeDadosNaoDeclarada,
   productionCandidates,
-  providersNaMatriz,
   recusaPorPoliticaDeDados,
   usesContentForTraining,
 } from './config';
-import { costForEntry } from './index';
 import { PRICING, priceFor } from './pricing';
 import { AGENT_NAMES, PROVIDER_IDS } from './types';
+
+/** Os provedores que a matriz cobre — derivado dela, nunca escrito à mão. */
+const providersNaMatriz = () => [...new Set(COMPARISON_MATRIX.map((entry) => entry.provider))];
 
 describe('matriz de comparação', () => {
   it('cada provedor tem exatamente um piso de produção', () => {
@@ -184,20 +185,7 @@ describe('política de dados', () => {
   });
 });
 
-describe('custo por entrada da matriz', () => {
-  it('free tier custa zero mesmo com o modelo tendo preço pago', () => {
-    const entry = COMPARISON_MATRIX.find((candidate) => candidate.id === 'google-dev-free')!;
-    // O modelo TEM preço na tabela — é o preço pago dele, e continua certo.
-    expect(priceFor(entry.provider, entry.model)).toBeDefined();
-    expect(costForEntry(entry, { inputTokens: 1_000_000, outputTokens: 500_000 })!.totalUsd).toBe(0);
-  });
-
-  it('configuração paga usa a tabela normalmente', () => {
-    const entry = cheapestProductionEntry('anthropic');
-    const cost = costForEntry(entry, { inputTokens: 1_000_000, outputTokens: 0 })!;
-    expect(cost.totalUsd).toBeGreaterThan(0);
-  });
-
+describe('configuração por entrada da matriz', () => {
   it('agentConfigFor expande a entrada para todos os agentes', () => {
     const entry = COMPARISON_MATRIX[0]!;
     const config = agentConfigFor(entry);

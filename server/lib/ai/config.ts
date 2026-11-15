@@ -215,23 +215,6 @@ export function matrixFor(provider: ProviderId): MatrixEntry[] {
   return COMPARISON_MATRIX.filter((entry) => entry.provider === provider);
 }
 
-/**
- * Os provedores que a matriz de comparação cobre — DERIVADO dela, nunca escrito
- * à mão, senão a lista e a matriz divergem no primeiro acréscimo.
- *
- * Nem todo provedor implementado está aqui, e isso é estado legítimo:
- *
- *  - `mock` nunca entra. Ele não é um fornecedor a comparar; pô-lo na matriz
- *    faria o harness "medir" um provedor que devolve texto inventado de graça,
- *    e ele ganharia todas as métricas de custo.
- *  - `openai` ainda não entrou. Entrar exige escolher os modelos e conferir os
- *    preços na documentação oficial, e a fase que escreveu o adaptador não
- *    consulta a rede. Enquanto o preço não estiver na tabela, uma entrada aqui
- *    produziria custo `undefined` no relatório — ver `estimateCost`.
- */
-export function providersNaMatriz(): ProviderId[] {
-  return [...new Set(COMPARISON_MATRIX.map((entry) => entry.provider))];
-}
 
 /**
  * Só o que é candidato a produção — exclui preview e free tier. É sobre

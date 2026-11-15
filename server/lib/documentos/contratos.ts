@@ -33,26 +33,6 @@ export const documentBriefSchema = z.object({
 });
 export type DocumentBrief = z.infer<typeof documentBriefSchema>;
 
-export const documentPlanSchema = z.object({
-  titulo: z.string().min(1),
-  /** Estrutura proposta em palavras ("relatório de diagnóstico"); não precisa
-   *  existir um template com esse nome. */
-  estrutura: z.string().min(1),
-  secoes: z
-    .array(
-      z.object({
-        id: z.string().min(1),
-        titulo: z.string().min(1),
-        finalidade: z.string().min(1),
-        componentes: z.array(z.string().min(1)),
-        fontesPrevistas: z.array(z.string().min(1)).default([]),
-      }),
-    )
-    .min(1),
-  limitacoesConhecidas: z.array(z.string()).default([]),
-});
-export type DocumentPlan = z.infer<typeof documentPlanSchema>;
-
 export const renderManifestSchema = z.object({
   revisaoDoConteudo: z.number().int().min(0),
   perfilId: z.string().min(1),
@@ -90,32 +70,3 @@ export const qualityReportSchema = z.object({
   fontesCitadas: z.array(referenciaDeFonteSchema).default([]),
 });
 export type QualityReport = z.infer<typeof qualityReportSchema>;
-
-/** Estados de um documento, todos vindos de operações reais. */
-export const ESTADOS_DO_DOCUMENTO = [
-  'rascunho_de_conteudo',
-  'gerando',
-  'renderizando',
-  'em_revisao',
-  'pronto',
-  'falhou',
-  'cancelado',
-  'desatualizado',
-] as const;
-export type EstadoDoDocumento = (typeof ESTADOS_DO_DOCUMENTO)[number];
-
-/**
- * "Pronto para baixar" exige o artefato real E que ele seja da revisão
- * corrente — nunca PDF antigo com DOCX novo.
- */
-export function prontoParaBaixar(
-  manifesto: RenderManifest | undefined,
-  revisaoAtual: number,
-  formato: (typeof FORMATOS_DE_SAIDA)[number],
-): boolean {
-  return (
-    !!manifesto &&
-    manifesto.revisaoDoConteudo === revisaoAtual &&
-    manifesto.formatos.some((f) => f.formato === formato)
-  );
-}

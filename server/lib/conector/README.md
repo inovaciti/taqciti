@@ -79,6 +79,7 @@ o `MeetingRecord` do storage: a projeção magra é o orçamento.
 | `banco.ts` | o pool e a interface `Consultador` (independente de driver) |
 | `acervoPostgres.ts` | `Acervo` sobre Postgres, atrás da mesma interface |
 | `cache.ts` | cache em memória por instância, com TTL de 30 s — não compartilhado entre instâncias da Vercel |
+| `projecoes.ts` | validação das projeções que a sincronização sobe (tamanho por item, id, quantidade por tipo) |
 | `escrita.ts` | os upserts — é por aqui que a sincronização entra, e invalida o cache da pessoa |
 | `copia.ts` | a cópia fiel (`copia_local`) e a leitura incremental por `seq` (`GET /api/sync`) |
 | `prints.ts` | prints como `bytea` (`print_local`), validados pelos bytes |
@@ -193,7 +194,7 @@ Duas credenciais, para dois caminhos diferentes:
 | Claude/ChatGPT → servidor | token do conector | hash no banco, revogável |
 
 **A extensão fala com o Google de DUAS formas independentes, com dois
-clientes OAuth diferentes.** `document/googleDocs.ts` usa
+clientes OAuth diferentes.** `src/document/googleDocs.ts` usa
 `chrome.identity.getAuthToken` (cliente tipo "Extensão do Chrome") só para
 enviar a ata ao Docs — isso nunca passa por este servidor. A identidade —
 tudo que este arquivo descreve — usa `chrome.identity.launchWebAuthFlow`
@@ -219,7 +220,10 @@ cola ao adicionar o conector — é assim que se tem acesso por pessoa sem
 nenhuma tela de login. O preço é honesto: é credencial ao portador, quem tem
 a URL tem o acervo. As três coisas que tornam isso administrável estão
 implementadas — o token aparece **uma** vez, o banco guarda só o hash, e
-revogar é imediato.
+revogar é imediato. Além disso o token **expira**: 90 dias de validade absoluta
+(`DIAS_DE_VALIDADE`) e um prazo de inatividade (`TAQCITI_TOKEN_INATIVO_DIAS`), e cada
+pessoa pode ter no máximo 3 tokens ativos (`MAX_TOKENS_ATIVOS`). Um token vencido
+é recusado do mesmo jeito que um revogado (ver `tokenDoConector.ts`).
 
 ## O caminho completo, hoje
 

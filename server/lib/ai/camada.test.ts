@@ -15,8 +15,7 @@ import {
   PROVIDER_IDS,
   capabilityTable,
   complete,
-  completeStructured,
-  costOf,
+  estimateCost,
   getProvider,
   resolveAgent,
 } from './index';
@@ -46,8 +45,8 @@ describe('o caminho completo', () => {
     expect(r.meta.latencyMs).toBeGreaterThanOrEqual(0);
   });
 
-  it('completeStructured devolve o valor já validado', async () => {
-    const { value, result } = await completeStructured<{ decisoes: string[] }>('leitor', {
+  it('complete com schema devolve o valor já validado em parsed', async () => {
+    const result = await complete('leitor', {
       ...PEDIDO,
       jsonSchema: {
         type: 'object',
@@ -56,13 +55,12 @@ describe('o caminho completo', () => {
       },
     });
 
-    expect(Array.isArray(value.decisoes)).toBe(true);
-    expect(result.parsed).toEqual(value);
+    expect(Array.isArray((result.parsed as { decisoes: string[] }).decisoes)).toBe(true);
   });
 
   it('uma resposta combinada atravessa a camada inteira', async () => {
     registrarResposta(() => true, '{"decisoes":["Login social fica fora."]}');
-    const { value } = await completeStructured<{ decisoes: string[] }>('auditor', {
+    const { parsed } = await complete('auditor', {
       ...PEDIDO,
       jsonSchema: {
         type: 'object',
@@ -70,7 +68,7 @@ describe('o caminho completo', () => {
         required: ['decisoes'],
       },
     });
-    expect(value.decisoes).toEqual(['Login social fica fora.']);
+    expect((parsed as { decisoes: string[] }).decisoes).toEqual(['Login social fica fora.']);
   });
 
   /*
@@ -79,7 +77,8 @@ describe('o caminho completo', () => {
    * custo dizendo que a geração saiu de graça — ver `estimateCost`.
    */
   it('o mock não produz custo inventado', async () => {
-    expect(costOf(await complete('auditor', PEDIDO))).toBeUndefined();
+    const r = await complete('auditor', PEDIDO);
+    expect(estimateCost(r.meta.provider, r.meta.model, r.usage)).toBeUndefined();
   });
 });
 

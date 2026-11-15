@@ -2,7 +2,6 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { contentTreeSchema, type ContentTree } from '../contentTree';
-import { prontoParaBaixar } from '../contratos';
 import { PERFIL_CITI_PROVISORIO } from '../perfil';
 import { compilarPdf, ErroDeCompilacao } from './index';
 import { segmentos, textoPlano } from './texto';
@@ -60,8 +59,6 @@ describe('compilarPdf', { timeout: 30_000 }, () => {
       expect(resultado.manifesto.revisaoDoConteudo).toBe(1);
       expect(resultado.manifesto.perfilEstado).toBe('provisorio');
       expect(resultado.manifesto.formatos[0]?.hash).toHaveLength(64);
-      expect(prontoParaBaixar(resultado.manifesto, 1, 'pdf')).toBe(true);
-      expect(prontoParaBaixar(resultado.manifesto, 2, 'pdf')).toBe(false);
 
       // Amostra para conferir à vista: `DOCUMENTOS_AMOSTRAS=<pasta>`.
       const pasta = process.env.DOCUMENTOS_AMOSTRAS;

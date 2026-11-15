@@ -154,26 +154,6 @@ export const perfilSchema = z.object({
 });
 export type PerfilDocumental = z.infer<typeof perfilSchema>;
 
-/**
- * Regras que o perfil exige e o que falta: um perfil "validado" sem validador
- * é inconsistente, e um provisório não pode carregar validação.
- */
-export function problemasDoPerfil(perfil: PerfilDocumental): string[] {
-  const problemas: string[] = [];
-  if (perfil.estado === 'validado' && !perfil.validacao) {
-    problemas.push('Perfil marcado como validado sem registro de quem validou.');
-  }
-  if (perfil.estado === 'provisorio' && perfil.validacao) {
-    problemas.push('Perfil provisório não pode carregar registro de validação.');
-  }
-  const ids = new Set<string>();
-  for (const variante of perfil.variantes) {
-    if (ids.has(variante.id)) problemas.push(`Variante "${variante.id}" duplicada.`);
-    ids.add(variante.id);
-  }
-  return problemas;
-}
-
 /** Algo que impede aplicar uma variante como aprovada. */
 export interface DiagnosticoDeVariante {
   tipo: 'fonte_ausente' | 'ativo_ausente';
@@ -561,14 +541,6 @@ export const PERFIL_CITI_PROVISORIO: PerfilDocumental = {
   variantes: [VARIANTE_ATA, VARIANTE_EDITORIAL],
   editorial: { idioma: 'pt-BR', orientacoes: [] },
 };
-
-/** Resolve o perfil de uma versão. Hoje só existe o provisório. */
-export function resolverPerfil(id = 'citi'): PerfilDocumental {
-  if (id !== PERFIL_CITI_PROVISORIO.id) {
-    throw new Error(`Perfil documental "${id}" não existe.`);
-  }
-  return PERFIL_CITI_PROVISORIO;
-}
 
 /**
  * A aparência dos documentos personalizados quando o pedido não diz: a da

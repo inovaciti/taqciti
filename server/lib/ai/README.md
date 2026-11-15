@@ -1,12 +1,12 @@
 # A camada de IA
 
 Nenhum outro arquivo do servidor instancia cliente de provedor ou conhece nome
-de modelo. Quem precisa de inferência chama `complete(agent, req)` — ou
-`completeStructured(agent, req)` quando a resposta tem forma — e não vê provedor
-nenhum.
+de modelo. Quem precisa de inferência chama `complete(agent, req)` e não vê
+provedor nenhum. Quando a resposta tem forma, passa `jsonSchema` na requisição:
+o adaptador valida (e repara) e devolve o objeto em `result.parsed`.
 
 ```ts
-import { complete, completeStructured } from '@/lib/ai';
+import { complete } from '@/lib/ai';
 
 const { text } = await complete('auditor', {
   system: 'Você redige atas.',
@@ -14,7 +14,7 @@ const { text } = await complete('auditor', {
   maxTokens: 2000,
 });
 
-const { value } = await completeStructured<{ decisoes: string[] }>('leitor', {
+const { parsed } = await complete('leitor', {
   system: 'Extraia as decisões.',
   messages: [{ role: 'user', content: transcricao }],
   maxTokens: 1000,
