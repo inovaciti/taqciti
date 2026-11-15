@@ -1,9 +1,9 @@
 /**
  * Manifesto MV3 da extensão — fonte única de verdade consumida pelo @crxjs/vite-plugin.
  *
- * Ver `content_scripts` e `host_permissions` abaixo para o porquê de o TaqCITi
- * viver em toda página: é o que dá à UI um ciclo de vida previsível dentro do
- * Chrome, em vez de existir numa aba e desaparecer na navegação seguinte.
+ * Ver `content_scripts` e `host_permissions` abaixo: o TaqCITi só age no Google
+ * Meet (`https://meet.google.com/*`), e o painel persiste entre navegações
+ * dentro dele porque o Chrome reinjeta o content script declarado.
  */
 import { defineManifest } from '@crxjs/vite-plugin';
 import { loadEnv } from 'vite';
@@ -257,54 +257,40 @@ export default defineManifest({
   //
   // `sidePanel` voltou porque o painel nativo voltou — e agora como a sidebar
   // do produto, não como uma segunda tela de histórico. Nenhuma destas aparece
-  // na tela de instalação: o aviso que o usuário vê vem do `<all_urls>`
-  // explicado abaixo.
+  // na tela de instalação: o aviso que o usuário vê vem do acesso ao Meet
+  // (`host_permissions` e `content_scripts`, abaixo).
   permissions: ['storage', 'sidePanel', 'scripting', 'identity', 'alarms'],
 
   /*
-   * O preço honesto da persistência.
-   *
-   * `<all_urls>` põe "ler e alterar todos os seus dados nos sites que você
-   * visita" na tela de instalação. Isso é real e não há como evitar: uma UI que
-   * precisa existir em TODA página precisa de acesso a toda página, e o
-   * `content_scripts` acima já produziria o mesmo aviso sozinho — declarar
-   * `host_permissions` junto não acrescenta aviso NENHUM e habilita o que o
-   * content script sozinho não dá: `chrome.tabs.sendMessage` para o painel de
-   * qualquer aba (o estado ao vivo chegar até ele) e o `executeScript` da
-   * primeira execução.
-   *
-   * A versão anterior evitava esse aviso e, em troca, não entregava a
-   * persistência — o painel morria na primeira navegação. Entre o aviso e o
-   * produto funcionando, o produto.
+   * Só o Meet. O painel só existe lá: `canInject` (background/injectPanel.ts)
+   * recusa qualquer outra aba, `tabs.query` e `tabs.sendMessage` só endereçam
+   * abas do Meet, e o `executeScript` da primeira execução só injeta nelas.
+   * Foi `<all_urls>` enquanto o painel viveu em toda página (plano de
+   * segurança, 21/10/2026: o content script já voltou ao Meet; as permissões
+   * de host acompanham). O servidor e as APIs do Google são chamados por
+   * `fetch` de páginas da extensão, com CORS do lado de lá — não dependem de
+   * `host_permissions`.
    */
-  host_permissions: ['<all_urls>'],
+  host_permissions: ['https://meet.google.com/*'],
 
   // Conteúdo injetado só alcança arquivo da extensão declarado aqui — e o
   // loader do @crxjs faz `import()` dos chunks do painel, então eles precisam
-  // valer na aba onde o painel for parar. Como o painel agora abre em qualquer
-  // aba, a lista precisa alcançar qualquer origem.
+  // valer na aba onde o painel for parar: só o Meet.
   //
   // Isto NÃO é `host_permissions`: `web_accessible_resources` diz "quem pode
   // LER estes arquivos meus", nunca "onde eu posso mexer". Não aparece na tela
-  // de instalação, e sem o clique no ícone nada é injetado — o alcance real
-  // continua sendo o do activeTab.
+  // de instalação.
   //
   // (Os chunks do painel o próprio @crxjs acrescenta a esta entrada no build;
   // por isso ela precisa ser a que casa com o content script.)
   web_accessible_resources: [
     {
       resources: ['brand/*'],
-      // Só quem usa: o painel no Meet. Em `<all_urls>`, qualquer site detectava
+      // Só quem usa: o painel no Meet. Aberto a qualquer site, ele detectaria
       // a extensão buscando um destes arquivos pelo ID fixo.
       matches: ['https://meet.google.com/*'],
     },
   ],
-
-  // Nenhum host_permissions: `document/index.html` (fase 2) chama o
-  // servidor de geração de documento via `fetch` comum, de dentro de uma
-  // página normal da extensão — CORS do lado do servidor, não permissão de
-  // manifest. host_permissions só entraria se o fetch fosse feito do
-  // background com bypass de CORS, o que não é o caso aqui.
 
   content_security_policy: {
     extension_pages: "script-src 'self'; object-src 'self'",

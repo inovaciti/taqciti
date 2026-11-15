@@ -17,3 +17,6 @@ release/
 # versionada — quem a tiver consegue publicar uma extensão com a MESMA
 # identidade, e portanto herdar o cliente OAuth registrado contra esse ID.
 *.pem
+
+# Demo Sequel da Shaped Fonts: avaliação local, sem redistribuição no repositório.
+/src/shared/fonts/sequel-demo-local/

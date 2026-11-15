@@ -37,11 +37,11 @@ export default {
        * leitura corrida solto, rótulo e número apertados.
        */
       fontSize: {
-        micro: ['10.5px', { lineHeight: '1.4', letterSpacing: '0.02em' }],
-        caption: ['11.5px', { lineHeight: '1.45' }],
-        body: ['12.5px', { lineHeight: '1.55' }],
-        read: ['13.5px', { lineHeight: '1.6' }],
-        title: ['15px', { lineHeight: '1.35', letterSpacing: '-0.01em' }],
+        micro: ['var(--fs-meta)', { lineHeight: 'var(--lh-rotulo)' }],
+        caption: ['var(--fs-ui)', { lineHeight: 'var(--lh-rotulo)' }],
+        body: ['var(--fs-corpo)', { lineHeight: 'var(--lh-corpo)' }],
+        read: ['var(--fs-leitura)', { lineHeight: 'var(--lh-leitura)' }],
+        title: ['var(--fs-titulo)', { lineHeight: 'var(--lh-titulo)' }],
       },
       /**
        * Uma escala só de raio, vinda dos tokens — nada no produto tem canto
@@ -56,14 +56,7 @@ export default {
         card: 'var(--radius-lg)',
       },
       fontFamily: {
-        sans: [
-          '-apple-system',
-          'BlinkMacSystemFont',
-          'SF Pro Text',
-          'Inter',
-          'Segoe UI',
-          'sans-serif',
-        ],
+        sans: ['var(--font-texto)'],
       },
       transitionTimingFunction: {
         flow: 'cubic-bezier(0.32, 0.72, 0, 1)',
