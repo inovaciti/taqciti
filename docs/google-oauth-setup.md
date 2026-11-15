@@ -60,6 +60,16 @@ gerando ata toda semana, o custo do download é o que cresce.
 
 ## Registrar os clientes
 
+Antes de configurar, rode `npm run check:oauth` (ou
+`npm run check:oauth -- production` para a build de produção). O comando
+deriva o ID e o redirect da chave pública do manifesto e confere os Client
+IDs locais, a igualdade do cliente Web na extensão e no servidor, e o
+cliente Docs do manifesto compilado (e a chave pública preservada no
+`dist/` ou `dist-dev/`, e que os dois clientes são distintos). Não imprime valores do ambiente.
+Uma pendência faz o comando terminar com código 1. Ele não verifica o
+cadastro no Google nem as variáveis do host de produção; o login real
+continua sendo a conferência final.
+
 **Todo mundo no mesmo Google Workspace?** Então a tela de consentimento é
 **Interna**, e isso remove a maior parte da burocracia: sem verificação da
 Google, sem lista de usuários de teste, sem fila de revisão. A tela de
@@ -72,7 +82,15 @@ derivado da `key` de `manifest.config.ts`)
 Ele vem da chave pública em `manifest.config.ts` e **não muda** entre
 máquinas, clones do repo ou reinstalações. É esse valor que o console pede no
 cliente tipo "Extensão do Chrome" — **não** no tipo "Aplicativo da Web", que
-usa um redirect URI derivado dele, não o ID cru (ver a etapa B abaixo).
+usa um redirect URI derivado dele, não o ID cru (ver a etapa 3B abaixo).
+
+> **O que este documento não prova.** Os nomes de telas, menus e links do
+> Google Cloud Console (e a regra de que a tela Interna dispensa verificação)
+> não são conferíveis pelo código: conferido pela última vez no console em
+> data desconhecida; revalide ao configurar. O que o código garante — escopos,
+> nomes de variáveis, fluxo do `id_token` e domínio permitido — foi
+> conferido contra `escopos.ts`, `manifest.config.ts`, `check-oauth.mjs` e
+> `server/lib/identidade/`.
 
 ### 1. Ativar a Drive API — **só para o Google Docs**
 
@@ -231,7 +249,10 @@ O acesso é restrito a contas `@citi.org.br` **por padrão**
 fail-closed. `TAQCITI_DOMINIO_PERMITIDO` só serve para TROCAR o domínio, e `*`
 desliga a restrição (só para desenvolvimento). A extensão manda `hd=citi.org.br`
 ao Google para o seletor oferecer só contas da organização, mas quem IMPÕE a
-regra é o servidor — o `hd` é só uma dica.
+regra é o servidor: o e-mail (verificado pelo Google) tem de terminar em
+`@<domínio>`, e um `hd` de OUTRA organização é recusado. O `hd` ausente passa
+(conta que não é do Workspace), a menos que `TAQCITI_EXIGIR_HD=sim` — o que
+fecha a brecha de uma conta Google pessoal criada com e-mail `@citi.org.br`.
 
 ### 7. Conferir
 

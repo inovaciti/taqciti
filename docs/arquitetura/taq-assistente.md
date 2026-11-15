@@ -209,13 +209,14 @@ Todos moram no navegador; o modelo, quando usado, passa pelo mesmo `POST
   modelo para a reunião deles (`contexto.ts`). `retomada.ts` lista combinados em aberto e
   decisões de encontros que a pessoa escolheu por id. Não há mais chamada ao modelo para
   montar o perfil (a extensão deixou de pedir `conducao-v1` no `6df3da6`; o servidor ainda o
-  mapeia, `instrucoes.ts:74`); a tela é `src/home/OQueLevar.tsx`.
+  mapeia, última entrada de `ARQUIVO_POR_VERSAO` em `instrucoes.ts`); a tela é `src/home/OQueLevar.tsx`.
 - **Estado dos pontos** (`features/estado/`, `estado-v1`): um estado por ponto
   (`a_esclarecer`, `discutido`, `a_confirmar`, `decidido`, `adiado`), até 10 pontos,
   com fala citada conferida em código (`mesclar`). Só roda por botão (lê as últimas
   60 falas consolidadas). `sintese.ts` monta o fechamento sem chamar modelo;
   `registrar.ts` registra um ponto como acompanhamento (`decidido` ou `a_confirmar`)
   ou como decisão (só `decidido`), por clique, respeitando o teto de 3.
+- **Automações pós-reunião** (`features/automacoes/automacoes.ts`, `automacoes-v1`; em uso, ainda sem commit na hora desta revisão): ao gravar um registro `ready` com falas (fim de captura ou importação de arquivo), uma fila local durável (`taqciti:automacoes:fila:v1`) guarda uma execução se a pessoa ligou "resumo" e/ou "compromissos" em Reuniões (ambas desligadas por padrão). `processarAutomacoes` faz UMA chamada ao modelo por execução (`POST /api/taq/turno`, sem ferramentas, 4096 tokens de saída, prazo de 25 s, no máximo 150 mil caracteres de contexto) e exige JSON com `resumo` e até 3 `compromissos`, cada um com índice de fala e trecho copiado. O código confere o trecho contra a fala; responsável só entra se é quem falou ou aparece no trecho, prazo só se aparece no trecho. O resumo vira documento (`guardarDocumentoUnico`, idempotente pela execução, tipo `resumo`); os compromissos entram como `candidato` em `registrarCompromissos`, sob o teto de 3 por reunião. Não há efeito externo nem repetição automática: falha vira `falhou` com "tentar novamente" na tela; fonte alterada ou automação desligada no meio vira `cancelada`; execução que estava `executando` quando o worker caiu vira `falhou`. O worker retoma pendências por `chrome.alarms` (a cada minuto) e nunca roda com o navegador fechado.
 - **Segundo cérebro** é o nome do conjunto condução + apoio + estado + calibração
   (ver `docs/segundo-cerebro.md`).
 - Outros: `features/agent/` (atividade do agente para a UI e barramento de escuta),
@@ -269,6 +270,8 @@ desconhecida".
 | documents | `documents-v4` | v1 a v3 |
 | app_assistant | `app-assistant-v5` | v1 a v4 |
 | communication / scheduling | `communication-v3` / `scheduling-v3` | v1, v2 |
+| Revisão da transcrição (`features/transcription/revisao.ts`, fora do Taq) | `transcricao-v1` | — |
+| Automações pós-reunião (`features/automacoes/automacoes.ts`, fora do Taq) | `automacoes-v1` | — |
 | meeting_copilot | `copilot-v2` | v1 |
 | analyst, commitments, continuity, handoff, memory, context | `analyst-v1`, `commitments-v1`, `continuity-v1`, `handoff-v1`, `memory-v1`, `context-v1` | — |
 | Subsistemas | `intervencao-v1`, `estado-v1`, `acompanhamento-v1`; `conducao-v1` (só o servidor mapeia; a extensão não pede desde `6df3da6`) | — |

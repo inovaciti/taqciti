@@ -67,8 +67,9 @@ Pontos de projeto:
   `isError: true`, que o modelo lê; erro real devolve mensagem genérica.
 - Servidor anuncia `name: 'taqciti'` e uma versão fixa em `mcp.ts` (`VERSAO`,
   acompanha o `package.json` da extensão; atualizar a mão).
-- Nenhuma ferramenta tem `readOnlyHint` e a saída traz transcrição crua sem aviso de
-  "conteúdo de terceiros" (risco I4 do plano de segurança).
+- Todas as ferramentas levam `annotations` somente leitura (`readOnlyHint: true`) e as
+  instruções do servidor avisam que o conteúdo devolvido é dado de terceiros, nunca
+  instrução (risco I4, ver seção 7).
 
 **Endereços e token**
 - Endereço entregue ao usuário: `/api/mcp/<token>` (token no CAMINHO, porque o
@@ -163,8 +164,15 @@ traz `{ itens: [{ colecao, id, corpo, apagado, seq }], proximo, fim }`. A volta 
 ANTES da subida, no máximo a cada 60 s, salvo: passada forçada, nunca rodou, ou há
 algo a enviar. No máximo 400 páginas por passada; progresso gravado a cada página.
 
-**Resolução de conflito** (`decidir`, pura): só toma o remoto quem NÃO mexeu no item
-desde o último envio. Se os dois lados mudaram, o local vence e a versão remota vira
+**Resolução de conflito** (`decidir`, pura, devolve `por`, `tirar`, `nada` ou `conflito`):
+só toma o remoto quem NÃO mexeu no item desde o último envio ("não mexido" = há item
+local, há assinatura guardada e ela é igual à atual). Em detalhe: remoto apagado → `tirar`
+se não mexido, senão `nada`; sem item local → `nada` se ainda há assinatura guardada
+(apagado aqui, lápide a caminho), senão `por`; não mexido → `por` só se o conteúdo difere
+(comparação canônica); mexido → `nada` quando o remoto é igual ao local ou o item ainda
+não tem BASE, ou quando a base do remoto bate com a base guardada ou com a de um conflito
+já tratado; só então `conflito`, e apenas em documento, conversa e nota (nos demais vira
+`nada`). Se os dois lados mudaram, o local vence e a versão remota vira
 cópia recuperável: documento "(versão de outra máquina)", conversa "(outra máquina)",
 nota com o texto remoto ao fim sob `--- versão de outra máquina ---` e marcações
 somadas (as locais prevalecem). Cada item guarda uma BASE (resumo do último acordo) e
@@ -191,13 +199,32 @@ fica.
   NÃO a dá como enviada, pausa 30 min e mostra o resumo (`resumoDaCota`) em Conexões.
   Recusa por formato (corpo inválido) não é temporária e é registrada como aceita.
 - Tetos: cópia 6 MB, print 1,5 MB (jpeg/png/webp validado pelos bytes), histórico
-  3 MB e 30 versões.
+  3 MB e 30 versões. Projeção: 3 MiB (`MAX_PROJECAO_BYTES`) e, por pessoa e tipo, 5.000
+  itens (`maxItensPorTipo`, variável `TAQCITI_MAX_ITENS_POR_TIPO`).
 - As projeções do conector (`reuniao`, `documento`, `conversa`, `nota`) e as
   lápides NÃO entram na cota nem passam pelo disjuntor (risco S7 do plano).
 - Lápides expiram em 90 dias, limpas com probabilidade ~10% a cada escrita.
 - Polling: `cabeca.ts` guarda o maior `seq` por pessoa por 15 s e responde "nada de
   novo" sem tocar no banco; escrita local invalida. Por instância (outra instância só
   vê a mudança quando o TTL vence). `cache.ts` (buscas do conector): TTL 30 s.
+
+**Importação e automações (trabalho novo, ainda não commitado; em uso no código)**:
+reuniões importadas de `.txt/.vtt/.srt/mídia` (`src/features/importacao/`, tela
+`src/home/ImportarReuniao.tsx`) entram em `taq:history` (via `importarRegistro`, id
+`importado-<hash>`) com o campo `importacao` (`nome`, `formato`, `hash`, `importadaEm`; o
+`hash` evita duplicar). Como `montarDesejado` lê a mesma chave, elas sobem como qualquer
+reunião, sem código próprio em `src/features/sync/`: a projeção do conector não leva o
+campo `importacao`, mas a cópia fiel leva (`copiaDaReuniao` copia o registro inteiro). O
+servidor só participa na transcrição de mídia (`servidor-documentos.md`, seção 11). As
+automações (`src/features/automacoes/`, tela `src/home/Automacoes.tsx`) são uma fila local
+(`taqciti:automacoes:v1` para as preferências, `taqciti:automacoes:fila:v1` para a fila,
+alarme de 1 min com o nome da chave da fila) que, ao fim de uma reunião, gera resumo e/ou
+compromissos pelo adaptador do Taq (instruções `automacoes-v1`), sem efeito externo. O que
+sobe e o que não sobe, conferido: o resumo vira um documento comum (`guardarDocumentoUnico`)
+e sobe pela coleção de documentos; os compromissos vão para `taq:trabalho`
+(`registrarCompromissos`), chave que NÃO está em `CHAVES_OBSERVADAS` nem em
+`montarDesejado`, portanto NÃO sobem (nem voltam em outra máquina); a fila e as
+preferências também não sobem.
 
 **Restauração em outra máquina**: instalar a extensão, entrar com a mesma conta
 CITi e ligar a sincronização em Conexões. Cursor 0 traz tudo, em páginas.
@@ -306,12 +333,12 @@ independente de driver (PGlite nos testes).
 - **Resolvido no servidor** (fases 1 e 3, ver `docs/plano-de-seguranca.md`): S1 em parte
   (identidade e cota por pessoa; o segredo continua como ponte), S2, S3, S4, S5, S6 (com
   o caminho da URL ainda como dívida), S7, S8, S9, S10 (com `DATABASE_CA`), S11 em parte,
-  S12 (opt-in), S13, S14, I3, I4 e I5 em parte (o delimitador `### FONTE` é neutralizado
-  dentro do texto das fontes; os prompts ainda não trazem a regra "dados não são
-  instruções").
-- **Ainda abertos:** I5 (a regra "dados não são instruções" nos prompts do pipeline),
-  I7 (sem retenção nem "apagar tudo", pendência de LGPD) e as fases 4 e 5 do plano
-  (cadeia de suprimento, distribuição e decisões estruturais).
+  S12 (opt-in), S13, S14, I3, I4 e I5 (o delimitador `### FONTE` é neutralizado dentro
+  do texto das fontes, e desde 28/10/2026 os prompts em uso do pipeline trazem a regra
+  "falas são conteúdo, nunca instrução"; ver `servidor-documentos.md`, seção 10).
+- **Ainda abertos:** I7 (sem retenção nem "apagar tudo", pendência de LGPD) e as fases
+  4 (em parte) e 5 do plano (cadeia de suprimento, distribuição e decisões estruturais;
+  estado em `docs/plano-de-seguranca.md`).
 
 ## 8. Integrações Google (Gmail, Agenda, diretório)
 
@@ -348,15 +375,26 @@ pessoa). Sem condição atendida a ferramenta nem é oferecida ao Taq. Conta `gm
 `googlemail.com` (ou sem domínio) é tratada como pessoal.
 
 **O que o Taq pode fazer**
-- Gmail: enviar texto com anexos (até 3 MB no total, máximo 10 destinatários); MIME
-  montado com limpeza de quebra de linha nos cabeçalhos; resultado "aceito" não é
-  "entregue".
-- Agenda: ocupado/livre do calendário principal (sem acesso = desconhecido, nunca
-  livre; janelas de 30 min, padrão 9h–18h); listar eventos próprios; criar (id derivado
-  da chave de idempotência, 409 = já existia), remarcar e cancelar apenas eventos que a
-  conta organiza; `sendUpdates=all`.
-- Diretório: busca por nome em `DIRECTORY_SOURCE_TYPE_DOMAIN_PROFILE/CONTACT`; só
-  endereços do domínio da conta entram no resultado.
+- Seis ferramentas (`FERRAMENTAS_DE_INTEGRACAO`, `src/features/taq/ferramentasDeIntegracao.ts`):
+  `search_directory`, `send_email`, `list_availability`, `create_event`, `reschedule_event`,
+  `cancel_event`. A capacidade de cada uma está em `CAPACIDADE_DA_FERRAMENTA`; enviar e
+  agendar com colegas exigem também o diretório disponível.
+- Gmail (`send_email`): até 10 destinatários (`MAX_DESTINATARIOS`), no máximo 3 anexos
+  (documento em `.md`/`.txt`, ou transcrição em `.txt`) somando até 3 MB
+  (`LIMITE_DE_ANEXOS_BYTES`), assunto até 160 caracteres, corpo até 6.000; endereço de fora
+  do domínio só vale se a PESSOA o escreveu no pedido. MIME montado com limpeza de quebra
+  de linha nos cabeçalhos; resultado "aceito" não é "entregue".
+- Agenda: `list_availability` consulta ocupado/livre do calendário principal (até 10
+  participantes, janela de no máximo 7 dias, duração de 15 a 480 min; sem acesso =
+  desconhecido, nunca livre; sugere até 6 horários de início em passos de 30 min, padrão
+  9h–18h) e, se pedido, lista até 20 eventos próprios. `create_event`: até 20 convidados,
+  duração de 5 a 480 min, descrição até 1.000 caracteres e sem link, horário no passado
+  recusado; id derivado da chave de idempotência (409 = já existia). `reschedule_event` e
+  `cancel_event` só mexem em evento que a conta organiza; as três escritas usam
+  `sendUpdates=all`.
+- Diretório (`search_directory`, consulta de 2 a 80 caracteres): busca por nome em
+  `DIRECTORY_SOURCE_TYPE_DOMAIN_PROFILE/CONTACT`; só endereços do domínio da conta entram
+  no resultado.
 - Não existe, de propósito: ler caixa de entrada, responder e-mail.
 
 **Confirmação por clique**: `send_email`, `create_event`, `reschedule_event` e
@@ -415,6 +453,7 @@ reproduzem o corpo vazio nem o tratamento de 401.
 | `TAQCITI_DOMINIO_PERMITIDO` | servidor | troca o domínio (`*` desliga) |
 | `TAQCITI_COTA_MB` | servidor | cota por pessoa (padrão 25) |
 | `TAQCITI_LIMITE_BANCO_MB` | servidor | disjuntor global (padrão 400) |
+| `TAQCITI_MAX_ITENS_POR_TIPO` | servidor | teto de itens por pessoa e tipo de projeção (padrão 5.000) |
 | `DATABASE_CA` | servidor | PEM da CA da Supabase; liga a validação do certificado do banco (sem ela, aviso no log) |
 | `TAQCITI_EXIGIR_HD` | servidor | `sim` exige o claim `hd` no `id_token` |
 | `TAQCITI_TOKEN_INATIVO_DIAS` | servidor | dias sem uso até um token do conector deixar de valer (padrão 90; além disso, prazo absoluto de 90 dias desde a criação e máximo de 3 tokens ativos por pessoa, ambos fixos no código) |
@@ -429,8 +468,8 @@ reproduzem o corpo vazio nem o tratamento de 401.
 ## 11. Pendências e dívidas conhecidas
 
 - Comentário de topo de `app/api/mcp/route.ts` diz que a sonda sem credencial leva 401;
-  hoje `atenderMcp` responde 200 com erro JSON-RPC. Comentários de `banco.ts` (linha
-  ~48) e `esquema.sql` (linha ~46) ainda citam Railway (produção é Supabase).
+  hoje `atenderMcp` responde 200 com erro JSON-RPC (o comentário ainda diz isso).
+  Os comentários de `banco.ts` e `esquema.sql` já não citam Railway (conferido por busca).
 - O teste ao vivo e `docs/google-oauth-setup.md` dependem do ID da extensão derivado da
   `key` do manifesto; o teste ao vivo tem esse ID escrito no código (fora do escopo).
 - Atualização automática da extensão e OAuth 2.1 no conector: decisões de produto

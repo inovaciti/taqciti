@@ -93,6 +93,7 @@ de host para host.
 | `DOCCITI_TIMEZONE` | não | Fuso usado para a data da reunião (`lib/dataDaReuniao.ts`). |
 | `TAQ_ORQUESTRADOR` | não | Modelo do Taq, `provedor:modelo`. Padrão `google:gemini-3.5-flash`; só `google` e `groq` têm adaptador com ferramentas, outro provedor deixa o Taq pendente (`lib/taq/config.ts`). |
 | `TAQ_MAX_CONTEXTO_CHARS` | não | Teto do pedido do Taq, em caracteres. Padrão 300000 (`lib/taq/atender.ts`). |
+| `DOCCITI_MODELO_TRANSCRICAO` | não | Modelo de transcrição de áudio/vídeo da importação (`/api/importacao/transcrever`, `lib/importacao/transcrever.ts`). A rota usa `GROQ_API_KEY`, exige `DOCCITI_DATA_POLICY=private` (sem isso, 503) e aceita até 4 MB por arquivo. |
 | `OPENAI_API_KEY` | só com o provedor OpenAI | Chave do provedor (`lib/ai/providers/openai.ts`). |
 | `DOCCITI_PROMPTS` | não | `anteriores` volta às versões de prompt anteriores sem deploy de código (`lib/prompts/index.ts`). |
 | `DOCUMENTOS_RACIOCINIO_GERACAO` / `DOCUMENTOS_RACIOCINIO_EDICAO` | não | Esforço de raciocínio (`low`, `medium`, `high`) ao gerar e ao editar documento personalizado. Padrões `medium` e `low` (`lib/documentos/gerar.ts`). |

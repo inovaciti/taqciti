@@ -1,5 +1,32 @@
 # A ajuda do TaqCiti — referência verificada
 
+## Acervo individual: importação, busca e automações
+
+Em Reuniões, **Importar reunião** aceita TXT, SRT e VTT UTF-8 (até 1 MB,
+200 mil caracteres e 10 mil trechos). Áudio e vídeo (MP3, MP4, M4A, WAV,
+WEBM, OGG, FLAC, MPEG e MPGA) têm limite de 4 MB por arquivo; são enviados
+ao servidor para transcrição, sem armazenar a mídia. É preciso publicar
+`/api/importacao/transcrever`, configurar `GROQ_API_KEY` e declarar
+`DOCCITI_DATA_POLICY=private`. Sem isso, a importação de texto continua local.
+Não há extração de nomes de falantes do áudio. A data da reunião é informada
+pela pessoa; duração ausente não é estimada. Reimportar um arquivo abre o
+registro existente, sem sobrescrever seu título.
+
+**Automações após reuniões** oferece resumo em Documentos e até três próximos
+passos candidatos em Acompanhamento. São preferências individuais, desligadas
+inicialmente, aplicadas a novos encerramentos e importações. A fila local é
+retomada com o navegador aberto; não há envio de mensagens nem processamento
+com o navegador fechado. Uma execução interrompida ou falha aguarda **Tentar
+novamente**, sem chamadas repetidas silenciosas. Requer publicar também o
+prompt `automacoes-v1` no servidor antes de distribuir a extensão.
+
+Reuniões, documentos e conversas têm busca local por nome e conteúdo.
+Reuniões filtram também por participante e data; documentos pela data da
+última alteração. A busca ignora acentos e caixa. O menu Conversas permite
+**Renomear** e **Salvar nome**, preservando mensagens e contexto.
+
+A instalação continua manual. Nenhum destes recursos cria acervo de equipe.
+
 O agente de Operações e Ajuda (`app_assistant`) não explica o TaqCiti de
 memória. Ele consulta a referência **`src/features/taq/ajuda.ts`**, que é dado
 versionado junto ao código, por duas ferramentas de leitura:
@@ -11,9 +38,10 @@ versionado junto ao código, por duas ferramentas de leitura:
 
 Nenhuma das duas chama um modelo. O "o agente executa" **não** está escrito à
 mão: sai do registro de ferramentas (`FERRAMENTAS_BASE` + `FERRAMENTAS_DE_APP`).
-O Taq também tem as duas ferramentas (instruções `taq-v5`), para não explicar o
-app de memória quando a delegação ao especialista falha. Isso foi visto ao vivo
-com a v4: por limite de cota, o Taq inventou uma opção “enviar por e-mail”.
+O Taq também tem as duas ferramentas (desde as instruções `taq-v5`; a versão
+atual é a `taq-v7`), para não explicar o app de memória quando a delegação ao
+especialista falha. Isso foi visto ao vivo com a v4: por limite de cota, o Taq
+inventou uma opção “enviar por e-mail”.
 
 ## Três categorias que não se confundem
 
@@ -53,7 +81,7 @@ node scripts/verify-ajuda.cjs <caminho do playwright-core> <pasta>
 ## Estado da verificação (23/09/2026)
 
 Esta seção é o retrato daquela data: `ajuda.ts` cresceu depois (a versão da
-referência é `VERSAO_DA_REFERENCIA`, 2026-10-08 na última leitura) e hoje tem
+referência é `VERSAO_DA_REFERENCIA`, 2026-11-11 na última leitura) e hoje tem
 bem mais entradas do que as 22 abaixo. A fonte atual do estado de cada entrada
 é o campo `verificacao` em `ajuda.ts`.
 
@@ -95,17 +123,16 @@ Corrigidas na referência, e não no código (fora do escopo):
   `presence: 'open'`.
 - A sidebar diz “Dá para começar depois, por aqui mesmo.” ao perguntar se deve
   registrar, mas não há controle que faça isso.
-- O envio ao Google Docs falha em silêncio: `GerarDocumento.tsx` ignora
-  `via: 'falhou'`.
+- O envio ao Google Docs falhava em silêncio. **Corrigido:** `GerarDocumento.tsx`
+  agora guarda o erro de `via: 'falhou'` e o mostra.
 - `Conexoes.tsx` diz que sem o cliente OAuth web "o mesmo vale para o envio ao
   Google Docs", mas o Docs depende de outro cliente (o do manifesto).
 - Os comentários de `homeTab.ts` e `HomePage.tsx` dizem que o ícone abre a
   HOME; hoje ele abre a sidebar. Em 21/10/2026 o comentário de topo de
   `HomePage.tsx` ainda dizia isso e falava em "quatro seções".
 - A HOME tem seis seções (`SECOES` em `SideNav.tsx`): Assistente, Preparar,
-  Reuniões, Documentos, Acompanhamento e Conexões. O passo de navegação da
-  entrada `abrir_sidebar_e_home` em `ajuda.ts` ainda lista só quatro (sem
-  Preparar e Acompanhamento); correção pendente no código.
+  Reuniões, Documentos, Acompanhamento e Conexões. O passo de navegação em
+  `ajuda.ts` já lista as seis (corrigido).
 
 ## Verificação com o modelo
 

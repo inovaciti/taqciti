@@ -6,7 +6,7 @@ uma reunião e devolve um documento gerado.
 
 Só backend — sem interface própria. O fluxo de "Gerar Documento" inteiro
 (escolher o tipo, mostrar loading/erro, exibir o resultado) vive dentro da
-extensão TaqCiti (`src/document/GenerateDocumentMenu.tsx`), que chama a
+extensão TaqCiti (`src/home/GerarDocumento.tsx`, o botão "Criar documento"), que chama a
 rota daqui.
 
 ## Rodando localmente
@@ -101,6 +101,10 @@ $env:VITE_DOCCITI_SHARED_KEY = '<o mesmo valor de DOCCITI_SHARED_KEY no host>'
 npm run build
 ```
 
+O `npm run build` de produção recusa rodar se a URL não for `https://` ou se a
+chave faltar ou for a de desenvolvimento (trava no `vite.config.ts`). Para testar
+contra este servidor local, use `npm run build:dev` (saída em `dist-dev/`).
+
 O CORS (`lib/apiGuard.ts`) só deixa a **extensão** ler as respostas: qualquer
 `chrome-extension://<id>` por padrão, ou só as origens de
 `DOCCITI_ORIGENS_PERMITIDAS` quando definida (em produção, a origem da extensão
@@ -135,7 +139,7 @@ As demais rotas (`/api/answers`, `/api/documentos/gerar|editar|renderizar`,
 `/api/ai/secao`) estão em `docs/arquitetura/servidor-documentos.md`, seção 11.
 
 ```
-POST /api/ai/smoke
+POST /api/ai/smoke                (rota de diagnóstico: NÃO existe em produção, `diagnosticoForaDoAr`)
 x-docciti-key: <segredo compartilhado>
 
 { "providers"?: ["anthropic" | "google" | "xai", ...] }   corpo vazio = os três
@@ -153,7 +157,7 @@ Por modelo ele reporta texto, `inputTokens`, `outputTokens`,
 
 **Por modelo, não por provedor:** exercita a configuração ativa do pipeline
 *e* o piso de produção da matriz, porque eles podem divergir — hoje divergem
-(`gemini-2.5-flash` contra `gemini-3.5-flash-lite`), e as duas famílias usam
+(`gemini-3.5-flash` do Leitor contra `gemini-3.5-flash-lite` do piso), e as duas famílias usam
 caminhos de código diferentes para saída estruturada e raciocínio. Testar só
 o piso deixaria sem prova exatamente o caminho que o pipeline usa. O campo
 `papel` diz qual é qual.
@@ -162,7 +166,7 @@ o piso deixaria sem prova exatamente o caminho que o pipeline usa. O campo
 `pulados`, e `ok` só é `true` se ao menos uma execução aconteceu. Uma tabela
 comparativa sem a linha da Anthropic parece completa e não é: quem lê conclui
 que o Gemini ganhou, quando os outros nem correram. A mesma lógica, na forma
-que o harness da Fase 8 consome, está em `lib/ai/availability.ts`
+que um harness de comparação (ainda inexistente; `server/eval/` não existe) consumiria, está em `lib/ai/availability.ts`
 (`planMatrixRun`, `describeSkips`), com a regra extra de que fornecedor cujas
 entradas foram *todas* puladas vira linha própria no relatório.
 
@@ -283,7 +287,7 @@ Cada agente pode usar um provedor diferente — é um resultado provável e
 
 ### A matriz de comparação
 
-`COMPARISON_MATRIX` em `config.ts` é o insumo do harness da Fase 8, e **não**
+`COMPARISON_MATRIX` em `config.ts` é o insumo previsto de um harness de comparação (ainda não existe), e **não**
 é uma configuração por provedor. Ela não tenta emparelhar modelos entre
 fornecedores: emparelhar seria inventar uma equivalência que não existe —
 Sonnet 5 e Gemini Flash não são o mesmo degrau, e chamar os dois de "o
@@ -293,7 +297,7 @@ uma medição.
 A pergunta que a matriz responde é: **por fornecedor, qual é o custo por
 documento no menor modelo que ainda passa as asserções determinísticas?**
 Daí duas configurações por provedor — teto e piso — com o mesmo modelo nos
-quatro agentes.
+dois agentes (`leitor` e `auditor`).
 
 | id | provedor | tier | modelo | |
 |---|---|---|---|---|
@@ -335,9 +339,9 @@ Isso é imposto em código, não só em comentário: a entrada carrega
 o piso de produção de nenhum fornecedor seja uma configuração de treinamento.
 
 O preço fica registrado como o preço **pago** do modelo ($0,30/$2,50). O zero
-mora em `billing: 'free-tier'` na entrada da matriz, e quem aplica é
-`costForEntry()` — o harness deve somar por ela, não por `estimateCost()`
-direto. Registrar 0 na tabela de preços poria um número falso justamente no
+mora em `billing: 'free-tier'` na entrada da matriz, e
+quem consumir a matriz deve respeitar essa marca e não somar por `estimateCost()`
+direto (o auxiliar `costForEntry`, que fazia isso, foi removido em 13/11/2026: não tinha chamador). Registrar 0 na tabela de preços poria um número falso justamente no
 lugar onde alguém vai olhar para decidir migrar para pago.
 
 ### Compatibilidade por família de modelo
@@ -490,7 +494,7 @@ contra a API em `npm run test:live`.
 
 ## Dívida conhecida
 
-`anthropic` e `xai` nunca fizeram uma chamada real — só há chave do Google.
+`anthropic` e `xai` nunca fizeram uma chamada real — só Google e Groq rodaram de verdade.
 As formas de requisição vieram dos `.d.ts` dos SDKs, que pegam nome e tipo de
 campo errados mas não provam que a API aceita o corpo nem que lemos a resposta
 direito. O que especificamente não foi provado, e como cada item falha, está
@@ -503,7 +507,7 @@ npm test          # vitest run
 npm run test:watch
 ```
 
-Cobrem a lógica pura da camada de IA (validador de schema, extração de JSON
+`npm run test:live` roda os testes que falam com servidor e banco de verdade (exigem configuração). Os testes comuns cobrem a lógica pura da camada de IA (validador de schema, extração de JSON
 embrulhado, laço de reparo, posicionamento do `cacheablePrefix`), a
 coerência da tabela de preços e da matriz, e os templates. **Não** fazem
 chamada de rede — provedor de verdade se testa com `/api/ai/smoke`.
@@ -520,7 +524,7 @@ markdown na ordem do template e devolve
 `documentData` + `html` junto. `/api/generate` expõe isso como "documento
 inteiro numa tacada"; quem quiser controle fino (uma seção por vez,
 perguntas, respostas) usa `generateStep` ou `/api/ai/secao` direto. Ver
-`docs/HANDOFF.md` para o estado detalhado e o que falta (harness da Fase 8).
+`docs/HANDOFF.md` para o estado detalhado e o que falta (o harness de comparação previsto não foi feito).
 
 `/api/generate` e `/api/answers` também devolvem `pdf` (base64) — irmão do
 `html`, saído do mesmo `documentData`. O PDF do catálogo sai de

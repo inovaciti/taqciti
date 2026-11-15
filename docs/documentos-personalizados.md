@@ -56,13 +56,17 @@ extensão (a instrução nova mora lá).
 
 | Rota | O que faz | Modelo |
 | --- | --- | --- |
-| `POST /api/documentos/gerar` | pedido + fontes → árvore, PDF, manifesto, relatório | sim (`leitor`, prompt `redator/v1`) |
-| `POST /api/documentos/editar` | árvore + pedido (+ escopo) → patch aplicado, PDF novo | sim (prompt `redator/v2`) |
+| `POST /api/documentos/gerar` | pedido + fontes → árvore, PDF, manifesto, relatório | sim (`leitor`, prompt `redator/v5`) |
+| `POST /api/documentos/editar` | árvore + pedido (+ escopo) → patch aplicado, PDF novo | sim (prompt `redator/v6`) |
 | `POST /api/documentos/renderizar` | árvore → PDF e/ou DOCX | não |
 
-Mesma tranca de `/api/generate` (`x-docciti-key`). 400 entrada inválida · 401 chave ·
-409 revisão desatualizada · 413 fontes longas · 422 nada sustentado / árvore
-inválida · 502 provedor.
+As três passam por `autorizarIa` (`server/lib/guardaDeIa.ts`): identidade pelo
+`id_token` do Google; `gerar` e `editar` contam a cota diária por pessoa, e
+`renderizar` exige identidade mas não cobra (`cobrar: false`). Os prompts em uso
+saem de `server/lib/prompts/index.ts` (`DOCCITI_PROMPTS=anteriores` volta a
+`redator/v3` e `v4`). 400 entrada inválida · 401 identidade · 409 revisão
+desatualizada · 413 corpo ou fontes longas · 422 nada sustentado / árvore inválida
+· 429 cota · 502 provedor · 503 provedor sobrecarregado.
 
 ## Na extensão
 
@@ -93,7 +97,7 @@ inválida · 502 provedor.
 
 ## Publicar (ordem importa)
 
-1. **Servidor primeiro** (`server/`): traz as rotas, os prompts `redator/v1`, `v2` e
+1. **Servidor primeiro** (`server/`): traz as rotas, os prompts `redator/v5`, `v6` e
    `taq/documents-v4`. Os assets de `server/lib/documentos/assets/` precisam ir junto
    (a leitura é por `process.cwd()`, como `lib/render/assets/`).
 2. Extensão depois. Extensão nova contra servidor velho falha ao gerar.

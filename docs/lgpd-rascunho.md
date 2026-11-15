@@ -10,7 +10,7 @@
 |---|---|---|
 | Transcrição das legendas, notas, prints, documentos | No navegador de quem gravou (`chrome.storage.local`) | Participantes da reunião, inclusive externos (clientes) |
 | Cópia sincronizada do acervo | Banco do servidor (Supabase), por pessoa, com RLS | Os mesmos |
-| Trechos enviados à IA para gerar documento ou responder | Provedores de IA (Google, Groq; Anthropic, OpenAI, xAI se configurados) | Os mesmos |
+| Trechos enviados à IA para gerar documento, responder ou **revisar a transcrição** (ao encerrar a reunião, a extensão manda a transcrição inteira (id, nome de quem falou e texto de cada fala) ao servidor para uma revisão automática de erros de legenda; se passar de 40 mil caracteres, nada é enviado e não há revisão; o original é mantido e a versão revisada fica ao lado, no navegador) | Provedores de IA (Google, Groq; Anthropic, OpenAI, xAI se configurados) | Os mesmos |
 | Conta Google do CITi (e-mail) e uso diário de IA | Banco do servidor (`uso_de_ia`) | Membros do CITi |
 
 Áudio e vídeo **não** são gravados: só o texto das legendas do Meet.
@@ -24,7 +24,7 @@ externo que não consente teria de sair da reunião, e o consentimento pode ser 
 - Legítimo interesse exige o **teste de balanceamento (LIA)**, art. 10. Esboço:
   - *Finalidade:* atas e resumos fiéis de reuniões de projeto.
   - *Necessidade:* só o texto falado na reunião, só quando alguém do CITi aceita registrar.
-  - *Expectativa do titular:* reunião de trabalho com aviso no chat do Meet (já automático desde `9009a74`).
+  - *Expectativa do titular:* reunião de trabalho com aviso no chat do Meet, oferecido no primeiro minuto da captura e enviado só com um clique de quem grava (cartão "Avisar no chat da reunião" na sidebar; não é automático).
   - *Salvaguardas:* dados no navegador por padrão, sincronização opcional, retenção limitada (seção 4),
     nada usado para treinar modelo (chave `private`).
 - **Decisão:** adotar legítimo interesse + LIA? (Alternativa: consentimento explícito dos participantes.)
@@ -36,7 +36,7 @@ contratuais da ANPD** (Resolução CD/ANPD nº 19/2024).
 
 - Conferir, para cada provedor em uso, se o contrato ou os termos de dados (DPA) aceitam as cláusulas-padrão
   ou têm equivalente, e se a chave usada é de plano que **não treina** com os dados.
-- Hoje em produção: `DOCCITI_DATA_POLICY=private` (confirmado em 28/10/2026).
+- Hoje em produção: `DOCCITI_DATA_POLICY=private` (confirmado em 28/10/2026; a variável é obrigatória em produção desde o `bcb3355`).
 - **Decisão:** quais provedores ficam autorizados, e quem confere os DPAs.
 
 ## 4. Retenção
@@ -47,6 +47,7 @@ Proposta de prazos (a confirmar):
 |---|---|---|
 | Cópia sincronizada no servidor | 12 meses sem acesso → apagar | Rotina no Supabase (não implementada) |
 | Contagem de uso de IA (`uso_de_ia`) | 90 dias | Rotina no Supabase (não implementada) |
+| Lápides da sincronização (id marcado como apagado, sem texto) | 90 dias | Já existe (`purgarLapides`, rodada a cada sincronização, `server/lib/conector/cota.ts`) |
 | Dados no navegador | Enquanto a pessoa mantiver; "apagar reunião" leva tudo dela | Já existe (`limparVinculosDaReuniao`) |
 | Logs da Vercel e do Supabase | Padrão do provedor | Conferir no painel |
 

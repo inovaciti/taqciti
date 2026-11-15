@@ -16,7 +16,7 @@ documento atualiza a data dele aqui, no mesmo commit; sem isso, a data passa a m
 
 ## Arquitetura (o estado atual do código)
 
-Seis documentos, um por área. Cada um aponta arquivos e linhas, registra as decisões e as
+Seis documentos, um por área (`taq-assistente.md` também lista a versão de instruções da revisão da transcrição). Cada um aponta arquivos e linhas, registra as decisões e as
 armadilhas que os comentários do código guardam, e diz como testar a área.
 
 | Documento | Cobre |
@@ -32,14 +32,14 @@ armadilhas que os comentários do código guardam, e diz como testar a área.
 
 | Documento | Para quê |
 |---|---|
-| [`ajuda-do-taqciti.md`](ajuda-do-taqciti.md) | Referência de ajuda ao usuário, verificada contra a interface (atualizado em 21/10/2026) |
+| [`ajuda-do-taqciti.md`](ajuda-do-taqciti.md) | Referência de ajuda ao usuário, verificada contra a interface (atualizado em 13/11/2026) |
 | [`taq-agentes.md`](taq-agentes.md) | Arquitetura, contratos e especialistas do Taq (atualizado em 21/10/2026) |
 | [`taq-progresso.md`](taq-progresso.md) | Estado das etapas do Taq e do que foi medido (atualizado em 11/11/2026, revisado contra o código; rodadas ao vivo até 03/10/2026) |
 | [`segundo-cerebro.md`](segundo-cerebro.md) | O "segundo cérebro": estado dos pontos, acompanhamentos e decisões (atualizado em 11/11/2026, revisado contra o código; o mapa de contextos do Preparar é de 28/10/2026) |
-| [`documentos-personalizados.md`](documentos-personalizados.md) | Documentos pedidos em linguagem natural, no padrão visual do CITi (atualizado em 16/10/2026) |
-| [`redesenho-dos-documentos.md`](redesenho-dos-documentos.md) | Diagnóstico e plano para tornar os documentos úteis e fiéis (atualizado em 28/10/2026; fidelidade implementada; a estrutura nova da Ata e do Resumo também, desde 28/10/2026; os demais tipos ficam como estão) |
+| [`documentos-personalizados.md`](documentos-personalizados.md) | Documentos pedidos em linguagem natural, no padrão visual do CITi (atualizado em 13/11/2026) |
+| [`redesenho-dos-documentos.md`](redesenho-dos-documentos.md) | Diagnóstico e plano para tornar os documentos úteis e fiéis (atualizado em 13/11/2026; fidelidade implementada; a estrutura nova da Ata e do Resumo também, desde 28/10/2026; os demais tipos ficam como estão) |
 | [`exemplos/`](exemplos/README.md) | Ata e Resumo de exemplo em PDF, gerados de uma reunião inventada, com o modelo de cada documento (atualizado em 28/10/2026) |
-| [`roteiro-reuniao-real.md`](roteiro-reuniao-real.md) | Roteiro manual para testar numa reunião de verdade (atualizado em 22/09/2026) |
+| [`roteiro-reuniao-real.md`](roteiro-reuniao-real.md) | Roteiro manual para testar numa reunião de verdade (atualizado em 13/11/2026) |
 | [`verification/`](verification) | Relatórios das passadas de verificação no navegador (atualizado em 11/11/2026) |
 
 ## Integrações e segurança
@@ -55,12 +55,12 @@ armadilhas que os comentários do código guardam, e diz como testar a área.
 
 | Documento | Para quê |
 |---|---|
-| [`server/README.md`](../server/README.md) | Visão do servidor, contratos das rotas e variáveis (atualizado em 21/10/2026) |
-| [`server/lib/ai/README.md`](../server/lib/ai/README.md) | A camada de provedores de IA (atualizado em 21/10/2026) |
-| [`server/lib/conector/README.md`](../server/lib/conector/README.md) | O conector MCP, em detalhe (atualizado em 21/10/2026) |
+| [`server/README.md`](../server/README.md) | Visão do servidor, contratos das rotas e variáveis (atualizado em 13/11/2026) |
+| [`server/lib/ai/README.md`](../server/lib/ai/README.md) | A camada de provedores de IA (atualizado em 13/11/2026) |
+| [`server/lib/conector/README.md`](../server/lib/conector/README.md) | O conector MCP, em detalhe (atualizado em 13/11/2026) |
 | [`server/docs/deploy.md`](../server/docs/deploy.md) | Como o servidor vai ao ar, na Vercel (atualizado em 11/11/2026, revisado contra o código) |
-| [`server/docs/HANDOFF.md`](../server/docs/HANDOFF.md) | Histórico de decisões do servidor. **Parcialmente superado**: ver [`arquitetura/servidor-documentos.md`](arquitetura/servidor-documentos.md) (atualizado em 21/10/2026) |
-| [`server/docs/divida-verificacao-provedores.md`](../server/docs/divida-verificacao-provedores.md) | Dívida de verificação dos provedores de IA (atualizado em 12/08/2026) |
+| [`server/docs/HANDOFF.md`](../server/docs/HANDOFF.md) | Histórico de decisões do servidor. **Parcialmente superado**: ver [`arquitetura/servidor-documentos.md`](arquitetura/servidor-documentos.md) (atualizado em 13/11/2026) |
+| [`server/docs/divida-verificacao-provedores.md`](../server/docs/divida-verificacao-provedores.md) | Dívida de verificação dos provedores de IA (atualizado em 13/11/2026) |
 
 ## Distribuição
 

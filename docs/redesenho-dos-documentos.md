@@ -2,7 +2,7 @@
 
 Estado em 20/10/2026. Estudo feito sobre a reunião real de alinhamento semanal (anonimizada), com os seis tipos do catálogo e um documento personalizado, no estilo da Apostila. O visual está resolvido. Este documento trata do que falta para o conteúdo ser usável sem revisão humana.
 
-> **Atualização de 28/10/2026.** Decisão do usuário: o produto precisa só da **Ata** e do **Resumo**; Daily, Planning, Review e X1 continuam no catálogo como estão, sem as fases B a D. Para os dois, o contrato da tabela 3.3 está implementado: resumo executivo frase a frase (no lugar da Conclusão), atuação de cada participante no lugar de cargo deduzido, encaminhamentos com dono e prazo só quando ditos (tabela no PDF, "Sem responsável definido" para o resto), "Em aberto" na Ata e "Pontos de atenção" no Resumo. As decisões da seção 6 ficaram assim: (1) "Sem responsável definido" entra; (2) papel na reunião entra como *atuação*, e cargo só quando dito; (3) e (4) não se aplicam aos dois tipos (a Ata mantém a capa) e o custo extra do Auditor ficou dentro das 2 chamadas por documento. Medido ao vivo com o gabarito da reunião sintética; exemplos em [`exemplos/`](exemplos/README.md). Detalhe técnico em `arquitetura/servidor-documentos.md`, seção 4.
+> **Atualização de 28/10/2026.** Decisão do usuário: o produto precisa só da **Ata** e do **Resumo**; Daily, Planning, Review e X1 continuam no catálogo como estão, sem as fases B a D. Para os dois, o contrato da tabela 3.3 está implementado: resumo executivo frase a frase (no lugar da Conclusão), atuação de cada participante no lugar de cargo deduzido, encaminhamentos com dono e prazo só quando ditos (tabela no PDF, "Sem responsável definido" para o resto), "Em aberto" na Ata e "Pontos de atenção" no Resumo. As decisões da seção 6 ficaram assim: (1) "Sem responsável definido" entra; (2) papel na reunião entra como *atuação*, e cargo só quando dito; (3) e (4) não se aplicam aos dois tipos (a Ata mantém a capa) e o custo extra do Auditor ficou dentro das 2 chamadas por documento. Medido ao vivo com o gabarito da reunião sintética; exemplos em [`exemplos/`](exemplos/README.md). Versões de prompt em uso hoje (`server/lib/prompts/index.ts`): `leitor/v3` e `auditor/v5` para Ata e Resumo, `redator/v5` (geração) e `redator/v6` (edição) para os personalizados; `DOCCITI_PROMPTS=anteriores` volta às anteriores. Detalhe técnico em `arquitetura/servidor-documentos.md`, seção 4.
 
 ## 1. Diagnóstico: causas, não sintomas
 
@@ -82,7 +82,7 @@ Todos os tipos ganham, no topo, um **resumo executivo** de 2 a 3 frases (também
 
 ### 3.6 Documento personalizado
 
-- Prompt do redator (`redator/v3`): "causa, motivo e diagnóstico só entram se alguém os disse; hipótese sua vai como `recomendacao`, rotulada". Tabela com **citação por linha**, e não uma para a tabela toda.
+- Prompt do redator (proposto aqui como `redator/v3`; hoje o redator está em `v5`/`v6`, que já trazem a regra de injeção de 21/10/2026): "causa, motivo e diagnóstico só entram se alguém os disse; hipótese sua vai como `recomendacao`, rotulada". Tabela com **citação por linha**, e não uma para a tabela toda.
 - Proibido `referencia` depois de recomendação.
 - Regra de responsável do 3.2 também vale aqui.
 

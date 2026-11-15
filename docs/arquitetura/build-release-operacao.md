@@ -40,6 +40,7 @@ de `src/`, fora do upload de `server/`.
 | `typecheck` | `tsc --noEmit`. |
 | `test` / `test:watch` | `vitest run` / `vitest`. |
 | `lint` | `eslint src` (só `src`). |
+| `check:oauth` | `node scripts/check-oauth.mjs [development\|production]` (script novo, ainda não commitado): confere, sem imprimir valores, se os dois clientes OAuth da build (`VITE_*`) existem e batem com o `GOOGLE_OAUTH_WEB_CLIENT_ID` do servidor (`server/.env*`). |
 | `format` | `prettier --write` em `src`, `docs/**/*.md` e arquivos de raiz. |
 | `icons` | `node scripts/generate-icons.mjs`. |
 | `package` | `node scripts/package-release.mjs`: roda `npm run build` e grava `release/taqciti-v<versão>.zip` (a extensão crua, montada com `scripts/lib/zip.mjs`). |
@@ -181,6 +182,8 @@ provedor: nunca gravação real).
 | `src/features/sync/sync.e2e.live.test.ts` | `TAQCITI_E2E_SERVER` (e `TAQCITI_E2E_COTA=1` para o servidor de cota) | Postgres local em contêiner, `server/lib/conector/esquema.sql` aplicado, `next start` com `DATABASE_URL` local, cliente OAuth de teste e um preload do Node (fora do repo) que responde ao `tokeninfo`; `TAQCITI_E2E_PG` nomeia o contêiner usado pelo `psql`; `VITE_DOCCITI_SERVER_URL` e `VITE_GOOGLE_OAUTH_WEB_CLIENT_ID` apontando para o ambiente de teste. **Nunca contra produção**: escreve e apaga acervo. |
 | `server/lib/documentos/gerar.live.test.ts` | `DOCUMENTOS_LIVE=1` (e `DOCUMENTOS_AMOSTRAS=<pasta>`) | Suspende a tranca `MOCK_LLM` só nesse arquivo; lê `.env.local` do servidor sem imprimir. Gasta chamadas do provedor. |
 | `server/lib/agents/auditor.canonical.test.ts` | `DOCCITI_LIVE_TESTS=1` + chave do Google | Via `npm run test:live` no servidor. |
+| `server/lib/injecao.live.test.ts` | `INJECAO_LIVE=1` (`INJECAO_GERACOES`; `DOCCITI_PROMPTS=anteriores` compara versões) | Remove `MOCK_LLM` nesse arquivo; chave de provedor; gasta cota. |
+| `server/lib/documentos/ataResumo.live.test.ts` | `ATA_LIVE=1` (gate conferido: `process.env.ATA_LIVE === '1'`; `DOCUMENTOS_AMOSTRAS` opcional, grava PDF e JSON) | Suspende a tranca `MOCK_LLM` e lê `.env.local` só nesse arquivo; chave de provedor; fixture sintética `docs/fixtures/reuniao-longa-ruidosa.txt`. Gasta cota. |
 
 Observação: os `*.live.test.ts` da raiz fazem parte do `include`, então rodam
 em `npm test`, mas ficam `describe.skip` sem as variáveis (padrão `rodar =
@@ -259,10 +262,11 @@ Account. Tudo isso saiu com a decisão de abandonar os instaladores.
   arquivo). `server/vercel.json` fixa a região `gru1`; `maxDuration` está
   declarado nas rotas de geração, e na Vercel vale como teto de função
   (`300` em `generate`, `ai/secao`, `ai/bench`, `documentos/gerar` e
-  `documentos/editar`; `60` em `taq/turno`).
+  `documentos/editar`; `60` em `taq/turno` e em `importacao/transcrever`, esta nova e
+  ainda não commitada).
 - `server/docs/deploy.md` é o runbook da Vercel (o Railway, host anterior, aparece
   só como histórico). Os comentários das rotas de geração já dizem que a diretiva
-  vale em produção (`app/api/generate/route.ts:8-13`); o Railway só aparece como o
+  vale em produção (comentário de topo de `app/api/generate/route.ts`); o Railway só aparece como o
   período em que ela ficava sem efeito.
 - `DATABASE_URL` tem que ser o endereço do **pooler** da Supabase, não a
   conexão direta (o erro de `lib/conector/banco.ts` quando a variável falta já
@@ -306,8 +310,35 @@ Account. Tudo isso saiu com a decisão de abandonar os instaladores.
 | `DOCUMENTOS_LIVE`, `DOCUMENTOS_AMOSTRAS`, `DOCUMENTOS_RACIOCINIO_GERACAO`, `DOCUMENTOS_RACIOCINIO_EDICAO`, `DOCCITI_LIVE_TESTS` | Só testes. |
 | `SMOKE_BASE_URL` | Alvo do `smokePdf.mjs`. |
 
-Há um `server/.env.example` no repositório; não foi lido ao escrever este
-documento.
+Mais variáveis lidas pelo código do servidor (conferido por busca em `app/`, `lib/` e
+`scripts/`, fora dos testes):
+
+| Nome | Função |
+| --- | --- |
+| `TAQ_ORQUESTRADOR` | Modelo do Taq, `provedor:modelo` (padrão Google; só `google` e `groq` têm adaptador com ferramentas). |
+| `TAQ_MAX_CONTEXTO_CHARS` | Teto de um turno do Taq (padrão 300.000; 413 acima). |
+| `OPENAI_API_KEY` | Chave do provedor OpenAI (junto de `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`, `XAI_API_KEY` e `GROQ_API_KEY`, acima). |
+| `DOCCITI_MODELO_TRANSCRICAO` | Modelo de transcrição de áudio (ainda não commitada; usa `GROQ_API_KEY` e exige `DOCCITI_DATA_POLICY=private`). |
+| `TAQCITI_MAX_ITENS_POR_TIPO` | Teto de itens por tipo no acervo (padrão 5.000). |
+| `DOCCITI_ESCRITOR` | Aparece no código, mas não tem efeito (o agente foi cortado). |
+
+`server/.env.example` comparado com a tabela (só nomes): traz `DOCCITI_SHARED_KEY`,
+`DOCCITI_MODELO_TRANSCRICAO`, `DOCCITI_ORIGENS_PERMITIDAS`, `DOCCITI_MAX_TRANSCRIPT_CHARS`,
+`DOCCITI_DATA_POLICY`, as chaves `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY` e
+`XAI_API_KEY`, `LLM_PROVIDER`, `MOCK_LLM`, `DOCCITI_PENSANTE`, `DOCCITI_AUDITOR`,
+`DOCCITI_ESCRITOR`, `DATABASE_URL`, `GOOGLE_OAUTH_WEB_CLIENT_ID`,
+`TAQCITI_DOMINIO_PERMITIDO`, `TAQ_ORQUESTRADOR` e `TAQ_MAX_CONTEXTO_CHARS`. Divergências:
+(1) faltam nele `GROQ_API_KEY`, `GROQ_TPM_LIMIT`, `DOCCITI_LEITOR`, `DOCCITI_CHAVE_LEGADA`,
+`DOCCITI_DIAGNOSTICO`, `DOCCITI_PROMPTS`, `DOCCITI_RATE_LIMIT_RETRIES`, `DOCCITI_TIMEZONE`,
+`DOCUMENTOS_RACIOCINIO_GERACAO`/`_EDICAO`, `DATABASE_CA`, `TAQCITI_EXIGIR_HD`,
+`TAQCITI_COTA_MB`, `TAQCITI_LIMITE_BANCO_MB`, `TAQCITI_IA_CHAMADAS_DIA`,
+`TAQCITI_IA_CARACTERES_DIA`, `TAQCITI_TOKEN_INATIVO_DIAS` e `TAQCITI_MAX_ITENS_POR_TIPO`
+(a tabela acima e `server/docs/deploy.md` são a lista completa); (2) ele cita
+`DIAGNOSTICO_MAX_BUSCAS`, que nenhum código lê (`lib/diagnostico/` não existe), e aponta
+para `docs/deploy-vercel.md`, que não existe (o runbook é `server/docs/deploy.md`); (3) o
+comentário dele diz que o segredo protege só `/api/generate` e `/api/ai/smoke`, mas
+`autorizarIa` cobre também `/api/documentos/*`, `/api/taq/*` e `/api/importacao/transcrever`.
+Corrigir o `.env.example` fica para quem tocar nele (fora do escopo desta revisão).
 
 ## 9. Armadilhas conhecidas (registradas em comentários e docs)
 
@@ -334,7 +365,10 @@ documento.
   diagnóstico respondem 404 em produção.
 - **Anthropic e xAI** nunca foram exercitados contra a API real, só contra os
   tipos dos SDKs (`server/docs/divida-verificacao-provedores.md`, estado de
-  12/08/2026; pode ter mudado depois, não verificado).
+  12/08/2026, conferido contra o código em 13/11/2026: a dívida segue aberta, os
+  adaptadores `anthropic.ts` e `xai.ts` existem como descritos e Google e Groq são os que
+  já rodaram de verdade. O arquivo ainda diz que o Auditor roda em Haiku 4.5, o que vale só
+  numa configuração Anthropic; o padrão atual do Auditor é Google flash-lite).
 - **PowerShell e git** (convenção local): mensagens de commit com aspas
   quebram no PowerShell 5.1; usar `git commit -F arquivo`.
 

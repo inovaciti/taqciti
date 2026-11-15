@@ -12,7 +12,7 @@ foi lido no código; o que não foi está marcado "não verificado".
 | --- | --- | --- |
 | Sidebar | `src/sidepanel/index.html` -> `main.tsx` -> `App.tsx` | `side_panel.default_path` no manifesto; o clique no ícone abre via `setPanelBehavior({ openPanelOnActionClick: true })` (`background/sidePanel.ts`). Não há popup. |
 | Home (página cheia) | `src/home/index.html` -> `main.tsx` -> `HomePage.tsx` | mensagem `ui/openHome` ao background (`homeTab.ts`), que reutiliza sempre a mesma aba. Também é o destino de reserva se o painel não abrir (`chrome.action.onClicked` em `background/index.ts`). |
-| Página de documento | `src/document/index.html` | só redireciona (`window.location.replace`) para a Home com `?record=<id>` (ou `?secao=reunioes`). Existe para não quebrar endereços antigos. |
+| Página de documento | `src/document/index.html` | só redireciona (`window.location.replace`) para a Home com `?record=<id>` (mais `&foco=notas` se veio assim; sem id, `?secao=reunioes`). Existe para não quebrar endereços antigos. |
 | Cápsula no Meet | `src/content/ui/` | fora do escopo deste arquivo (ver `extensao-captura.md`). |
 
 Os três `main.tsx` seguem o mesmo molde: importam `global.css` e o CSS da
@@ -44,13 +44,13 @@ Documentos, Acompanhamento, Conexões.
   (`ConversasMenu.tsx`).
 - **Seções** (arquivos): Assistente = `AssistantView.tsx` (+ `WaveField.tsx`, só
   montada nesta seção); Preparar = `Preparar.tsx` (o mapa de contextos do
-  assistente, `OQueLevar.tsx`, com os ajustes sugeridos e o teste numa reunião passada); Reuniões = `Paginas.tsx` (lista, transcrição, `NotasDaReuniao`,
+  assistente, `OQueLevar.tsx`, com os ajustes sugeridos e o teste numa reunião passada); Reuniões = `Paginas.tsx` (lista com `BuscaDoAcervo`, `ImportarReuniao` e `Automacoes` no topo, transcrição, `NotasDaReuniao`,
   `PrintsDaReuniao`, `GerarDocumento`); Documentos = `Documentos.tsx` e
   `DocumentoPersonalizado.tsx`; Acompanhamento = `Acompanhamento.tsx` (abas
   Compromissos, Decisões, Achados; mesma fonte `taq:trabalho` dos cartões do Taq);
   Conexões = `Conexoes.tsx` + `ContaDoCiti.tsx` (sincronização, conector, conta do
   CITi).
-- **Reset de botão com `:where`** (`src/home/home.css:97-111`, commit `f8c769e`): o reset
+- **Reset de botão com `:where`** (`src/home/home.css`, comentário "O reset do botão com especificidade ZERO na raiz", commit `f8c769e`): o reset
   da HOME é `:where(.tq-home) button` (especificidade zero na raiz). Com
   `.tq-home button` (0,1,1) ele vencia toda classe de botão (0,1,0): `.tq-acao` perdia a
   moldura e a cor, `.tq-acao-principal` o verde e `.tq-acao-perigo` o vermelho, e botões
@@ -112,9 +112,8 @@ cobre mensagens e estado da reunião, não tudo.
 
 ## 5. Componentes compartilhados (`shared/ui`)
 
-- Marca: `MarcaDoTaq` (onda viva do agente, estados como `repouso`, `ouve`,
-  `preparando`, `escrevendo`), `MarcaDaEscuta` (glifo da transcrição),
-  `SinalTaqciti` (SVG), `Wordmark`, `Wave` (legado, 3 barras), `Brasas`, `Sheen`.
+- Marca: `MarcaDoTaq` (onda viva do agente; o `estado` é a `AtividadeDoAgente` de `features/agent/atividade.ts`, e `ouve` é uma propriedade para quando a pessoa digita), `MarcaDaEscuta` (glifo da transcrição),
+  `SinalTaqciti` (SVG), `Wordmark`, `Wave` (legado, 3 barras), `Brasas`, `Sheen` (só a cápsula do Meet o usa), `TextoCinetico` (texto da transcrição ao vivo na sidebar, `Reuniao.tsx`), `BuscaDoAcervo` (busca local por texto e período em Reuniões, Documentos e no menu de conversas; não envia nada à IA).
 - Conversa: `RespostaDoTaq` (fontes como botões, documentos criados, em aberto,
   limitações), `CartoesDoTaq` (cartões validados vindos de ferramentas),
   `CartaoDeTela` (captura sob pedido), `TrilhaDaConversa` (barra de rolagem que
@@ -135,14 +134,22 @@ cobre mensagens e estado da reunião, não tudo.
 - Tokens em `shared/config/tokens.css` (`--c-*` canais RGB para Tailwind,
   `--color-*` prontos), declarados em `:root, :host` para valer também em
   shadow root. Regra do arquivo: não declarar cor, raio, blur ou sombra em outro lugar.
-- `glass.css` (receita de vidro), `fontes.css` (Barlow para títulos; corpo na fonte
-  do sistema), `scrollbar.css`. `global.css` importa tudo e o Tailwind.
+- `glass.css` (receita de vidro), `scrollbar.css`. `global.css` importa tudo e o Tailwind.
+- Tipografia: **DM Sans** variável (família `TaqCiti DM Sans`, `--font-texto`) para texto e
+  títulos, em arquivos locais `shared/fonts/dm-sans/` declarados em `fontes.css` (sem CDN;
+  origem e licença OFL em `origem.json` e `public/licenses/`). A marca (`Wordmark`) conserva
+  a Barlow. `tipografia.css` traz o acabamento comum (herança de fonte em campos, placeholder,
+  animação de chegada do texto). Na página do Meet a cápsula/sidebar carrega a fonte por
+  `content/ui/fonte.ts` (FontFace a partir do woff2 embutido), porque o shadow root não
+  enxerga o `@font-face` da página.
 - Home e sidebar usam CSS escrito à mão (`home/home.css`, `sidepanel/sidepanel.css`,
   `shared/ui/*.css`), prefixo de classes `tq-`. O verde é acento restrito a poucos
   lugares (comentário de `home.css`); cinzas neutros no resto.
-- Os comentários de abertura de `tokens.css` e `global.css` ainda falam em
-  "Liquid Glass"; `home.css` descreve a Home como grafite neutro. Qual direção
-  visual vale em cada tela: não verificado além dos comentários.
+- Direção visual por tela (verificado no código em 13/11/2026): o vidro (`.glass`, de
+  `glass.css`) só é usado na **cápsula** injetada no Meet (`content/ui/Capsula.tsx`); a Home
+  é grafite neutro, sem `.glass` (`ReuniaoEDocumentos.test.tsx` fixa isso) e a sidebar
+  usa o CSS próprio. O comentário de abertura de `tokens.css` ainda
+  descreve o sistema inteiro como "Liquid Glass" e está desatualizado nisso (o de `global.css` já foi corrigido).
 
 ## 7. Fluxo de gerar documento
 
@@ -213,18 +220,25 @@ cobre mensagens e estado da reunião, não tudo.
 - Rolagem: quem rola é a página; mensagem nova só puxa a rolagem se a pessoa já
   está no fim (margem 96 px) ou acabou de enviar.
 
-## 9. Persistência da UI
+## 9. Importar reunião e Automações (topo da seção Reuniões)
+
+Dois blocos novos de `Paginas.tsx` (`PaginaReunioes`), ainda sem commit na hora desta revisão, mas em uso real: o background já trata `ui/history/import` e enfileira as automações (ver `extensao-captura.md`, seção 4.4).
+
+- **`ImportarReuniao.tsx`**: a pessoa escolhe um arquivo, informa nome e data/hora e clica em "Importar". TXT, SRT e VTT (até 1 MB) são lidos localmente por `lerTranscricao`; áudio e vídeo (até 4 MB) são enviados SÓ no clique, por `fetchDeIa`, a `/api/importacao/transcrever` (servidor com chave Groq e `DOCCITI_DATA_POLICY=private`; sem isso responde 503 e a tela mostra o erro). O resultado vai ao background por `ui/history/import` e a tela abre a reunião. Reimportar o mesmo arquivo (mesmo hash) abre o registro que já existe. O áudio não identifica falantes. Está na ajuda do Taq (`features/taq/ajuda.ts`, tópico `importar_reuniao`).
+- **`Automacoes.tsx`**: duas chaves, "resumo" e "compromissos" (próximos passos), desligadas por padrão, e a lista da fila de execuções (`pendente`, `executando`, `concluida`, `falhou`, `cancelada`) com "tentar novamente" para as que falharam. Lê e grava por `features/automacoes/automacoes.ts`. O resumo vira documento comum na seção Documentos (tipo `resumo`, origem `gerado`); os próximos passos entram como compromissos candidatos no Acompanhamento, respeitando o teto de 3 por reunião.
+
+## 10. Persistência da UI
 
 Tudo em `chrome.storage.local` por `shared/services/storage` (`readLocal`,
 `writeLocal`, `onLocalChange`), chaves em `STORAGE_KEYS` (`shared/config/constants.ts`):
 `taq:history`, `taq:conversations`, `taq:notes`, `taq:marks`, `taq:shots`,
 `taq:documents`, `taq:documentVersions`, `taq:trabalho`, `taq:conducao`, `taq:apoio`,
-`taq:integracoes`, entre outras. Telas assinam com `observar*`/`onLocalChange` para
+`taq:integracoes`, entre outras. Exceção: as automações guardam preferências e fila em `taqciti:automacoes:v1` e `taqciti:automacoes:fila:v1`, fora de `STORAGE_KEYS`. Telas assinam com `observar*`/`onLocalChange` para
 sincronizar abas. Escritas concorrentes usam `comTravaLocal`/`criarFilaDeGravacao`.
 Rascunhos de conversa, aba aberta e animação pausada são estado de React, perdidos
 ao recarregar. O histórico de reuniões é escrito pelo background/content, não pela UI.
 
-## 10. Convenções
+## 11. Convenções
 
 - Nomes de domínio e UI em português (`GerarDocumento`, `observarNotas`,
   `guardarDocumento`); tipos de protocolo em inglês (`MeetingRecord`, `UiCommand`).
@@ -236,7 +250,7 @@ ao recarregar. O histórico de reuniões é escrito pelo background/content, nã
 - CSS: prefixo `tq-`, cores só de tokens, sem `position: fixed/sticky` no fluxo da
   conversa. Alias `@` = `src`.
 
-## 11. Testes
+## 12. Testes
 
 `npm test` (`vitest run`); `npm run typecheck`; `npm run lint`. `vitest.config.ts`:
 ambiente jsdom, `include: src/**/*.test.{ts,tsx}`, `define __TAQCITI_DEV__: true`,
@@ -247,9 +261,9 @@ Relevantes: `home/HomePage.test.tsx`, `rota.test.ts`, `GerarDocumento.test.tsx`,
 `GerarDocumentoPersonalizado.test.tsx`, `DocumentoPersonalizado.test.tsx`,
 `ReuniaoEDocumentos.test.tsx`, `Preparar.test.tsx`, `AssistenteTaq.test.tsx`,
 `conversations.test.ts`, `apagarConversas.test.ts`, `ContaDoCiti.test.tsx`, `Espectro.test.tsx`,
-`PointerLayer.test.tsx`, `home.css.test.ts`; sidebar: `Sidebar.test.tsx`,
+`PointerLayer.test.tsx`, `Conexoes.test.tsx`, `OQueLevar.test.tsx`, `home.css.test.ts`; sidebar: `Sidebar.test.tsx`,
 `Conversa.test.tsx`, `CartaoDeApoio.test.tsx`, `EstadoDosPontos.test.tsx`,
-`sidepanel.css.test.ts`; shared: `CartoesDoTaq.test.tsx`, `Markdown.test.tsx`,
+`sidepanel.css.test.ts`; shared: `CartoesDoTaq.test.tsx`, `Markdown.test.tsx`, `BuscaDoAcervo.test.ts`,
 `estadoDaCaptura.test.ts`, `platform/extension.test.ts`; documentos:
 `features/documents/store.test.ts`, `personalizado/*.test.ts`,
 `document/baixarDocumento.test.ts`, `googleDocs.test.ts`; agente:

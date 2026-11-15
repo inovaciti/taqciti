@@ -92,21 +92,12 @@ da loja oficial) e não indica nenhum problema com a TaqCiti.
 
 **O navegador avisa que a extensão pode "ler e alterar todos os seus dados
 nos sites que você visita". Por quê?**
-Porque o TaqCiti desenha uma **cápsula** que precisa continuar disponível
-enquanto você navega — ela fica à mão em qualquer página, não só dentro do
-Google Meet. Para desenhar isso por cima de uma página, o navegador exige
-acesso a essa página, e não existe permissão mais estreita que signifique
-"desenhar por cima, sem ler nada".
-
-Na prática, o que a extensão faz com esse acesso é: desenhar a própria cápsula
-e, **apenas em `meet.google.com`**, ler as legendas da reunião. Nenhuma outra
-página é lida.
-
-Se preferir não conceder isso, é possível restringir o acesso pela própria
-página de extensões do navegador → TaqCiti → **Detalhes** → **Acesso ao
-site**, escolhendo "Em sites específicos" e deixando só `meet.google.com`.
-O TaqCiti continua gravando reuniões normalmente; o que se perde é a cápsula
-nas outras páginas.
+Porque a extensão atua dentro de uma página (o Google Meet), e o navegador usa
+esse texto geral para qualquer extensão que lê uma página. O acesso declarado é
+**só a `meet.google.com`** (desde 13/11/2026; antes cobria todos os sites): é lá
+que o TaqCiti desenha a **cápsula** e lê as legendas da reunião. Nenhuma outra
+página recebe a cápsula nem é lida. Ao atualizar, o navegador não pede nova
+aprovação, porque o acesso só diminuiu.
 
 **O que sai do meu computador?**
 Por padrão, nada: a transcrição, as notas, as marcações e os prints ficam no

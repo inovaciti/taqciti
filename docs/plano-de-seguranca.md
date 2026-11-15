@@ -120,7 +120,7 @@ A ordem segue o risco, dividido pelo esforço. Uma regra de deploy, já registra
 
 1. **Dependências:**
    - `next@16.4.1`.
-   - `@modelcontextprotocol/sdk@>=1.32.0`, com `maxRequestBodySize` e `maxToolInputElements` configurados (essa proteção vem **desligada** por padrão).
+   - `@modelcontextprotocol/sdk@>=1.32.0`, instalado em `^1.32.1`, com `maxRequestBodySize` configurado (`MAX_CORPO_MCP_BYTES` em `atenderMcp.ts`; o padrão do SDK é 4 MiB). O SDK instalado não expõe `maxToolInputElements`, então esse segundo teto não existe; o limite de entrada das ferramentas vem do corpo e do `listaComTeto`.
    - Rodar `npm audit` de novo até não sobrar nenhum item alto em produção. **`npm audit fix` aplicado no `365ef8c`** (`server/package-lock.json`: body-parser, fast-uri, ip-address, qs). **Resta o alerta do `zod` 3** (memória ao validar coleções grandes; a correção é o zod 4.6.7, uma mudança incompatível): decisão pendente, nos dois pacotes. No servidor, `listaComTeto` e o orçamento de nós (`lib/listaComTeto.ts`) reduzem o efeito.
 2. **S5:** redigir o token no log (`/api/mcp/<redigido>`) e corrigir o comentário.
 3. **S2:**

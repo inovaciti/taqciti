@@ -32,6 +32,11 @@ Se `VITE_GOOGLE_OAUTH_CLIENT_ID` ainda não existe, faça antes as etapas 3A e 4
 `docs/google-oauth-setup.md`: **sem cliente OAuth nada disto liga** (a tela
 Conexões mostra "Falta registrar o cliente OAuth").
 
+> **Telas do Google não são verificáveis pelo código.** Os nomes de menus do
+> Cloud Console e do Admin Console abaixo foram conferidos pela última vez no
+> console em data desconhecida; revalide ao configurar. Escopos, variáveis e
+> mensagens do Taq foram conferidos contra o código.
+
 ## 1. Ativar as APIs
 
 No [Google Cloud Console](https://console.cloud.google.com/), no **mesmo projeto**
@@ -60,6 +65,9 @@ sensíveis). Em **Escopos**, além dos que já existem (`openid`, `userinfo.emai
 | `https://www.googleapis.com/auth/directory.readonly` | achar colegas do domínio | não altera nada |
 | `https://www.googleapis.com/auth/calendar.events` | criar, remarcar e cancelar eventos na sua agenda | não mexe em outros calendários além dos seus eventos |
 | `https://www.googleapis.com/auth/calendar.freebusy` | ver ocupado/livre dos colegas | só "ocupado/livre", sem os títulos |
+
+A capacidade de consultar agenda (`agenda_consulta`) pede `calendar.freebusy`
+**e** `calendar.events`; sem o segundo ela não abre.
 
 Esta lista tem **uma fonte só no código**: `src/features/integracoes/escopos.ts`
 (`ESCOPOS_DA_CONEXAO`). O `manifest.config.ts` repete os mesmos escopos como
@@ -99,11 +107,19 @@ do `tokeninfo`.
 
 ## 5. Compilar e conferir
 
+Antes de abrir o Google, `npm run check:oauth` (ou `npm run check:oauth -- production`)
+confere se a build e o servidor têm os clientes OAuth registrados; ele só imprime
+estados, nunca valores.
+
 ```powershell
 $env:VITE_GOOGLE_OAUTH_CLIENT_ID = '<client id do cliente da extensão>.apps.googleusercontent.com'
-npm run build
-(Get-Content dist\manifest.json | ConvertFrom-Json).oauth2.scopes
+npm run build:dev
+(Get-Content dist-dev\manifest.json | ConvertFrom-Json).oauth2.scopes
 ```
+
+Para testar contra o servidor local use `build:dev` (saída em `dist-dev/`). O
+`npm run build` de produção (saída em `dist/`) recusa rodar sem a URL `https://` do
+servidor e a chave compartilhada de produção; ver `CLAUDE.md`.
 
 O último comando deve listar os 7 escopos. Recarregue a extensão, abra a HOME →
 **Conexões** → **Conectar conta do CITi**.

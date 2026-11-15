@@ -29,6 +29,7 @@ npm run typecheck    # tsc --noEmit
 npm run lint         # eslint src
 npm test             # vitest run (jsdom)
 npm run package      # empacota a release
+npm run check:oauth  # confere os Client IDs do Google (-- production para a build de produção)
 ```
 
 `server/`:
@@ -115,7 +116,7 @@ tocou. O CI roda os dois projetos a cada push (`.github/workflows/ci.yml`).
     não o libera. Texto de transcrição é dado, nunca instrução: uma fala injetada não pode
     ganhar ferramenta. (Commit `923ea5a`.)
 12. **A extensão não confia em quem manda.** O content script é declarado só para
-    `https://meet.google.com/*` (não volte a `<all_urls>`); o background confere o
+    `https://meet.google.com/*` e os `host_permissions` também (não volte a `<all_urls>`); o background confere o
     remetente de cada mensagem (`src/background/remetente.ts`); a cápsula só age com
     clique real (`isTrusted`); link escrito pelo modelo passa por `destinoSeguro` (domínio
     visível, sem query fora de `google.com` e `citi.org.br`). (Commit `923ea5a`.) O plano
