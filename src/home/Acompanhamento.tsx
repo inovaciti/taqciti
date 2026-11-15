@@ -97,9 +97,9 @@ export function PaginaAcompanhamento({
   /** O item, com a lixeira — ou, no lugar dele, a pergunta de excluir. */
   const linha = (id: string, rotulo: string, item: React.ReactNode) =>
     excluindo === id ? (
-      <div key={id} className="tq-acomp-confirma" role="alertdialog" aria-label={`Excluir "${rotulo}"?`}>
+      <div key={id} className="tq-acomp-confirma" role="alertdialog" aria-label={`Apagar "${rotulo}"?`}>
         <p>
-          Excluir &ldquo;{rotulo}&rdquo;? Sai do acompanhamento deste computador. A reunião de
+          Apagar &ldquo;{rotulo}&rdquo;? O item será removido do acompanhamento deste computador. A reunião de
           origem não é afetada.
         </p>
         <div className="tq-acoes">
@@ -109,10 +109,10 @@ export function PaginaAcompanhamento({
             onClick={() =>
               void excluirDoTrabalho(aba, id)
                 .then(() => setExcluindo(null))
-                .catch(() => setErro('Não foi possível excluir.'))
+                .catch(() => setErro('Não foi possível apagar o item.'))
             }
           >
-            Excluir
+            Apagar
           </button>
           <button type="button" className="tq-acao" onClick={() => setExcluindo(null)}>
             Cancelar
@@ -125,8 +125,8 @@ export function PaginaAcompanhamento({
         <button
           type="button"
           className="tq-acomp-lixo"
-          title={`Excluir "${rotulo}"`}
-          aria-label={`Excluir "${rotulo}"`}
+          title={`Apagar "${rotulo}"`}
+          aria-label={`Apagar "${rotulo}"`}
           onClick={() => {
             setNovoAberto(false);
             setExcluindo(id);

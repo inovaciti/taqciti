@@ -16,7 +16,6 @@ import {
   mudarEstadoDoAchado,
   registrarCompromissos,
   registrarDecisao,
-  removerDemonstracao,
   situacaoDoPrazo,
   vincularDependencia,
   type EvidenciaGuardada,
@@ -262,16 +261,4 @@ describe('análises', () => {
     expect(salva!.historico.at(-1)!.detalhe).toBe('Deploy na sexta');
     expect((await corrigirItemDaAnalise(a.id, a.revisao, 'decisoes', 0, 'x')).tipo).toBe('conflito');
   });
-});
-
-it('a demonstração sai sem levar registro real', async () => {
-  await registrarCompromissos(
-    [
-      { descricao: 'Real', responsavel: null, prazo: null, evidencias: [] },
-      { descricao: 'Demo', responsavel: null, prazo: null, evidencias: [], demo: true },
-    ],
-    { origem: 'pessoa' },
-  );
-  expect(await removerDemonstracao()).toBe(1);
-  expect((await lerTrabalho()).compromissos.map((c) => c.descricao)).toEqual(['Real']);
 });

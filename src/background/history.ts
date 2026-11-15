@@ -12,6 +12,29 @@ import { readLocal, writeLocal } from '@/shared/services/storage';
 
 const VALID_STATUSES: readonly HistoryStatus[] = ['recording', 'ready'];
 
+/** Reimportar o mesmo arquivo abre o original sem sobrescrever nome ou edições. */
+export async function importarRegistro(record: MeetingRecord): Promise<{ id: string; existente: boolean }> {
+  return comTravaLocal(STORAGE_KEYS.history, async () => {
+    const history = await listHistory();
+    const anterior = history.find((r) => r.id === record.id || (record.importacao && r.importacao?.hash === record.importacao.hash));
+    if (anterior) return { id: anterior.id, existente: true };
+    await writeLocal(STORAGE_KEYS.history, [record, ...history].sort((a, b) => b.startedAt - a.startedAt));
+    return { id: record.id, existente: false };
+  });
+}
+
+/** A resposta tardia não ressuscita registro apagado nem revisa outra captura. */
+export async function guardarRevisao(original: MeetingRecord, revisao: NonNullable<MeetingRecord['revisao']>): Promise<void> {
+  await comTravaLocal(STORAGE_KEYS.history, async () => {
+    const history = await listHistory();
+    const atual = history.find((r) => r.id === original.id);
+    if (!atual || atual.status !== 'ready' || atual.revisao ||
+        atual.endedAt !== original.endedAt ||
+        JSON.stringify(atual.segments) !== JSON.stringify(original.segments)) return;
+    await writeLocal(STORAGE_KEYS.history, history.map((r) => r.id === original.id ? { ...r, revisao } : r));
+  });
+}
+
 function normalizeRecord(record: MeetingRecord): MeetingRecord {
   if ((VALID_STATUSES as readonly string[]).includes(record.status)) return record;
   return { ...record, status: 'ready' };
@@ -27,6 +50,8 @@ export async function upsertRecord(record: MeetingRecord): Promise<void> {
     const history = await listHistory();
     const previous = history.find((item) => item.id === record.id);
     const merged = previous ? { ...previous, ...record } : record;
+    if (previous && (record.status === 'recording' ||
+        JSON.stringify(previous.segments) !== JSON.stringify(record.segments))) delete merged.revisao;
     const without = history.filter((r) => r.id !== record.id);
     const next = [merged, ...without].sort((a, b) => b.startedAt - a.startedAt);
     await writeLocal(STORAGE_KEYS.history, next);

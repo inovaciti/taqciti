@@ -46,6 +46,7 @@ import { Icon } from '@/shared/ui/Icon';
 import { formatDate, formatTime } from '@/shared/ui/format';
 import { SinalTaqciti } from '@/shared/ui/SinalTaqciti';
 import { DocumentoPersonalizado } from './DocumentoPersonalizado';
+import { BuscaDoAcervo, useBuscaDoAcervo, correspondeABusca, dentroDoPeriodo } from '@/shared/ui/BuscaDoAcervo';
 
 interface Props {
   documentos: DocumentoGuardado[];
@@ -77,6 +78,9 @@ export function PaginaDocumentos({
   /** O documento da lista cuja remoção está à espera de confirmação. */
   const [confirmandoId, setConfirmandoId] = useState<string | null>(null);
   const [erroDaLista, setErroDaLista] = useState('');
+  const busca = useBuscaDoAcervo();
+  const filtrados = documentos.filter((d) => correspondeABusca(busca.consulta, [d.title, d.content])
+    && dentroDoPeriodo(d.updatedAt, busca.de, busca.ate));
 
   // O documento pode sumir (apagado aqui, ou noutra aba): a tela volta para a
   // lista em vez de ficar num editor sem dono.
@@ -123,6 +127,8 @@ export function PaginaDocumentos({
       <header className="tq-pagina-topo">
         <h1>Documentos</h1>
       </header>
+      <BuscaDoAcervo busca={busca} rotulo="Buscar documentos" total={filtrados.length} />
+      {carregado && documentos.length > 0 && filtrados.length === 0 && <p className="tq-vazio">Nenhum documento encontrado. As datas filtram a última alteração.</p>}
 
       {erro ? (
         <p role="alert">
@@ -145,7 +151,7 @@ export function PaginaDocumentos({
       {carregado && !erro && documentos.length > 0 && (
         <div className="tq-lista tq-estante">
           {erroDaLista && <p role="alert">{erroDaLista}</p>}
-          {documentos.map((d) => {
+          {filtrados.map((d) => {
             const reuniao = d.meetingId
               ? (registros.find((r) => r.id === d.meetingId) ?? null)
               : null;

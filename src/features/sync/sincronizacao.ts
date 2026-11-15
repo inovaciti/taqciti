@@ -697,15 +697,6 @@ export async function sincronizar(opcoes: OpcoesDoSync = {}): Promise<ResultadoD
     ...(recusadosPorCota > 0 ? { recusadosPorCota } : {}),
   };
 }
-/**
- * Esquece o que já foi enviado, forçando a próxima passada a mandar tudo.
- *
- * Existe para o caso de o acervo do servidor ser apagado por fora: sem isto,
- * a extensão acharia que tudo já está lá e nunca reenviaria nada.
- */
-export async function esquecerSincronizado(): Promise<void> {
-  await writeLocal(STORAGE_KEYS.syncEstado, { assinaturas: {} } satisfies EstadoDoSync);
-}
 
 // ---------------------------------------------------------- o agendamento
 

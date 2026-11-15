@@ -17,7 +17,6 @@ import { limparCacheDeIdentidadeLocal } from '@/shared/services/identidade';
 import {
   assinar,
   assinaturaDe,
-  esquecerSincronizado,
   NOME_DO_ALARME,
   PERIODO_DO_ALARME_MIN,
   fatiar,
@@ -453,17 +452,6 @@ describe('sincronizar', () => {
     expect(await sincronizar()).toEqual({ estado: 'ok', enviados: 0, apagados: 1 });
     const corpo = JSON.parse((subidas(rede)[0]?.[1] as RequestInit).body as string);
     expect(corpo.apagados).toEqual([{ tipo: 'reuniao', id: 'r1' }]);
-  });
-
-  it('esquecer o progresso força o reenvio completo', async () => {
-    await ligar();
-    await chrome.storage.local.set({ [STORAGE_KEYS.history]: [reuniao()] });
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ gravados: 1 })));
-    await sincronizar();
-    expect(await sincronizar()).toEqual({ estado: 'nada-a-fazer' });
-
-    await esquecerSincronizado();
-    expect(await sincronizar()).toEqual({ estado: 'ok', enviados: 1, apagados: 0 });
   });
 });
 

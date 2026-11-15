@@ -186,6 +186,9 @@ export const IDLE_STATE: MeetingState = { phase: 'idle', session: null };
 export type HistoryStatus = 'recording' | 'ready';
 
 export interface MeetingRecord {
+  importacao?: { nome: string; formato: 'txt' | 'vtt' | 'srt' | 'midia'; hash: string; importadaEm: number };
+  /** Resultado opcional da IA. `segments` permanece a fonte original. */
+  revisao?: { segmentos: LiveSegment[]; revisadaEm: number };
   id: string; // = meetingId
   /**
    * O código da sala do Meet de onde a gravação veio (`abc-defg-hij`). É o que

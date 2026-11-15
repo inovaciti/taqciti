@@ -37,6 +37,9 @@ import { GerarDocumento } from './GerarDocumento';
 import { NotasDaReuniao } from './NotasDaReuniao';
 import { PrintsDaReuniao } from './PrintsDaReuniao';
 import { useCabemDuasColunas } from './useLargura';
+import { BuscaDoAcervo, useBuscaDoAcervo, correspondeABusca, dentroDoPeriodo } from '@/shared/ui/BuscaDoAcervo';
+import { ImportarReuniao } from './ImportarReuniao';
+import { Automacoes } from './Automacoes';
 
 /** O título da seção, sem subtítulo: a tela se explica pelo que mostra. */
 function Cabecalho({ titulo }: { titulo: string }) {
@@ -99,6 +102,13 @@ export function PaginaReunioes({
   /** A reunião cuja lixeira foi apertada na lista: a pergunta ocupa o lugar dela. */
   const [confirmandoId, setConfirmandoId] = useState<string | null>(null);
   const [erroDaLista, setErroDaLista] = useState('');
+  const busca = useBuscaDoAcervo();
+  const [participante, setParticipante] = useState('');
+  const filtrados = registros.filter((r) => dentroDoPeriodo(r.startedAt, busca.de, busca.ate)
+    && correspondeABusca(busca.consulta, [r.title, notas[r.id]?.texto, ...r.participants.map((p) => p.name),
+      ...r.segments.flatMap((s) => [s.text, s.speaker]),
+      ...(r.revisao?.segmentos.map((s) => s.text) ?? [])])
+    && correspondeABusca(participante, [...r.participants.map((p) => p.name), ...r.segments.map((s) => s.speaker)]));
 
   const apagar = (id: string) => {
     void platform
@@ -130,11 +140,17 @@ export function PaginaReunioes({
     );
   }
 
-  const grupos = agruparPorSemana(registros);
+  const grupos = agruparPorSemana(filtrados);
 
   return (
     <div className="tq-pagina">
       <Cabecalho titulo="Reuniões" />
+      <ImportarReuniao onAbrir={onAbrir} />
+      <Automacoes />
+      <BuscaDoAcervo busca={busca} rotulo="Buscar reuniões" total={filtrados.length} />
+      <label className="tq-filtro-participante">Participante<input type="search" value={participante}
+        onChange={(e) => setParticipante(e.target.value)} placeholder="Nome de participante ou falante" /></label>
+      {carregado && registros.length > 0 && filtrados.length === 0 && <Vazio>Nenhuma reunião encontrada. Ajuste a busca ou os filtros.</Vazio>}
 
       {!carregado ? (
         <Vazio>Lendo o histórico…</Vazio>
@@ -203,6 +219,7 @@ export function PaginaReunioes({
               <div key={r.id} className="tq-item-linha">
                 <button type="button" className="tq-item tq-linha-reuniao" onClick={() => onAbrir(r.id)}>
                   <strong>{r.title}</strong>
+                  {r.importacao && <span className="tq-linha-selo">Importada · {r.importacao.nome}</span>}
                   <span className="tq-meta">
                     {r.status === 'recording' ? (
                       <span className="tq-ao-vivo-txt">Ao vivo agora</span>
@@ -211,7 +228,7 @@ export function PaginaReunioes({
                     )}
                     <span className="tq-relogio">{formatTime(r.startedAt)}</span>
                     {r.status !== 'recording' && (
-                      <span>{formatDurationHuman(r.durationSeconds)}</span>
+                      <span>{r.importacao && !r.durationSeconds ? 'Duração não informada' : formatDurationHuman(r.durationSeconds)}</span>
                     )}
                   </span>
                   {(r.segments.length > 0 || notas[r.id] || vinculados > 0) && (
@@ -384,6 +401,11 @@ function DetalheDaReuniao({
   onVoltar: () => void;
   onPedirDocumento: (registro: MeetingRecord, texto: string) => void;
 }) {
+  const [verRevisada, setVerRevisada] = useState(false);
+  const exibindoRevisao = verRevisada && Boolean(registro.revisao);
+  const leitura = exibindoRevisao && registro.revisao
+    ? { ...registro, segments: registro.revisao.segmentos }
+    : registro;
   const platform = usePlatform();
   const cabemDuas = useCabemDuasColunas();
   const [titulo, setTitulo] = useState(registro.title);
@@ -413,7 +435,7 @@ function DetalheDaReuniao({
 
   const copiar = () => {
     void navigator.clipboard
-      .writeText(transcriptToText(registro.segments))
+      .writeText(transcriptToText(leitura.segments))
       .then(() => setAviso('Transcrição copiada'))
       .catch(() => setAviso('Não foi possível copiar'));
   };
@@ -465,7 +487,8 @@ function DetalheDaReuniao({
       <p className="tq-meta">
         <span>{formatDate(registro.startedAt)}</span>
         <span className="tq-relogio">{formatTime(registro.startedAt)}</span>
-        <span>{formatDurationHuman(registro.durationSeconds)}</span>
+        <span>{registro.importacao && !registro.durationSeconds ? 'Duração não informada' : formatDurationHuman(registro.durationSeconds)}</span>
+        {registro.importacao && <span>Importada de {registro.importacao.nome}</span>}
         {palavras > 0 && <span>{formatCount(palavras)} palavras</span>}
         {registro.participants.length > 0 && (
           <span>{registro.participants.map((p) => p.name).join(', ')}</span>
@@ -492,7 +515,7 @@ function DetalheDaReuniao({
           type="button"
           className="tq-acao tq-pilula"
           title="Baixar a transcrição em .txt"
-          onClick={() => downloadTranscript(registro)}
+          onClick={() => downloadTranscript(leitura)}
         >
           <Icon name="arrowDown" size={15} />
           Baixar .txt
@@ -522,6 +545,14 @@ function DetalheDaReuniao({
             </button>
             {menuAberto && (
               <div className="tq-menu" role="menu">
+                {registro.revisao && (
+                  <button type="button" role="menuitem" onClick={() => {
+                    setVerRevisada(!verRevisada);
+                    setMenuAberto(false);
+                  }}>
+                    {exibindoRevisao ? 'Ver transcrição original' : 'Ver transcrição revisada por IA'}
+                  </button>
+                )}
                 <button
                   type="button"
                   role="menuitem"
@@ -573,7 +604,7 @@ function DetalheDaReuniao({
             className={foco === 'transcricao' ? 'atual' : undefined}
             onClick={() => setFoco('transcricao')}
           >
-            Transcrição
+            {exibindoRevisao ? 'Revisada por IA' : 'Transcrição'}
           </button>
           <button
             type="button"
@@ -597,13 +628,13 @@ function DetalheDaReuniao({
               repetir o título embaixo dela era o mesmo rótulo duas vezes. */}
           {cabemDuas && (
             <div className="tq-coluna-topo">
-              <h2>Transcrição</h2>
+              <h2>{exibindoRevisao ? 'Transcrição revisada por IA' : 'Transcrição'}</h2>
             </div>
           )}
           {/* `scroll={false}`: quem rola é a coluna, e só ela. Uma caixa de
               rolagem a mais aqui dentro seria a caixa aninhada que engole a
               roda do mouse. */}
-          <TranscricaoComMapa registro={registro} />
+          <TranscricaoComMapa registro={leitura} />
         </Coluna>
 
         <Coluna

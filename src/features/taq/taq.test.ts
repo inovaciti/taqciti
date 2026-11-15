@@ -17,7 +17,8 @@ import {
 } from '@/features/documents/store';
 import { armazenamentoLocal } from './armazenamento';
 import { ESPECIALISTAS } from './catalogo';
-import { lerExecucoes } from './execucoes';
+import { readLocal } from '@/shared/services/storage';
+import type { RegistroDeExecucao } from './execucoes';
 import {
   ErroDoModelo,
   type AdaptadorDeModelo,
@@ -731,7 +732,7 @@ describe('especialistas', () => {
     expect(r.estado).toBe('concluido');
     // O pai cita a evidência que o filho registrou no livro compartilhado.
     expect(r.evidencias.map((e) => e.registroId)).toEqual(['m-sprint']);
-    const [execucao] = await lerExecucoes();
+    const [execucao] = (await readLocal<RegistroDeExecucao[]>(STORAGE_KEYS.taqExecucoes))!;
     expect(execucao!.passos).toBe(5); // 3 do Taq + 2 do especialista
     expect(execucao!.delegacoes).toHaveLength(1);
   });
@@ -902,7 +903,7 @@ describe('registro da execução', () => {
       modelo,
       armazenamento: armazenamentoLocal,
     }).executar(pedido('leia a sprint'));
-    const [execucao] = await lerExecucoes();
+    const [execucao] = (await readLocal<RegistroDeExecucao[]>(STORAGE_KEYS.taqExecucoes))!;
     expect(execucao).toMatchObject({
       id: r.execucaoId,
       conversaId: 'c-1',

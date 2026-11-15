@@ -41,7 +41,7 @@ export function Wordmark({ height = 26, className = '', comSinal = true }: Props
       <span
         aria-hidden="true"
         style={{
-          fontFamily: 'var(--font-titulo)',
+          fontFamily: 'var(--font-marca)',
           fontSize: corpo,
           fontWeight: 700,
           letterSpacing: `${-corpo * 0.02}px`,

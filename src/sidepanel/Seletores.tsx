@@ -171,7 +171,7 @@ export function Seletores({
   };
 
   return (
-    <nav className="tq-modos" aria-label="Seções da sidebar">
+    <nav className="tq-modos" aria-label="Seções do painel">
       <button
         type="button"
         className={`tq-modo${modo === 'transcricao' ? ' atual' : ''}`}

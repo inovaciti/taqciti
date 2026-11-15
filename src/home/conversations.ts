@@ -272,6 +272,21 @@ export function tituloDe(texto: string): string {
   return `${limpo.slice(0, 59)}…`;
 }
 
+/** Renomear não recria conversa apagada nem sobrescreve mensagens de outra aba. */
+export async function renomearConversa(id: string, titulo: string): Promise<boolean> {
+  const limpo = titulo.trim().replace(/\s+/g, ' ');
+  if (!limpo || limpo.length > 200) return false;
+  return comTravaLocal(STORAGE_KEYS.conversations, async () => {
+    const conversas = await lerConversas();
+    const conversa = conversas.find((c) => c.id === id);
+    if (!conversa) return false;
+    conversa.title = limpo;
+    conversa.updatedAt = Date.now();
+    await gravar(conversas);
+    return true;
+  });
+}
+
 export async function lerConversas(): Promise<Conversation[]> {
   const guardadas = await readLocal<Conversation[]>(STORAGE_KEYS.conversations);
   if (!Array.isArray(guardadas)) return [];

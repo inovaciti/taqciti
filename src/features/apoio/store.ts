@@ -352,22 +352,6 @@ export async function mudarEstado(
   });
 }
 
-/** Encerra de uma vez todas as abertas de uma reunião (reunião encerrada, sugestões pausadas…). */
-export async function expirarAbertas(reuniaoId: string, por: 'tempo' | 'conversa' = 'tempo'): Promise<number> {
-  return transacao((a) => {
-    let n = 0;
-    const agora = Date.now();
-    for (const s of a.sugestoes) {
-      if (s.reuniaoId !== reuniaoId || !estaAberta(s)) continue;
-      s.estado = 'expirada';
-      s.encerradaEm = agora;
-      s.encerradaPor = por;
-      n += 1;
-    }
-    return { resultado: n, mudou: n > 0 };
-  });
-}
-
 // ------------------------------------------------------------------ feedback
 
 export async function registrarFeedback(p: {

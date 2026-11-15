@@ -9,8 +9,6 @@
  * opaca do provedor, nem segredo algum.
  */
 import { z } from 'zod/v4';
-import { STORAGE_KEYS } from '@/shared/config/constants';
-import { readLocal } from '@/shared/services/storage';
 import type { ResultadoDoAgente, Tarefa } from './contratos';
 import type { EventoDeExecucao } from './tipos';
 
@@ -93,13 +91,4 @@ export function montarRegistro(
     documentos: resultado.documentos.map((d) => ({ id: d.id, acao: d.acao })),
     referenciasCitadas: resultado.evidencias.length,
   };
-}
-
-export async function lerExecucoes(): Promise<RegistroDeExecucao[]> {
-  const bruto = await readLocal<unknown>(STORAGE_KEYS.taqExecucoes);
-  if (!Array.isArray(bruto)) return [];
-  return bruto.flatMap((r) => {
-    const lido = registroDeExecucaoSchema.safeParse(r);
-    return lido.success ? [lido.data] : [];
-  });
 }

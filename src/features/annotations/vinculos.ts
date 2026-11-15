@@ -203,5 +203,7 @@ export async function limparVinculosDaReuniao(
   };
   const travar = (i: number): Promise<ResultadoDaLimpeza> =>
     i === chaves.length ? executar() : comTravaLocal(chaves[i]!, () => travar(i + 1));
-  return travar(0);
+  // A automação também verifica a fonte e cria vínculos. Serializar as duas
+  // operações antes das travas por coleção evita inversão history/documents.
+  return comTravaLocal('automacoes:gravar', () => travar(0));
 }

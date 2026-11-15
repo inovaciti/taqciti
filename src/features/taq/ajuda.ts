@@ -44,7 +44,7 @@
 import { termosDe } from './busca';
 
 /** Sobe quando o conteúdo muda — vai no resultado da consulta. */
-export const VERSAO_DA_REFERENCIA = '2026-11-11';
+export const VERSAO_DA_REFERENCIA = '2026-11-13';
 
 export const ASSUNTOS = [
   'captura',
@@ -137,6 +137,43 @@ const CAPTURA_TAQ = 'src/features/taq/captura.ts';
 const CARTAO_DE_TELA = 'src/shared/ui/CartaoDeTela.tsx';
 
 export const FUNCIONALIDADES: readonly Funcionalidade[] = [
+  {
+    id: 'importar_reuniao', assunto: 'reunioes', titulo: 'Importar uma transcrição ou gravação',
+    oQueFaz: 'Importa TXT, SRT e VTT localmente ou transcreve áudio e vídeo pelo servidor, guardando uma reunião individual.',
+    onde: 'Home → Reuniões → Importar reunião',
+    passos: ['Abra Importar reunião, escolha o arquivo, informe nome, data e hora e clique em Importar.'],
+    preRequisitos: ['Mídia exige login e serviço de transcrição configurado no servidor.'],
+    limitacoes: ['Texto UTF-8: até 1 MB, 200 mil caracteres e 10 mil trechos. Mídia: até 4 MB. Não identifica nomes de falantes no áudio. Reimportar o mesmo arquivo abre o registro existente.'],
+    rotulos: ['Importar reunião', 'Arquivo', 'Nome da reunião', 'Data e hora da reunião'],
+    implementacao: ['src/home/ImportarReuniao.tsx'], verificacao: 'codigo',
+    palavras: ['importar', 'importacao', 'transcricao externa', 'arquivo de audio', 'srt', 'vtt', 'mp3', 'mp4'],
+  },
+  {
+    id: 'automatizar_reuniao', assunto: 'reunioes', titulo: 'Preparar resumo e próximos passos automaticamente',
+    oQueFaz: 'Após encerrar ou importar uma reunião, pode salvar um resumo e sugerir até três próximos passos como candidatos em Acompanhamento.',
+    onde: 'Home → Reuniões → Automações após reuniões',
+    passos: ['Abra Automações após reuniões e marque os resultados desejados. Confira o estado das últimas execuções no mesmo lugar.'],
+    preRequisitos: ['IA disponível. Preferências ativadas antes de encerrar ou importar.'],
+    limitacoes: ['Exige navegador aberto. Não envia mensagens. Falhas não bloqueiam a reunião e só são repetidas ao clicar em Tentar novamente. Não processa reuniões antigas retroativamente.'],
+    rotulos: ['Automações após reuniões', 'Tentar novamente'], implementacao: ['src/home/Automacoes.tsx'], verificacao: 'codigo',
+    palavras: ['automacao', 'automatizar', 'automaticamente', 'pos reuniao', 'resumo automatico'],
+  },
+  {
+    id: 'buscar_acervo', assunto: 'reunioes', titulo: 'Buscar e filtrar reuniões, documentos e conversas',
+    oQueFaz: 'Busca local por nome e conteúdo, sem gastar IA. Reuniões também filtram participantes e datas; documentos filtram pela última alteração.',
+    onde: 'Home → Reuniões, Documentos ou menu Conversas',
+    passos: ['Preencha Buscar reuniões, Buscar documentos ou Buscar conversas. Use De e Até nas listas de reuniões e documentos.'],
+    rotulos: ['Buscar reuniões', 'Buscar documentos', 'Buscar conversas'],
+    implementacao: [PAGINAS, DOCUMENTOS, CONVERSAS_MENU], verificacao: 'codigo',
+    palavras: ['buscar', 'filtrar', 'filtro', 'busca', 'pesquisar', 'participante'],
+  },
+  {
+    id: 'renomear_conversa', assunto: 'conversas', titulo: 'Renomear uma conversa',
+    oQueFaz: 'Troca o nome visível, preservando as mensagens, o contexto e os documentos.',
+    onde: 'Home → Conversas → Renomear', passos: ['Abra Conversas, escolha Renomear, escreva o nome e clique em Salvar nome.'],
+    rotulos: ['Renomear', 'Nome da conversa', 'Salvar nome'], implementacao: [CONVERSAS_MENU], verificacao: 'codigo',
+    palavras: ['renomear conversa', 'nome da conversa', 'titulo da conversa'],
+  },
   // ------------------------------------------------------------------ captura
   {
     id: 'registrar_reuniao',
@@ -1566,21 +1603,6 @@ export const FORA_DO_APP: readonly ForaDoApp[] = [
     resposta:
       'Não há, na tela, como descartar a captura em andamento. Dá para pausar, ou encerrar e depois apagar a reunião.',
     palavras: ['descartar', 'cancelar captura', 'jogar fora', 'limpar transcricao'],
-  },
-  {
-    id: 'busca_na_lista',
-    titulo: 'Buscar ou filtrar a lista de reuniões e documentos',
-    situacao: 'indisponivel',
-    resposta:
-      'As listas de reuniões e documentos não têm busca nem filtro. Para achar pelo conteúdo, pergunte ao Taq na conversa.',
-    palavras: ['filtrar', 'filtro', 'ordenar', 'campo de busca', 'barra de busca'],
-  },
-  {
-    id: 'renomear_conversa',
-    titulo: 'Renomear uma conversa',
-    situacao: 'indisponivel',
-    resposta: 'Não dá para renomear conversas: o nome sai da primeira mensagem.',
-    palavras: ['renomear conversa', 'nome da conversa'],
   },
   {
     id: 'selecionar_conversas',

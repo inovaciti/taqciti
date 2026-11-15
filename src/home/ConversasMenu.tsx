@@ -38,6 +38,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '@/shared/ui/Icon';
 import { formatDate } from '@/shared/ui/format';
 import type { Conversation } from './conversations';
+import { renomearConversa } from './conversations';
+import { BuscaDoAcervo, useBuscaDoAcervo, correspondeABusca } from '@/shared/ui/BuscaDoAcervo';
 
 interface Props {
   conversas: Conversation[];
@@ -65,12 +67,18 @@ export function ConversasMenu({
   /** A conversa cuja remoção está à espera de confirmação. */
   const [confirmando, setConfirmando] = useState<string | null>(null);
   const [erro, setErro] = useState('');
+  const busca = useBuscaDoAcervo();
+  const filtradas = conversas.filter((c) => correspondeABusca(busca.consulta, [c.title, ...c.messages.map((m) => m.text)]));
+  const [editando, setEditando] = useState<string | null>(null);
+  const [titulo, setTitulo] = useState('');
+  const [salvando, setSalvando] = useState(false);
 
   // Fechar o menu desfaz a pergunta pendente: reabrir já confirmando seria
   // uma pergunta feita numa sessão e respondida noutra.
   useEffect(() => {
     if (!aberto) {
       setConfirmando(null);
+      setEditando(null);
       setErro('');
     }
   }, [aberto]);
@@ -100,11 +108,13 @@ export function ConversasMenu({
         // Escape desfaz um passo de cada vez: primeiro a pergunta, depois o
         // menu. Fechar tudo de uma vez faria o gesto de recuar da confirmação
         // levar embora também a lista que se estava consultando.
-        if (confirmando) setConfirmando(null);
+        if (editando) setEditando(null);
+        else if (confirmando) setConfirmando(null);
         else fechar(true);
         return;
       }
       if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      if (e.target instanceof HTMLInputElement) return;
       const itens = Array.from(
         menuRef.current?.querySelectorAll<HTMLElement>('[data-item]') ?? [],
       );
@@ -128,7 +138,7 @@ export function ConversasMenu({
       document.removeEventListener('keydown', aoTeclar);
       document.removeEventListener('pointerdown', aoClicarFora);
     };
-  }, [aberto, fechar, confirmando]);
+  }, [aberto, fechar, confirmando, editando]);
 
   return (
     <div className="tq-conversas">
@@ -168,6 +178,8 @@ export function ConversasMenu({
             Nova conversa
           </button>
 
+          <BuscaDoAcervo busca={busca} rotulo="Buscar conversas" total={filtradas.length} datas={false} />
+          {conversas.length > 0 && filtradas.length === 0 && <p className="tq-conversas-vazio">Nenhuma conversa encontrada.</p>}
           {conversas.length === 0 ? (
             <p className="tq-conversas-vazio">
               Nenhuma conversa guardada ainda. A primeira nasce quando você
@@ -175,8 +187,20 @@ export function ConversasMenu({
             </p>
           ) : (
             <ul>
-              {conversas.map((c) => {
+              {filtradas.map((c) => {
                 const atual = c.id === atualId;
+                if (editando === c.id) return <li key={c.id}>
+                  <form className="tq-conversas-confirma" onSubmit={(e) => {
+                    e.preventDefault(); if (salvando) return; setSalvando(true); setErro('');
+                    void renomearConversa(c.id, titulo).then((ok) => {
+                      if (ok) setEditando(null); else setErro('Não foi possível renomear. Confira o nome e tente novamente.');
+                    }).catch(() => setErro('Não foi possível salvar o nome.')).finally(() => setSalvando(false));
+                  }}>
+                    <label>Nome da conversa<input autoFocus value={titulo} maxLength={200} required onChange={(e) => setTitulo(e.target.value)} /></label>
+                    <button className="tq-acao" disabled={salvando || !titulo.trim()}>Salvar nome</button>
+                    <button type="button" className="tq-acao" onClick={() => setEditando(null)}>Cancelar</button>
+                  </form>
+                </li>;
 
                 if (confirmando === c.id) {
                   return (
@@ -240,7 +264,14 @@ export function ConversasMenu({
                       type="button"
                       role="menuitem"
                       data-item
-                      className="tq-conversas-apagar"
+                      className="tq-conversas-renomear"
+                      title="Renomear esta conversa"
+                      aria-label={`Renomear a conversa "${c.title}"`}
+                      onClick={() => { setTitulo(c.title); setEditando(c.id); setErro(''); }}
+                    >
+                      Renomear
+                    </button>
+                    <button type="button" role="menuitem" data-item className="tq-conversas-apagar"
                       title="Apagar esta conversa"
                       aria-label={`Apagar a conversa "${c.title}"`}
                       onClick={() => {

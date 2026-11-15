@@ -653,9 +653,3 @@ export async function salvarBriefing(
     return { resultado: { tipo: 'ok' as const, item: briefing }, mudou: true };
   });
 }
-
-/** Apagar a reunião leva o briefing dela. Devolve quantos saíram. */
-export function semBriefingDaReuniao(c: Conducao, reuniaoId: string): { conducao: Conducao; removidos: number } {
-  const ficam = c.briefings.filter((b) => b.reuniaoId !== reuniaoId);
-  return { conducao: { ...c, briefings: ficam }, removidos: c.briefings.length - ficam.length };
-}

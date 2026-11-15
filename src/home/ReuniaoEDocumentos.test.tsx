@@ -174,6 +174,25 @@ afterEach(() => {
 });
 
 describe('a reunião na HOME', () => {
+  it('alterna original e revisão pelo menu sem alterar a fonte nem o campo de notas', async () => {
+    await montar({ url: '/?record=m-1' });
+    const campo = q<HTMLTextAreaElement>('.tq-notas-campo');
+    await act(async () => {
+      await chrome.storage.local.set({ [STORAGE_KEYS.history]: [{
+        ...REUNIAO,
+        revisao: { revisadaEm: 2, segmentos: REUNIAO.segments.map((s) => ({ ...s, text: 'Precisamos fechar o escopo hoje.' })) },
+      }] });
+    });
+    expect(q('.tq-fala-texto').textContent).toBe(REUNIAO.segments[0]!.text);
+    await clicar(q<HTMLElement>('.tq-menu-secundario > button'));
+    await clicar(porTexto('button', 'Ver transcrição revisada por IA'));
+    expect(q('.tq-fala-texto').textContent).toBe('Precisamos fechar o escopo hoje.');
+    expect(q('.tq-notas-campo')).toBe(campo);
+    await clicar(q<HTMLElement>('.tq-menu-secundario > button'));
+    await clicar(porTexto('button', 'Ver transcrição original'));
+    expect(q('.tq-fala-texto').textContent).toBe(REUNIAO.segments[0]!.text);
+    expect((storage.local.values[STORAGE_KEYS.history] as MeetingRecord[])[0]?.segments).toEqual(REUNIAO.segments);
+  });
   /* O link antigo continua valendo: `?record=` abre a reunião correspondente. */
   it('abre pela URL, com transcrição e notas lado a lado', async () => {
     await montar({ url: '/?record=m-1' });

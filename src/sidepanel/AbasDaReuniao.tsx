@@ -43,7 +43,7 @@ export function AbasDaReuniao({
         onClick={() => onAba('notas')}
       >
         Notas
-        {notaExiste && <span className="tq-aba-selo" aria-label="já tem nota" />}
+        {notaExiste && <span className="tq-aba-selo" aria-label="Nota salva" />}
       </button>
       <button
         type="button"

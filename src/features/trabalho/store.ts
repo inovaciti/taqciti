@@ -867,20 +867,3 @@ export async function corrigirItemDaAnalise(
 export function analiseDesatualizada(a: Pick<Analise, 'versaoDaReuniao'>, versaoAtual: string | null): boolean {
   return versaoAtual !== null && a.versaoDaReuniao !== versaoAtual;
 }
-
-// -------------------------------------------------------------- manutenção
-
-/** Tira o que o conjunto de demonstração semeou. Os registros reais ficam. */
-export async function removerDemonstracao(): Promise<number> {
-  return transacao((t) => {
-    const antes =
-      t.compromissos.length + t.decisoes.length + t.achados.length + t.analises.length;
-    t.compromissos = t.compromissos.filter((c) => !c.demo);
-    t.decisoes = t.decisoes.filter((d) => !d.demo);
-    t.achados = t.achados.filter((a) => !a.demo);
-    t.analises = t.analises.filter((a) => !a.demo);
-    const depois =
-      t.compromissos.length + t.decisoes.length + t.achados.length + t.analises.length;
-    return { resultado: antes - depois, mudou: antes !== depois };
-  });
-}

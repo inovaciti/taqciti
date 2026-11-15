@@ -288,9 +288,6 @@ export async function apagarDocumento(id: string): Promise<void> {
   await apagarHistorico(id);
 }
 
-/** Respiro entre a última tecla e a gravação. O mesmo das notas. */
-export const AGUARDAR_MS = 700;
-
 export type EstadoDaGravacaoDoDocumento = 'parado' | 'gravando' | 'salvo' | 'falhou';
 
 /**

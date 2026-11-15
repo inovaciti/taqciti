@@ -23,7 +23,6 @@ import {
   resolverPerfil,
   salvarBriefing,
   salvarPerfil,
-  semBriefingDaReuniao,
 } from './store';
 
 const PERFIL = {
@@ -242,13 +241,5 @@ describe('briefing', () => {
     const b = briefingDaReuniao(await lerConducao(), 'm-1')!;
     expect(b.perfilRevisao).toBeNull();
     expect(b.perfilUsado).toEqual(conteudoDoPadrao());
-  });
-
-  it('semBriefingDaReuniao tira só o daquela reunião', async () => {
-    await salvarBriefing('m-1', { objetivo: 'A' }, 0);
-    await salvarBriefing('m-2', { objetivo: 'B' }, 0);
-    const { conducao, removidos } = semBriefingDaReuniao(await lerConducao(), 'm-1');
-    expect(removidos).toBe(1);
-    expect(conducao.briefings.map((b) => b.reuniaoId)).toEqual(['m-2']);
   });
 });

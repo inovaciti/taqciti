@@ -827,7 +827,7 @@ export function PaginaConexoes({
                       type="button"
                       className="tq-linkish"
                       disabled={ocupado}
-                      title="Desligar para de enviar daqui para frente. O que já subiu continua lá."
+                      title="Desligar interrompe os próximos envios. Os dados já sincronizados são mantidos."
                       onClick={() => setConfirmandoId('google')}
                     >
                       Desconectar

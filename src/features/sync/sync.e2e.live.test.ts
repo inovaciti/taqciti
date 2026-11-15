@@ -31,7 +31,7 @@ import { installChromeStorageMock } from '@/test/chromeStorageMock';
 import { STORAGE_KEYS } from '@/shared/config/constants';
 import { SERVER_BASE_URL } from '@/shared/config/serverConfig';
 import { limparCacheDeIdentidadeLocal } from '@/shared/services/identidade';
-import { esquecerSincronizado, sincronizar } from './sincronizacao';
+import { sincronizar } from './sincronizacao';
 
 const SERVIDOR = process.env.TAQCITI_E2E_SERVER;
 const CONTEINER = process.env.TAQCITI_E2E_PG ?? 'taqciti-e2e-pg';
@@ -463,7 +463,8 @@ rodar('sincronização de ponta a ponta (servidor e Postgres reais)', () => {
     const antes = contagem('copia_local', sub) + contagem('reuniao', sub) + contagem('historico_do_documento', sub);
 
     await a.em(async () => {
-      await esquecerSincronizado();
+      // Esquece o que já foi enviado, forçando a passada a mandar tudo de novo.
+      await chrome.storage.local.set({ [STORAGE_KEYS.syncEstado]: { assinaturas: {} } });
       return sincronizar();
     });
     expect(contagem('copia_local', sub) + contagem('reuniao', sub) + contagem('historico_do_documento', sub)).toBe(antes);

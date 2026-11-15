@@ -73,7 +73,7 @@ it('"Novo" registra um compromisso à mão, e excluir pede confirmação no luga
   expect(trabalho()!.compromissos).toHaveLength(1);
   expect(q('.tq-acomp-confirma').textContent).toContain('Revisar o contrato');
 
-  await act(async () => porTexto('.tq-acomp-confirma button', 'Excluir')!.click());
+  await act(async () => porTexto('.tq-acomp-confirma button', 'Apagar')!.click());
   await esperar(() => trabalho()!.compromissos.length === 0);
   expect(trabalho()!.compromissos).toHaveLength(0);
 });

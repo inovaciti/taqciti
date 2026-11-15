@@ -15,6 +15,7 @@
  * e o Chrome nos reinstala na página nova.
  */
 import PANEL_CSS from './panel.css?inline';
+import { registrarFonteDaCapsula } from './fonte';
 
 /**
  * "Abra o painel", disparado em `document`.
@@ -55,6 +56,8 @@ function guardHost(node: HTMLElement): void {
 
 function ensureShadowRoot(): ShadowRoot {
   if (shadowRoot) return shadowRoot;
+
+  registrarFonteDaCapsula();
 
   host = document.createElement('taqciti-root');
   document.documentElement.appendChild(host);

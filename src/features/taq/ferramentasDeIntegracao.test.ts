@@ -34,7 +34,8 @@ import {
   searchDirectory,
   sendEmail,
 } from './ferramentasDeIntegracao';
-import { lerExecucoes } from './execucoes';
+import { readLocal } from '@/shared/services/storage';
+import type { RegistroDeExecucao } from './execucoes';
 import type { AdaptadorDeModelo } from './modelo';
 import { criarOrquestrador } from './orquestrador';
 import { RegistroDeFerramentas, executarChamada } from './registroDeFerramentas';
@@ -465,7 +466,7 @@ describe('enviar e-mail: o modelo prepara, o botão envia', () => {
       const cartoes: CartaoDaResposta[] = [];
       await rodar(sendEmail, args(), ctx('prepare', { cartoes }));
       const r = await clicar(chaveDosCartoes(cartoes));
-      const registros = await lerExecucoes();
+      const registros = (await readLocal<RegistroDeExecucao[]>(STORAGE_KEYS.taqExecucoes)) ?? [];
       expect(registros.some((x) => x.id === r.execucaoId && x.ferramentas[0]?.nome === 'send_email')).toBe(true);
       expect(modelo.turno).not.toHaveBeenCalled();
     });

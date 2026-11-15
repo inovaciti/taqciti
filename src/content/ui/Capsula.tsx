@@ -265,7 +265,7 @@ export function Capsula({
       <button
         ref={floating.capsuleRef as RefObject<HTMLButtonElement>}
         type="button"
-        title="TaqCiti — clique para abrir a sidebar, arraste para mover"
+        title="TaqCiti — clique para abrir o painel, arraste para mover"
         aria-label={
           perguntando || estado === 'desligada'
             ? 'Abrir a sidebar do TaqCiti'
@@ -386,7 +386,7 @@ export function Capsula({
             abrir();
             callbacks.onGravarAgora();
           }}
-          title="Começar a registrar esta reunião e abrir a sidebar"
+          title="Começar a registrar esta reunião e abrir o painel"
           style={{
             left: Math.max(
               MARGEM_DA_PERGUNTA,

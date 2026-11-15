@@ -31,12 +31,12 @@
   margin-bottom: 4px;
 }
 
-/* O título do cartão na Barlow, como o título de seção da ata. */
+/* O título acompanha a família da identidade definida nos tokens. */
 .tq-c-cab h4 {
   margin: 0;
   font-family: var(--font-titulo);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: var(--peso-enfase);
   line-height: 1.3;
   color: rgb(240 242 244);
 }

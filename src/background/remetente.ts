@@ -2,10 +2,11 @@
  * Quem pode mandar o quê ao background.
  *
  * O zod de `messaging.ts` confere a FORMA da mensagem, não quem a mandou. E o
- * content script é declarado para `<all_urls>`: existe dentro do processo de
- * todo site aberto, mesmo saindo cedo fora do Meet. Sem esta barreira, um
- * renderer comprometido em qualquer aba (a classe de bug que o isolamento por
- * site existe para conter) herdava o content script e, com ele, os comandos de
+ * content script existe dentro do processo da página do Meet (já foi declarado
+ * para `<all_urls>`, e a barreira nasceu nessa época; hoje o `matches` é só o
+ * Meet). Sem esta barreira, um renderer comprometido nessa aba (a classe de bug
+ * que o isolamento por site existe para conter) herdava o content script e, com
+ * ele, os comandos de
  * UI: ler a transcrição ao vivo (`ui/getState`), capturar a tela da reunião
  * (`ui/print`), escrever no chat do Meet, apagar ou "restaurar" reuniões.
  *

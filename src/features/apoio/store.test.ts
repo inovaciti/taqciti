@@ -8,7 +8,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { installChromeStorageMock } from '@/test/chromeStorageMock';
 import {
-  expirarAbertas,
   lerApoio,
   mudarEstado,
   podeTransitar,
@@ -117,18 +116,6 @@ describe('estados', () => {
 
   it('id inexistente não inventa nada', async () => {
     expect(await mudarEstado('nao-existe', 'mostrada')).toEqual({ tipo: 'inexistente' });
-  });
-
-  it('expirarAbertas encerra só as abertas da reunião', async () => {
-    const a = await registrarSugestao(NOVA);
-    await registrarSugestao({ ...NOVA, reuniaoId: 'm-2', ponto: 'Outra reunião' });
-    if (a.tipo !== 'ok') throw new Error('esperava ok');
-    await registrarSugestao({ ...NOVA, ponto: 'Aberta 2' });
-    await mudarEstado(a.sugestao.id, 'descartada', 'pessoa');
-    expect(await expirarAbertas('m-1')).toBe(1);
-    const { sugestoes } = await lerApoio();
-    expect(sugestoes.find((s) => s.reuniaoId === 'm-2')!.estado).toBe('pendente');
-    expect(sugestoes.find((s) => s.id === a.sugestao.id)!.estado).toBe('descartada');
   });
 });
 

@@ -255,10 +255,10 @@
 .tq-trilha-previa strong {
   display: block;
   margin-bottom: 2px;
-  font-size: 10.5px;
+  font-size: var(--fs-meta);
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: normal;
+  text-transform: none;
   color: rgb(var(--verde));
 }
 

@@ -4,6 +4,7 @@
  * atravessando fronteiras de contexto.
  */
 import { z } from 'zod';
+import { importacaoSchema } from '@/features/importacao/transcricao';
 
 export const participantSchema = z.object({
   name: z.string().min(1).max(120),
@@ -252,6 +253,7 @@ export const uiMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('ui/reset') }),
   z.object({ type: z.literal('ui/dismissLanguageWarning') }),
   z.object({ type: z.literal('ui/history/delete'), id: z.string() }),
+  z.object({ type: z.literal('ui/history/import'), dados: importacaoSchema }).strict(),
   z.object({
     type: z.literal('ui/history/rename'),
     id: z.string(),
@@ -277,6 +279,7 @@ export const uiMessageSchema = z.discriminatedUnion('type', [
       .object({
         id: z.string().min(1),
         meetingCode: z.string().optional(),
+        importacao: z.object({ nome: z.string(), formato: z.enum(['txt', 'vtt', 'srt', 'midia']), hash: z.string(), importadaEm: z.number() }).optional(),
         title: z.string(),
         startedAt: z.number(),
         endedAt: z.number().optional(),
