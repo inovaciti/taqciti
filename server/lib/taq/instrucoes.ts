@@ -45,6 +45,7 @@ const ARQUIVO_POR_VERSAO: Record<string, string> = {
   'app-assistant-v5': 'app-assistant-v5.md',
   /** v7: os especialistas de trabalho (análise, compromissos, continuidade, passagem, comunicação…). */
   'taq-v7': 'v7.md',
+  'taq-v8': 'v8.md',
   /** v3: revisar com check_document; refazer cria documento novo, sem sobrescrever a edição humana. */
   'documents-v3': 'documents-v3.md',
   /** v4: pedido fora do catálogo vira documento personalizado (create_document não é forçado); formato que o TaqCiti não gera segue para o Claude. */

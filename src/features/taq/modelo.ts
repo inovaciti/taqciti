@@ -14,6 +14,7 @@
  * localmente, e a interface diz isso.
  */
 import { z } from 'zod/v4';
+import { pesquisaWebSchema } from './pesquisaWeb';
 import {
   SERVER_BASE_URL,
   SERVER_SHARED_KEY,
@@ -49,6 +50,7 @@ export interface DeclaracaoDeFerramenta {
 }
 
 export interface PedidoDeTurno {
+  buscaNaInternet?: boolean;
   instrucoes: string;
   contexto: string;
   mensagens: MensagemDoTurno[];
@@ -61,6 +63,7 @@ export const respostaDoTurnoSchema = z.object({
   texto: z.string(),
   chamadas: z.array(chamadaSchema),
   continuacao: z.string().optional(),
+  pesquisaWeb: pesquisaWebSchema.optional(),
   uso: z.object({
     entrada: z.number().int().nonnegative(),
     saida: z.number().int().nonnegative(),
@@ -83,6 +86,7 @@ const erroSchema = z.object({
 });
 
 export const estadoDoTaqSchema = z.object({
+  buscaNaInternet: z.object({ disponivel: z.boolean(), motivo: z.string() }).optional(),
   pronto: z.boolean(),
   provedor: z.string().nullable(),
   modelo: z.string().nullable(),
@@ -115,6 +119,7 @@ export class ErroDoModelo extends Error {
 // -------------------------------------------------------------- adaptador
 
 export interface AdaptadorDeModelo {
+  estado?(sinal?: AbortSignal): Promise<EstadoDoTaq>;
   turno(pedido: PedidoDeTurno, sinal: AbortSignal): Promise<RespostaDoTurno>;
 }
 
@@ -227,7 +232,7 @@ export function criarAdaptadorHttp(
       // janela do Google (ver `identidadeParaIa`). A rota não gasta modelo.
       const corpo = await pedir(
         '/api/taq/estado',
-        { method: 'GET', ...(sinal ? { signal: sinal } : {}) },
+        { method: 'GET', cache: 'no-store', signal: AbortSignal.any([AbortSignal.timeout(10_000), ...(sinal ? [sinal] : [])]) },
         false,
       );
       const lido = estadoDoTaqSchema.safeParse(corpo);

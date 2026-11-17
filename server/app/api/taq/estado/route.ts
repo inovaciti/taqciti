@@ -22,6 +22,7 @@ export function OPTIONS(request: NextRequest): NextResponse {
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const headers = corsHeaders(request.headers.get('origin'), METODOS);
+  headers['Cache-Control'] = 'no-store';
   const autorizacao = await autorizarIa(request, headers, { cobrar: false });
   if (!autorizacao.ok) return autorizacao.resposta;
   return NextResponse.json(estadoPublico(resolverConfiguracao()), { status: 200, headers });

@@ -245,6 +245,8 @@ export async function executarCiclo(
     agenteId: tarefa.agenteId,
   });
 
+  const pesquisasWeb: NonNullable<ResultadoDoAgente['pesquisasWeb']> = [];
+
   const fim = (
     estado: EstadoDeExecucao,
     extra: { resposta?: string; evidencias?: ReferenciaDeEvidencia[] } = {},
@@ -263,6 +265,7 @@ export async function executarCiclo(
     }
     return resultadoDoAgenteSchema.parse({
       estado,
+      ...(pesquisasWeb.length ? { pesquisasWeb } : {}),
       ...(extra.resposta ? { resposta: extra.resposta } : {}),
       evidencias: extra.evidencias ?? [],
       documentos: [...documentos.values()],
@@ -315,7 +318,8 @@ export async function executarCiclo(
       resposta = await chamarModelo(
         ambiente,
         {
-          instrucoes: cfg.instrucoes,
+          instrucoes: ambiente.buscaNaInternet && tarefa.agenteId === 'taq' ? 'taq-v8' : cfg.instrucoes,
+          ...(ambiente.buscaNaInternet && tarefa.agenteId === 'taq' ? { buscaNaInternet: true } : {}),
           contexto: cfg.contexto,
           mensagens,
           ferramentas: ferramentasDoTurno,
@@ -341,6 +345,7 @@ export async function executarCiclo(
       return fim('falhou');
     }
 
+    if (resposta.pesquisaWeb) pesquisasWeb.push(resposta.pesquisaWeb);
     orcamento.somarUso(resposta.uso);
     uso.entrada += resposta.uso.entrada;
     uso.saida += resposta.uso.saida;

@@ -96,7 +96,7 @@ export interface ConteudoDoPerfil {
   padraoVersao: number;
   /** Vazio no perfil GUARDADO com base no padrão: o padrão vem do pacote. */
   contextos: ContextoDoAssistente[];
-  /** Só a preferência: a ferramenta de busca ainda não existe. */
+  /** Permissão de busca nas conversas, condicionada à disponibilidade no servidor. */
   buscaNaInternet: boolean;
   intervencao: { modo: ModoDeIntervencao };
   /**

@@ -35,7 +35,7 @@ import { registrosUsados } from './memoria';
 import type { RegistroSelecionado } from './contratos';
 import { armazenamentoLocal } from './armazenamento';
 import { restaurarDaLixeira } from './lixeira';
-import { criarAdaptadorHttp, ErroDoModelo, type AdaptadorHttp } from './modelo';
+import { criarAdaptadorHttp, ErroDoModelo, type AdaptadorHttp, type EstadoDoTaq } from './modelo';
 import {
   criarOrquestrador,
   type ExecucaoDoTaq,
@@ -48,7 +48,7 @@ import type { AcoesDaInterface, EventoDeExecucao } from './tipos';
 
 export type DisponibilidadeDoTaq =
   | { fase: 'verificando' }
-  | { fase: 'pronto'; provedor: string; modelo: string }
+  | { fase: 'pronto'; provedor: string; modelo: string; buscaNaInternet?: EstadoDoTaq['buscaNaInternet'] }
   | { fase: 'pendente'; motivos: string[] }
   | { fase: 'inalcancavel'; motivo: string };
 
@@ -97,11 +97,11 @@ export async function verificarTaq(sinal?: AbortSignal): Promise<Disponibilidade
         fase: 'pendente',
         motivos: [
           'A chave de IA do servidor pode usar o conteúdo enviado para treinar o provedor. ' +
-            'Enquanto for assim, o Taq não envia reuniões e documentos reais.',
+            'A IA aguarda uma chave compatível. Após a troca no servidor e um novo deploy, volte a esta janela para verificar novamente.',
         ],
       };
     }
-    return { fase: 'pronto', provedor: estado.provedor, modelo: estado.modelo };
+    return { fase: 'pronto', provedor: estado.provedor, modelo: estado.modelo, ...(estado.buscaNaInternet ? { buscaNaInternet: estado.buscaNaInternet } : {}) };
   } catch (e) {
     if (e instanceof ErroDoModelo && e.codigo === 'nao_autorizado') {
       return {
@@ -122,11 +122,25 @@ export function useDisponibilidadeDoTaq(): [DisponibilidadeDoTaq, () => void] {
   const [tentativa, setTentativa] = useState(0);
   useEffect(() => {
     const controle = new AbortController();
-    setEstado({ fase: 'verificando' });
-    void verificarTaq(controle.signal).then((r) => {
-      if (!controle.signal.aborted) setEstado(r);
-    });
-    return () => controle.abort();
+    let verificando = false;
+    const atualizar = async () => {
+      if (verificando || document.visibilityState === 'hidden') return;
+      verificando = true;
+      try {
+        const r = await verificarTaq(controle.signal);
+        if (!controle.signal.aborted) setEstado(r);
+      } finally { verificando = false; }
+    };
+    void atualizar();
+    window.addEventListener('focus', atualizar);
+    document.addEventListener('visibilitychange', atualizar);
+    const intervalo = window.setInterval(atualizar, 60_000);
+    return () => {
+      controle.abort();
+      window.clearInterval(intervalo);
+      window.removeEventListener('focus', atualizar);
+      document.removeEventListener('visibilitychange', atualizar);
+    };
   }, [tentativa]);
   const verificarDeNovo = useCallback(() => setTentativa((v) => v + 1), []);
   return [estado, verificarDeNovo];
@@ -396,6 +410,7 @@ export async function perguntarAoTaq(p: PerguntaAoTaq): Promise<ExecucaoDoTaq | 
         ...comum,
         text: r.resposta,
         fontes: fontesDe(r),
+        ...(r.pesquisasWeb?.length ? { pesquisasWeb: r.pesquisasWeb } : {}),
         desfecho: r.estado,
         ...(r.pergunta
           ? { pergunta: { motivo: r.pergunta.motivo, opcoes: r.pergunta.opcoes } }

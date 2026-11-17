@@ -25,6 +25,7 @@
  * há segundo escritor para coordenar. O `onLocalChange` abaixo mantém outras
  * abas da HOME em sincronia, que é o único concorrente real.
  */
+import type { PesquisaWeb } from '@/features/taq/pesquisaWeb';
 import { STORAGE_KEYS } from '@/shared/config/constants';
 import { onLocalChange, readLocal, writeLocal } from '@/shared/services/storage';
 import { comTravaLocal } from '@/shared/services/storageLock';
@@ -63,6 +64,7 @@ export interface ContextoDaPergunta {
 }
 
 export interface ConversationMessage {
+  pesquisasWeb?: PesquisaWeb[];
   id: string;
   role: MessageRole;
   text: string;

@@ -93,6 +93,7 @@ export const pedidoDeTurnoSchema = z.object({
    * rotas de geração (ver `activeDataPolicyWarning`).
    */
   sintetica: z.boolean().optional(),
+  buscaNaInternet: z.boolean().optional(),
 });
 export type PedidoDeTurno = z.infer<typeof pedidoDeTurnoSchema>;
 
@@ -102,6 +103,11 @@ export const usoSchema = z.object({
   cache: z.number().int().nonnegative().optional(),
 });
 export type Uso = z.infer<typeof usoSchema>;
+
+export const pesquisaWebSchema = z.object({
+  fontes: z.array(z.object({ titulo: z.string(), url: z.string().url().startsWith('https://') })),
+  sugestoesHtml: z.string().optional(),
+});
 
 export const respostaDoTurnoSchema = z.object({
   /**
@@ -113,6 +119,7 @@ export const respostaDoTurnoSchema = z.object({
   texto: z.string(),
   chamadas: z.array(chamadaDeFerramentaSchema),
   continuacao: z.string().optional(),
+  pesquisaWeb: pesquisaWebSchema.optional(),
   uso: usoSchema,
   provedor: z.string(),
   modelo: z.string(),
@@ -154,6 +161,7 @@ export interface ErroDoTurno {
 
 /** O que `GET /api/taq/estado` devolve — antes de a pessoa escrever. */
 export interface EstadoDoTaq {
+  buscaNaInternet: { disponivel: boolean; motivo: string };
   pronto: boolean;
   provedor: string | null;
   modelo: string | null;

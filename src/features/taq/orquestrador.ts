@@ -18,6 +18,8 @@
  * Falhar ao gravar esse registro não derruba a resposta: vira uma limitação.
  */
 import { z } from 'zod/v4';
+import { lerConducao } from '@/features/conducao/store';
+import { perfilQueValeParaAReuniao } from '@/features/conducao/contexto';
 import type { ConversationMessage } from '@/home/conversations';
 import { obterAcao, type TipoDeAcao } from '@/features/integracoes/registroDeAcoes';
 import {
@@ -450,7 +452,15 @@ export function criarOrquestrador(deps: {
         sinal: controle.signal,
       };
 
+      const perfil = await lerConducao()
+        .then((c) => perfilQueValeParaAReuniao(c, p.meetingId ?? null))
+        .catch(() => null);
+      const buscaNaInternet = perfil?.base === 'personalizado' && perfil.buscaNaInternet
+        ? await deps.modelo.estado?.(controle.signal)
+            .then((e) => e.buscaNaInternet?.disponivel === true).catch(() => false) ?? false
+        : false;
       const base = {
+        buscaNaInternet,
         modelo: deps.modelo,
         armazenamento: deps.armazenamento,
         livro,

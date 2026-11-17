@@ -42,6 +42,50 @@ troca-se o valor, não o código.
 
 ---
 
+## Manter sem custos e trocar a chave depois
+
+A busca na internet nasce desligada: mantenha `TAQ_BUSCA_NA_INTERNET=desligada`
+(ausência da variável também desliga). Não há consulta de teste ao modelo ao abrir
+a extensão: `GET /api/taq/estado` apenas lê configuração, sem validar a chave no
+provedor e sem gastar tokens. Uma chave presente pode estar expirada ou sem cota;
+nesses casos, o erro só será conhecido ao fazer um pedido real.
+
+Enquanto não houver chave compatível, a IA permanece pendente. Uma chave do plano
+gratuito sujeita a treinamento deve continuar com `DOCCITI_DATA_POLICY=training`:
+isso mantém a recusa de reuniões e documentos reais. Não altere para `private`
+apenas para contornar essa recusa. Captura e dados locais não dependem da chave.
+
+Quando houver uma chave funcional:
+
+1. No projeto Vercel, em **Settings → Environment Variables**, altere
+   `GOOGLE_API_KEY` no ambiente **Production**. Não altere o segredo compartilhado
+   com a extensão nem o endereço do servidor para uma simples troca de chave.
+2. Declare `DOCCITI_DATA_POLICY=private` somente se os termos da chave garantirem
+   tratamento compatível, sem uso dos dados para treinamento. Ajuste
+   `TAQ_ORQUESTRADOR`, `DOCCITI_LEITOR` e `DOCCITI_AUDITOR` se precisar trocar
+   também os modelos, verificando disponibilidade e preços do provedor.
+3. **Só quando aceitar os custos de pesquisa**, use
+   `TAQ_BUSCA_NA_INTERNET=ligada`. A integração atual aceita Google Gemini 3 com
+   busca nativa e ferramentas locais; outros modelos mantêm a busca indisponível.
+4. Publique o código preparado com `vercel deploy --prod` a partir do projeto
+   ligado. Para futuras trocas apenas de variável, faça **Redeploy** do deploy que
+   já contém este código. Redeploy de uma versão antiga não publica mudanças locais.
+5. Volte à janela da extensão: ela consulta a disponibilidade ao ganhar foco e a
+   cada minuto enquanto visível. A partir desta atualização da extensão, futuras
+   trocas de chave não precisam de reinstalação ou rebuild. A primeira atualização
+   do cliente ainda precisa ser carregada em `chrome://extensions`.
+
+Para pesquisar, no perfil **Personalizado**, abra **Busca na internet**, marque
+**Permitir quando estiver disponível** e salve em **Usar este assistente**. A
+permissão vale para as conversas com o Taq, não para geração automática de
+documentos nem apoio automático durante a reunião. Reuniões já iniciadas mantêm
+o perfil com que começaram. As respostas guardam os links e as sugestões da
+pesquisa; as sugestões são renderizadas em iframe isolado, sem scripts.
+
+Desligar só a busca **não impede custos das outras chamadas de IA** depois de
+instalar uma chave paga. Para manter custo zero agora, não ative faturamento nem
+use uma chave paga. Os testes desta integração usam respostas simuladas.
+
 ## 1. Criar o projeto
 
 O repositório tem **dois projetos independentes**: a extensão na raiz e este

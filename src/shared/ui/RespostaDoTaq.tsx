@@ -24,6 +24,7 @@ import { Markdown } from './Markdown';
 import { BotaoCopiar } from './BotaoCopiar';
 import type { ResultadoDaConfirmacao } from '@/features/taq/orquestrador';
 import { CartoesDoTaq } from './CartoesDoTaq';
+import { FontesDaInternet } from './FontesDaInternet';
 import { semMarcadores } from '@/features/taq/evidencias';
 import './respostaDoTaq.css';
 
@@ -102,6 +103,8 @@ export function RespostaDoTaq({
           }}
         />
       </div>
+
+      {!!mensagem.pesquisasWeb?.length && <FontesDaInternet pesquisas={mensagem.pesquisasWeb} />}
 
       {mensagem.cartoes && mensagem.cartoes.length > 0 && (
         <CartoesDoTaq

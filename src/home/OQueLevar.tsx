@@ -31,6 +31,7 @@
  * (os mesmos botões, em coluna): na prévia ele rolava de lado num celular, e
  * um mapa que só se lê rolando de lado não mostra o caminho a ninguém.
  */
+import { useDisponibilidadeDoTaq } from '@/features/taq/interface';
 import { Fragment, useEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   MAX_CONTEXTOS,
@@ -425,20 +426,28 @@ function PainelDaBusca({
   mudar: (p: Partial<Rascunho>) => void;
   aoFechar: () => void;
 }) {
+  const [estado] = useDisponibilidadeDoTaq();
+  const busca = estado.fase === 'pronto' ? estado.buscaNaInternet : undefined;
+  const aviso = estado.fase === 'verificando' ? 'Verificando a disponibilidade…'
+    : estado.fase === 'inalcancavel' ? 'Não foi possível consultar o servidor. Sua preferência continua salva.'
+    : estado.fase === 'pendente' ? estado.motivos.join(' ')
+    : busca?.disponivel ? 'Disponível nas conversas com o Taq. As respostas pesquisadas mostram links das fontes.'
+    : busca?.motivo || 'A busca aguarda atualização e liberação no servidor.';
   return (
     <>
       <Cabeca olho="Fora do computador" titulo="Busca na internet" aoFechar={aoFechar} />
       <div className="tq-ed-corpo">
         {r.base === 'personalizado' ? (
           <Interruptor
-            titulo="Ligada neste assistente"
+            titulo="Permitir quando estiver disponível"
             ligado={r.buscaNaInternet}
             aoMudar={(buscaNaInternet) => mudar({ buscaNaInternet })}
           />
         ) : (
           <p className="tq-ed-citacao">Desligada no Padrão do CITi.</p>
         )}
-        <p className="tq-ed-aviso">A busca ainda não está disponível nesta versão.</p>
+        <p className="tq-ed-aviso" role="status">{aviso}</p>
+        <p className="tq-ed-aviso">A permissão vale para perguntas ao Taq. A busca pode ter cobrança do provedor quando liberada no servidor.</p>
       </div>
     </>
   );
@@ -676,7 +685,7 @@ export function OQueLevar({ conducao, emAndamento }: { conducao: Conducao; emAnd
     ? [
         `${ligados} ${ligados === 1 ? 'contexto levado' : 'contextos levados'}`,
         `${contextos.length - ligados} ${contextos.length - ligados === 1 ? 'guardado' : 'guardados'}`,
-        `busca ${r.buscaNaInternet ? 'ligada' : 'desligada'}`,
+        `busca ${r.buscaNaInternet ? 'permitida quando disponível' : 'desligada'}`,
         `${contextos.length} de ${MAX_CONTEXTOS} vagas`,
       ]
     : [`${contextos.length} contextos`, 'definido pelo CITi'];

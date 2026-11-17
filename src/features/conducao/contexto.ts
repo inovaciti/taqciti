@@ -12,8 +12,8 @@
  * Nenhum dos dois dá ou tira permissão: quem decide o que o Taq pode fazer é a
  * política em código, não este texto. Também não são fatos da reunião, e o
  * texto diz isso. O briefing sem objetivo informado diz que não há objetivo:
- * o título da reunião não o substitui. A busca na internet não entra: é só a
- * preferência, e a ferramenta não existe.
+ * o título da reunião não o substitui. A permissão de busca na internet é
+ * aplicada pelo orquestrador e pelo servidor, fora deste texto.
  *
  * Qual perfil vale para a reunião, nesta ordem: a cópia de quando ela COMEÇOU
  * (`emUso`); a de quando foi preparada (`perfilUsado` do briefing, para a

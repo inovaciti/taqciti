@@ -1133,7 +1133,7 @@ export const FUNCIONALIDADES: readonly Funcionalidade[] = [
     limitacoes: [
       'O Padrão do CITi é igual para todos e não se edita; para mudar, personalize.',
       'Só os contextos ligados vão junto quando o Taq consulta a IA; os guardados ficam só neste computador.',
-      '“Busca na internet” guarda só a sua preferência: a busca ainda não está disponível nesta versão.',
+      '“Busca na internet” permite pesquisas nas conversas com o Taq quando a chave, o modelo e a liberação no servidor forem compatíveis. O painel mostra a disponibilidade; a permissão sozinha não ativa a busca nem a cobrança.',
       'Cada reunião começa com a versão do assistente em uso e fica com ela até o fim: o que você mudar durante uma reunião vale a partir da próxima.',
       'Se você der vários retornos do mesmo tipo sobre as sugestões (descartar, “tarde demais”, “já foi resolvido”), aparecem “Ajustes sugeridos”, com o que mudaria. Nada muda sozinho: “Aplicar ao meu assistente” grava uma nova versão do perfil; “Agora não” recusa, e a proposta só volta com retorno novo.',
     ],
