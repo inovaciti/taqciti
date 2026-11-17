@@ -13,9 +13,12 @@
  * O Meet redesenha a barra sem avisar e leva embora o que não é dele, então a
  * posição é CONFERIDA a cada passada (`sincronizar`), e o botão volta ao lugar.
  *
+ * Marca e estado por escrito: a cor sozinha não distingue pausa de início.
  * Vanilla de propósito: é um botão. Nada de React dentro da barra do Meet.
  */
 import { LEAVE_CALL_SELECTORS } from './selectors';
+import TOKENS from '@/shared/config/tokens.css?inline';
+import { registrarFonteDaCapsula } from '@/content/ui/fonte';
 
 const ID = 'taqciti-botao-na-barra';
 const ID_ESTILO = 'taqciti-botao-na-barra-estilo';
@@ -29,38 +32,58 @@ export interface EstadoDoBotao {
   pulsando: boolean;
   /** O que o leitor de tela e a dica dizem. */
   rotulo: string;
+  /** Estado curto, visível sem passar o mouse. */
+  texto?: string;
 }
 
 const COR: Record<TomDoBotao, string> = {
-  verde: '#5ad88a',
-  ambar: '#f2c94c',
-  vermelho: '#ff6b5e',
-  neutro: '#9aa0a6',
+  verde: 'rgb(var(--c-glow))',
+  ambar: 'rgb(var(--c-atencao))',
+  vermelho: 'rgb(var(--c-danger))',
+  neutro: 'rgb(var(--c-muted))',
 };
 
 const ESTILO = `
+${TOKENS.replace(/:root|:host/g, `#${ID}`)}
 #${ID} {
   all: unset;
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
+  justify-content: flex-start;
+  gap: 9px;
+  width: 176px;
+  height: 44px;
+  padding: 0 13px 0 10px;
   margin: 0 6px;
-  border-radius: 50%;
-  background: rgb(60, 64, 67);
+  border-radius: 16px;
+  border: 1px solid rgb(var(--c-primary) / .28);
+  background: rgb(var(--c-surface));
+  color: rgb(var(--c-text));
+  font: 500 12px/1.3 var(--font-texto);
   cursor: pointer;
   flex: 0 0 auto;
-  transition: background-color 0.15s;
+  transition: background-color 0.2s, border-color 0.2s;
 }
-#${ID}:hover { background: rgb(77, 81, 86); }
-#${ID}:focus-visible { outline: 2px solid #8ab4f8; outline-offset: 2px; }
-#${ID} svg { width: 22px; height: 22px; display: block; }
+#${ID}:hover { background: rgb(var(--c-elevated)); border-color: rgb(var(--c-glow) / .6); }
+#${ID}:focus-visible { outline: 2px solid rgb(var(--c-glow)); outline-offset: 3px; }
+#${ID} svg { width: 26px; height: 26px; display: block; flex-shrink: 0; }
+#${ID} .taqciti-textos { display: grid; gap: 1px; text-align: left; white-space: nowrap; }
+#${ID} .taqciti-nome { color: rgb(var(--c-text)); font-size: 11px; font-weight: 700; letter-spacing: .03em; }
+#${ID} .taqciti-estado { color: var(--taqciti-cor); font-size: 11px; }
+#${ID} .taqciti-miolo { transform-origin: center; }
 #${ID}[${ATRIBUTO}~="pulsando"] .taqciti-miolo {
   animation: taqciti-pulso 1.6s ease-in-out infinite;
 }
-@keyframes taqciti-pulso { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes taqciti-pulso { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+@media (max-width: 900px) {
+  #${ID} { width: 152px; padding: 0 8px; gap: 6px; margin: 0 3px; }
+  #${ID} .taqciti-nome { display: none; }
+}
+@media (max-width: 600px) {
+  #${ID} { width: 40px; padding: 0; justify-content: center; }
+  #${ID} .taqciti-textos { display: none; }
+}
 @media (prefers-reduced-motion: reduce) {
   #${ID}[${ATRIBUTO}~="pulsando"] .taqciti-miolo { animation: none; }
 }
@@ -97,12 +120,15 @@ function acharBarra(): { pai: Element; antes: Element } | null {
   return null;
 }
 
-function icone(cor: string): string {
-  // Um anel e, dentro, o ponto: o "gravar" de sempre, sem texto.
+function icone(): string {
+  // O mesmo glifo da escuta: onda à esquerda, escrita à direita.
   return (
-    `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">` +
-    `<circle cx="12" cy="12" r="8.5" fill="none" stroke="#e8eaed" stroke-width="1.6"/>` +
-    `<circle class="taqciti-miolo" cx="12" cy="12" r="4.2" fill="${cor}"/></svg>`
+    `<svg viewBox="0 0 28 28" aria-hidden="true" focusable="false">` +
+    `<defs><linearGradient id="taqciti-escuta-tinta" x2="1" y2="1"><stop stop-color="#3ddc2e"/>` +
+    `<stop offset=".45" stop-color="#06a48c"/><stop offset=".75" stop-color="#05b2d4"/>` +
+    `<stop offset="1" stop-color="#6a3de8"/></linearGradient></defs>` +
+    `<g class="taqciti-miolo" fill="none" stroke="url(#taqciti-escuta-tinta)" stroke-width="2.4" stroke-linecap="round">` +
+    `<path d="M4 10v8 M8 6v16 M12 9v10 M17 8h7 M17 14h5 M17 20h6"/></g></svg>`
   );
 }
 
@@ -130,13 +156,14 @@ export class BotaoNaBarra {
     if (this.el.parentElement !== barra.pai || this.el.nextElementSibling !== barra.antes) {
       barra.pai.insertBefore(this.el, barra.antes);
     }
-    const chave = `${estado.tom}|${estado.pulsando}|${estado.rotulo}`;
+    const chave = `${estado.tom}|${estado.pulsando}|${estado.rotulo}|${estado.texto}`;
     if (chave !== this.ultimo) {
       this.ultimo = chave;
       this.el.setAttribute(ATRIBUTO, estado.pulsando ? 'pulsando' : 'parado');
       this.el.setAttribute('aria-label', estado.rotulo);
       this.el.title = estado.rotulo;
-      this.el.innerHTML = icone(COR[estado.tom]);
+      this.el.style.setProperty('--taqciti-cor', COR[estado.tom]);
+      this.el.querySelector('.taqciti-estado')!.textContent = estado.texto ?? estado.rotulo;
     }
     return true;
   }
@@ -152,6 +179,7 @@ export class BotaoNaBarra {
     const botao = document.createElement('button');
     botao.id = ID;
     botao.type = 'button';
+    botao.innerHTML = `${icone()}<span class="taqciti-textos" aria-hidden="true"><span class="taqciti-nome">TaqCiti</span><span class="taqciti-estado"></span></span>`;
     // O clique é tratado aqui, sem `await` antes: é o gesto dele que autoriza o
     // Chrome a abrir a sidebar.
     botao.addEventListener('click', (e) => {
@@ -163,6 +191,7 @@ export class BotaoNaBarra {
   }
 
   private garantirEstilo(): void {
+    registrarFonteDaCapsula();
     if (document.getElementById(ID_ESTILO)) return;
     const estilo = document.createElement('style');
     estilo.id = ID_ESTILO;

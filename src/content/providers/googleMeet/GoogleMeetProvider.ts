@@ -40,7 +40,7 @@ import { readMeetAccountContext } from './accountContext';
 import {
   CALL_ENDED_BUTTON_TEXT,
   CAPTION_REGION_SELECTORS,
-  CAPTIONS_TOGGLE_SELECTORS,
+  queryCaptionsToggle,
   LEAVE_CALL_SELECTORS,
   PARTICIPANT_NAME_SELECTORS,
   PARTICIPANT_TILE_SELECTOR,
@@ -229,7 +229,7 @@ export class GoogleMeetProvider implements MeetingProvider {
   areCaptionsAvailable(): boolean {
     return safely(
       'busca do botão de legendas',
-      () => queryFirst(document, CAPTIONS_TOGGLE_SELECTORS) !== null,
+      () => queryCaptionsToggle() !== null,
       false,
     );
   }
@@ -247,10 +247,16 @@ export class GoogleMeetProvider implements MeetingProvider {
     return safely(
       'leitura do estado das legendas',
       () => {
-        const toggle = queryFirst(document, CAPTIONS_TOGGLE_SELECTORS);
+        const toggle = queryCaptionsToggle();
         const pressed = toggle?.getAttribute('aria-pressed');
         if (pressed === 'true') return true;
         if (pressed === 'false') return false;
+
+        // Sem aria-pressed, o rótulo da próxima ação informa o estado atual.
+        // Texto da barra de idioma dentro da região não prova captura ligada.
+        const label = toggle?.getAttribute('aria-label') ?? '';
+        if (/desativar|turn off|disable/i.test(label)) return true;
+        if (/ativar|turn on|enable/i.test(label)) return false;
 
         const region = queryFirst(document, CAPTION_REGION_SELECTORS);
         return (region?.textContent ?? '').trim().length > 0;
@@ -290,7 +296,7 @@ export class GoogleMeetProvider implements MeetingProvider {
       'clique no botão de legendas',
       () => {
         if (this.areCaptionsEnabled()) return true;
-        const toggle = queryFirst(document, CAPTIONS_TOGGLE_SELECTORS);
+        const toggle = queryCaptionsToggle();
         if (toggle instanceof HTMLElement) {
           toggle.click();
           return true;

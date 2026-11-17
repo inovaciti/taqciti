@@ -184,10 +184,10 @@ export const FUNCIONALIDADES: readonly Funcionalidade[] = [
     onde: 'Página do Google Meet (a cápsula do TaqCiti) ou a sidebar',
     passos: [
       'Entre na reunião pelo Google Meet, no navegador com a extensão instalada.',
-      'O TaqCiti pergunta “Deseja registrar esta reunião?” ao lado da cápsula e na sidebar: clique em “Registrar”.',
+      'No Meet, o TaqCiti pergunta “Vamos guardar esta conversa?”: clique em “Começar registro”. Na sidebar, a ação é “Registrar”.',
       'O TaqCiti liga as legendas do Meet sozinho e as esconde da tela. Enquanto isso, a sidebar mostra “Preparando a transcrição…”.',
       'As falas aparecem na sidebar, em “Reunião”, na aba “Transcrição”.',
-      'Se a sala já tem uma gravação guardada, a pergunta mostra qual é e oferece “Continuar de onde parou” (as falas novas entram nela) ou “Nova gravação”.',
+      'Se a sala já tem uma gravação guardada, o convite no Meet oferece “Continuar de onde parou” (as falas novas entram nela) ou “Novo registro”. Na sidebar, a segunda opção é “Nova gravação”.',
     ],
     preRequisitos: [
       'Reunião no Google Meet (meet.google.com).',
@@ -201,7 +201,9 @@ export const FUNCIONALIDADES: readonly Funcionalidade[] = [
       'Voltar à mesma sala em até 10 minutos continua a gravação sem perguntar. Continuar uma gravação só é oferecido para gravações feitas a partir de 03/10/2026, que guardam de que sala vieram.',
     ],
     rotulos: [
-      'Deseja registrar esta reunião?',
+      'Vamos guardar esta conversa?',
+      'Começar registro',
+      'Novo registro',
       'Continuar de onde parou',
       'Nova gravação',
       'Agora não',

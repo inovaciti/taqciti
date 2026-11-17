@@ -35,8 +35,7 @@ import type { MeetingPhase, PanelPrefs } from '@/shared/types/domain';
 import type { DecisaoDeRegistro, GravacaoAnterior } from '@/features/meeting/consent';
 import { formatElapsedClock } from '@/shared/ui/format';
 import { Icon } from '@/shared/ui/Icon';
-import { Sheen, SHEEN_HOST_POSITIONED, trackSheen } from '@/shared/ui/Sheen';
-import { Wave } from '@/shared/ui/Wave';
+import { SinalTaqciti } from '@/shared/ui/SinalTaqciti';
 import { derivarEstadoDaCaptura, LEITURA_DO_ESTADO } from '@/shared/ui/estadoDaCaptura';
 import { useFloating } from './useFloating';
 import { PANEL_OPEN_EVENT } from './mount';
@@ -81,8 +80,7 @@ interface Props {
   portaoFalhou?: boolean;
   /** `false` = há legenda na tela que a captura não está conseguindo ler. */
   saudavel: boolean;
-  /** Instante do último trecho recebido; 
-ull = nenhum ainda. */
+  /** Instante do último trecho recebido; null = nenhum ainda. */
   ultimoTrechoEm?: number | null;
   /** Quantas falas já foram capturadas. */
   falas?: number;
@@ -98,8 +96,8 @@ ull = nenhum ainda. */
 /** Quanto tempo a explicação de falha fica na tela. */
 const DICA_MS = 6000;
 
-/** Largura desejada do balão da pergunta — a mesma do `w-[286px]` abaixo. */
-const LARGURA_PERGUNTA = 286;
+/** Largura do convite; o viewport limita a largura em janelas pequenas. */
+const LARGURA_PERGUNTA = 336;
 /** Respiro mínimo entre o balão e a borda da tela. */
 const MARGEM_DA_PERGUNTA = 12;
 
@@ -199,18 +197,8 @@ export function Capsula({
   );
   const gravando = estado === 'capturando' && !perguntando;
 
-  const tone = perguntando
-    ? 'amber'
-    : estado === 'erro'
-      ? 'red'
-      : estado === 'capturando'
-        ? 'green'
-        : estado === 'desligada' || estado === 'salva'
-          ? 'dim'
-          : 'amber';
-
   const rotulo = perguntando
-    ? 'registrar?'
+    ? 'Registrar reunião'
     : estado === 'erro'
       ? 'erro na captura'
       : estado === 'interrompida'
@@ -231,7 +219,7 @@ export function Capsula({
                       ? 'sem registro'
                       : 'TaqCiti';
   /** A pergunta abre para cima ou para baixo, conforme onde a cápsula está. */
-  const paraBaixo = floating.geometry.capsule.top < 220;
+  const paraBaixo = floating.geometry.capsule.top < window.innerHeight / 2;
 
   /*
    * Onde a pergunta cabe — e não só onde ela gostaria de ficar.
@@ -253,16 +241,20 @@ export function Capsula({
       window.innerWidth - larguraDaPergunta - MARGEM_DA_PERGUNTA,
     ),
   );
-  const topoDaPergunta = Math.max(
-    MARGEM_DA_PERGUNTA,
-    paraBaixo
-      ? floating.geometry.capsule.top + 52
-      : floating.geometry.capsule.top - (gravacaoAnterior ? 236 : 172),
-  );
+  const posicaoDaPergunta = barraAtiva
+    ? { right: 20, bottom: 88, maxHeight: 'calc(100dvh - 108px)' }
+    : {
+        left: esquerdaDaPergunta,
+        ...(paraBaixo
+          ? { top: floating.geometry.capsule.top + 64,
+              maxHeight: window.innerHeight - floating.geometry.capsule.top - 76 }
+          : { bottom: window.innerHeight - floating.geometry.capsule.top + 12,
+              maxHeight: floating.geometry.capsule.top - 24 }),
+      };
 
   return (
     <>
-      <button
+      {!barraAtiva && <button
         ref={floating.capsuleRef as RefObject<HTMLButtonElement>}
         type="button"
         title="TaqCiti — clique para abrir o painel, arraste para mover"
@@ -274,27 +266,27 @@ export function Capsula({
         {...floating.dragHandlers}
         onPointerMove={(event) => {
           floating.dragHandlers.onPointerMove(event);
-          trackSheen(event);
         }}
         onPointerUp={(event) => {
           floating.dragHandlers.onPointerUp(event);
-          if (floating.wasClick()) abrir();
+          if (gestoReal(event) && floating.wasClick()) abrir();
         }}
         // Enter/Espaço: o clique sintetizado pelo teclado tem `detail === 0` e
         // não passa por pointerup — sem isto, a cápsula focada não abria nada.
         // O clique do mouse (detail ≥ 1) já foi tratado acima.
         onClick={(event) => {
-          if (event.detail === 0) abrir();
+          if (gestoReal(event) && event.detail === 0) abrir();
         }}
         style={{ left: floating.geometry.capsule.left, top: floating.geometry.capsule.top }}
-        className={`glass ${SHEEN_HOST_POSITIONED} fixed z-[2147483000] flex items-center gap-2.5 rounded-full py-2.5 pl-3.5 pr-4 text-body font-semibold tabular-nums text-foreground transition-[opacity,transform] duration-300 ease-flow animate-dock-in ${
+        data-estado={estado}
+        className={`tq-meet-capsula ${
           floating.dragging ? 'cursor-grabbing' : 'cursor-grab'
         }`}
       >
-        <Sheen />
-        <Wave size={16} animated={estado === 'capturando'} tone={tone} />
-        <span className={gravando ? '' : 'text-muted'}>
-          {rotulo}
+        <SinalTaqciti altura={23} />
+        <span className="tq-meet-capsula-texto">
+          <strong>TaqCiti</strong>
+          <span>{rotulo}</span>
         </span>
         {gravando && (
           <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse-dot" />
@@ -304,31 +296,32 @@ export function Capsula({
         )}
         {/* Só a MUDANÇA de estado é anunciada: o relógio, que muda a cada segundo, fica de fora. */}
         <span className="sr-only" role="status">{perguntando ? '' : LEITURA_DO_ESTADO[estado]}</span>
-      </button>
+      </button>}
 
       {/* ---------- a solicitação, na própria página ---------- */}
       {perguntando && (
         <div
           role="dialog"
           aria-label="Registrar esta reunião?"
-          style={{ left: esquerdaDaPergunta, top: topoDaPergunta }}
-          className="glass fixed z-[2147483002] w-[286px] max-w-[92vw] rounded-card p-3.5 animate-dock-in"
+          style={posicaoDaPergunta}
+          className="tq-meet-convite"
         >
-          <p className="text-read font-semibold text-foreground">
-            Deseja registrar esta reunião?
-          </p>
+          <div className="tq-meet-convite-marca">
+            <SinalTaqciti altura={28} />
+            <span>TaqCiti <span>· seu registro da reunião</span></span>
+          </div>
+          <h2>Vamos guardar esta conversa?</h2>
           {perguntandoSobre && (
-            <p className="mt-0.5 truncate text-caption text-muted">{perguntandoSobre}</p>
+            <p className="tq-meet-sala" title={perguntandoSobre}>{perguntandoSobre}</p>
           )}
-          <p className="mt-2 text-micro leading-relaxed text-muted/90">
-            O TaqCiti lê as <strong className="font-medium">legendas do Meet</strong> e
-            guarda a transcrição neste computador. Não há gravação de áudio nem de
-            vídeo.
+          <p className="tq-meet-explicacao">
+            Transforme as legendas em uma transcrição para consultar depois.
+            O registro fica neste computador, sem gravar áudio ou vídeo.
           </p>
 
           {gravacaoAnterior && (
-            <p className="mt-2 text-micro leading-relaxed text-muted/90">
-              Esta sala já tem uma gravação:{' '}
+            <p className="tq-meet-anterior">
+              Último registro nesta sala:{' '}
               <strong className="font-medium">{gravacaoAnterior.title}</strong> ·{' '}
               {new Date(gravacaoAnterior.endedAt).toLocaleString('pt-BR', {
                 day: '2-digit',
@@ -344,33 +337,29 @@ export function Capsula({
             <button
               type="button"
               onClick={(e) => gestoReal(e) && aceitar(`continuar:${gravacaoAnterior.id}`)}
-              className="mt-3 w-full rounded-full border border-primary/45 bg-primary/[0.16] px-3 py-2 text-caption font-medium text-glow transition-colors duration-200 hover:bg-primary/25"
+              className="tq-meet-acao tq-meet-acao-principal tq-meet-continuar"
             >
               Continuar de onde parou
             </button>
           )}
-          <div className={`${gravacaoAnterior ? 'mt-1.5' : 'mt-3'} flex gap-1.5`}>
+          <div className="tq-meet-acoes">
             <button
               type="button"
               onClick={(e) => gestoReal(e) && aceitar('aceito')}
-              className={`flex-1 rounded-full px-3 py-2 text-caption transition-colors duration-200 ${
-                gravacaoAnterior
-                  ? 'border border-white/15 text-foreground hover:bg-white/[0.07]'
-                  : 'border border-primary/45 bg-primary/[0.16] font-medium text-glow hover:bg-primary/25'
-              }`}
+              className={`tq-meet-acao ${gravacaoAnterior ? '' : 'tq-meet-acao-principal'}`}
             >
-              {gravacaoAnterior ? 'Nova gravação' : 'Registrar'}
+              {gravacaoAnterior ? 'Novo registro' : 'Começar registro'}
             </button>
             <button
               type="button"
-              onClick={() => callbacks.onResponder('recusado')}
-              className="flex-1 rounded-full border border-white/10 px-3 py-2 text-caption text-muted transition-colors duration-200 hover:bg-white/[0.07] hover:text-foreground"
+              onClick={(e) => gestoReal(e) && callbacks.onResponder('recusado')}
+              className="tq-meet-acao"
             >
               Agora não
             </button>
           </div>
-          <p className="mt-2 text-micro text-muted/75">
-            Ignorar mantém a captura desligada.
+          <p className="tq-meet-rodape">
+            Só começa quando você escolher.
           </p>
         </div>
       )}
@@ -382,7 +371,8 @@ export function Capsula({
           type="button"
           // Primeiro abre a sidebar (é o gesto do clique que autoriza, e ele não
           // sobrevive a um `await`), depois manda gravar.
-          onClick={() => {
+          onClick={(event) => {
+            if (!gestoReal(event)) return;
             abrir();
             callbacks.onGravarAgora();
           }}
@@ -392,11 +382,9 @@ export function Capsula({
               MARGEM_DA_PERGUNTA,
               Math.min(floating.geometry.capsule.left, window.innerWidth - (portaoFalhou ? 360 : 170)),
             ),
-            top: floating.geometry.capsule.top + 44,
+            top: floating.geometry.capsule.top + 62,
           }}
-          className={`glass fixed z-[2147483000] rounded-full border px-3 py-1 text-micro transition-[opacity,color] duration-200 hover:text-foreground hover:opacity-100 focus-visible:opacity-100 animate-dock-in ${
-            portaoFalhou ? 'border-primary/45 text-glow' : 'border-white/10 text-muted opacity-70'
-          }`}
+          className="tq-meet-manual"
         >
           {portaoFalhou ? 'Não consegui perguntar se devo registrar. Registrar esta reunião?' : 'Registrar esta reunião'}
         </button>
@@ -411,7 +399,7 @@ export function Capsula({
             left: floating.geometry.capsule.left,
             top: floating.geometry.capsule.top - 78,
           }}
-          className="glass fixed z-[2147483001] max-w-[280px] rounded-card px-3.5 py-2.5 text-caption leading-relaxed text-muted animate-fade-in"
+          className="tq-meet-dica"
         >
           Não consegui abrir o painel daqui.
           <strong className="font-medium text-foreground">
@@ -434,7 +422,7 @@ export function Capsula({
             left: floating.geometry.capsule.left - 26,
             top: floating.geometry.capsule.top + 2,
           }}
-          className="glass fixed z-[2147483000] grid h-6 w-6 place-items-center rounded-full text-muted opacity-0 transition-opacity duration-200 hover:opacity-100 focus-visible:opacity-100"
+          className="tq-meet-esconder"
         >
           <Icon name="close" size={12} />
         </button>

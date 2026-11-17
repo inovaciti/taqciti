@@ -10,6 +10,60 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
+describe('GoogleMeetProvider — controle de idioma não é botão de legendas', () => {
+  it('liga as legendas sem clicar no menu de idioma que aparece antes delas', () => {
+    render(`<button aria-label="Idioma das legendas" aria-haspopup="menu">Português</button>
+      <button aria-label="Ativar legendas">CC</button>`);
+    const idioma = vi.fn();
+    const ativar = vi.fn();
+    document.querySelectorAll('button')[0]!.addEventListener('click', idioma);
+    document.querySelectorAll('button')[1]!.addEventListener('click', ativar);
+    expect(new GoogleMeetProvider().requestEnableCaptions()).toBe(true);
+    expect(ativar).toHaveBeenCalledTimes(1);
+    expect(idioma).not.toHaveBeenCalled();
+  });
+
+  it.each(['Desativar legendas', 'Turn off captions'])('não desliga legendas no silêncio: %s', (label) => {
+    render(`<button aria-label="${label}">CC</button><div role="region" aria-label="Legendas"></div>`);
+    const clique = vi.fn();
+    document.querySelector('button')!.addEventListener('click', clique);
+    const provider = new GoogleMeetProvider();
+    expect(provider.areCaptionsEnabled()).toBe(true);
+    provider.requestEnableCaptions();
+    provider.requestEnableCaptions();
+    expect(clique).not.toHaveBeenCalled();
+  });
+
+  it('não usa o nome do idioma como evidência de legendas ligadas', () => {
+    render(`<button aria-label="Ativar legendas">CC</button>
+      <div role="region" aria-label="Legendas"><button>Português</button></div>`);
+    expect(new GoogleMeetProvider().areCaptionsEnabled()).toBe(false);
+  });
+
+  it('só o menu de idioma presente não autoriza nenhum clique', () => {
+    render('<button aria-label="Caption language" aria-haspopup="menu">English</button>');
+    const clique = vi.fn();
+    document.querySelector('button')!.addEventListener('click', clique);
+    const provider = new GoogleMeetProvider();
+    expect(provider.areCaptionsAvailable()).toBe(false);
+    expect(provider.requestEnableCaptions()).toBe(false);
+    expect(clique).not.toHaveBeenCalled();
+  });
+
+  it('ignora o botão escondido do layout anterior', () => {
+    render(`<button aria-label="Ativar legendas"></button><button aria-label="Ativar legendas"></button>`);
+    const botoes = document.querySelectorAll('button');
+    botoes[0]!.checkVisibility = () => false;
+    const escondido = vi.fn();
+    const visivel = vi.fn();
+    botoes[0]!.addEventListener('click', escondido);
+    botoes[1]!.addEventListener('click', visivel);
+    new GoogleMeetProvider().requestEnableCaptions();
+    expect(escondido).not.toHaveBeenCalled();
+    expect(visivel).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('GoogleMeetProvider — presença confiável e reconciliada', () => {
   it('não promove avatar/falante da legenda a participante', () => {
     render(`

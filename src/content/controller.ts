@@ -213,6 +213,12 @@ export class ContentController {
       tom,
       pulsando: estado === 'capturando' && !perguntando,
       rotulo,
+      texto: perguntando ? 'Registrar reunião' : {
+        capturando: 'Transcrevendo', preparando: 'Preparando…', iniciando: 'Iniciando…',
+        aguardando_fonte: 'Aguardando legendas', pausada: 'Pausado',
+        interrompida: 'Reconectando…', erro: 'Verificar captura',
+        salva: 'Novo registro', desligada: 'Registrar reunião',
+      }[estado],
     });
     if (montado !== this.barraAtiva) {
       this.barraAtiva = montado;

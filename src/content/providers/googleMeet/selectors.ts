@@ -30,12 +30,31 @@ export const LEAVE_CALL_SELECTORS = [
 export const CALL_ENDED_BUTTON_TEXT =
   /^(rejoin|participar novamente|voltar à tela inicial|voltar para a tela inicial|return to home screen)$/i;
 
-/** Botão de ativar/desativar legendas. */
+/** O seletor amplo também pegava "Idioma das legendas" e abria o menu a cada
+ * tentativa de ligar a captura. Só ações de ligar/desligar são candidatas. */
 export const CAPTIONS_TOGGLE_SELECTORS = [
-  'button[aria-label*="caption" i]',
-  'button[aria-label*="legenda" i]',
+  'button[aria-label*="legenda" i][aria-pressed]',
+  'button[aria-label*="caption" i][aria-pressed]',
+  'button[aria-label*="ativar legendas" i]',
+  'button[aria-label*="turn on captions" i]',
+  'button[aria-label*="turn off captions" i]',
+  'button[aria-label*="enable captions" i]',
+  'button[aria-label*="disable captions" i]',
   '[jsname="r8qRAd"]',
 ];
+
+/** O Meet pode conservar botões de um layout anterior, escondidos. */
+export function queryCaptionsToggle(): HTMLElement | null {
+  for (const selector of CAPTIONS_TOGGLE_SELECTORS) {
+    for (const el of document.querySelectorAll<HTMLElement>(selector)) {
+      if (el.matches('[disabled], [aria-disabled="true"], [aria-haspopup]')) continue;
+      if (/idioma|language|settings|configura/i.test(el.getAttribute('aria-label') ?? '')) continue;
+      if (typeof el.checkVisibility === 'function' && !el.checkVisibility()) continue;
+      return el;
+    }
+  }
+  return null;
+}
 
 /** Região onde as legendas são renderizadas (só existe com legendas ligadas). */
 export const CAPTION_REGION_SELECTORS = [

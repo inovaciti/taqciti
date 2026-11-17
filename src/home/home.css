@@ -754,11 +754,12 @@ html {
 /* O nome do Taq sobre a resposta — uma regra só (havia uma base de 10px em
    cinza e uma segunda, de 12px em violeta, que sempre a vencia). */
 .tq-agente-nome {
-  font-size: var(--fs-ui);
-  font-weight: var(--peso-enfase);
+  font-family: var(--font-taq);
+  font-size: 13px;
+  font-weight: 700;
   line-height: var(--lh-rotulo);
   color: var(--ideia);
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .tq-indisponivel {
@@ -2258,8 +2259,8 @@ body .tq-home [role='dialog'] button {
   --voz: #5ccb85;
   --voz-clara: #90dfad;
   --voz-funda: #0c3120;
-  --ideia: #9b82f5;
-  --ideia-clara: #cdc0fc;
+  --ideia: rgb(var(--c-taq-acento));
+  --ideia-clara: rgb(var(--c-taq-texto));
   --papel: #f3f4f1;
   --tinta-papel: #15171a;
   --cinza-papel: #5c6269;
@@ -2376,11 +2377,11 @@ body .tq-home [role='dialog'] button {
 
 .tq-slogan {
   margin: 0;
-  font-family: var(--font-titulo);
-  font-size: 15px;
+  font-family: var(--font-taq);
+  font-size: 17px;
   font-weight: 500;
   letter-spacing: 0.2px;
-  color: var(--e-cinza);
+  color: var(--ideia-clara);
 }
 
 /* Primeiro uso (sem reunião guardada): discreto, abaixo do slogan, e some
@@ -2408,8 +2409,9 @@ body .tq-home [role='dialog'] button {
   font-size: 12px;
   padding: 5px 12px;
   border-radius: 999px;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  color: rgb(196 199 203);
+  border: 1px solid rgb(var(--c-taq-acento) / 0.22);
+  color: var(--ideia-clara);
+  background: rgb(var(--c-taq-acento) / 0.04);
   cursor: pointer;
   transition:
     border-color 0.3s,
@@ -2418,8 +2420,8 @@ body .tq-home [role='dialog'] button {
 
 .tq-sugestoes button:hover,
 .tq-sugestoes button:focus-visible {
-  border-color: rgb(255 255 255 / 0.26);
-  color: rgb(240 242 244);
+  border-color: rgb(var(--c-taq-acento) / 0.6);
+  color: rgb(var(--c-taq-enfase));
 }
 
 /* Quem fala, no chat: a sua mensagem em branco, texto solto à direita — sem
@@ -2430,22 +2432,68 @@ body .tq-home [role='dialog'] button {
   line-height: var(--lh-corpo);
 }
 
-/* O destaque dentro da resposta (negrito, títulos, marcadores) vem da regra
-   compartilhada em respostaDoTaq.css — o mesmo lilás aqui e na sidebar. */
+/* Manrope e violeta luminoso distinguem a voz do Taq. O corpo conserva
+   contraste; títulos, links e marcadores carregam a maior saturação. */
 .tq-turno-agente .tq-resp-texto,
 .tq-turno-agente .tq-indisponivel {
-  color: rgb(214 207 250);
-  font-size: 15px;
+  font-family: var(--font-taq);
+  color: rgb(var(--c-taq-texto));
+  font-size: 16px;
+  font-weight: 450;
+  line-height: 1.8;
+  letter-spacing: 0.005em;
+}
+
+.tq-home .tq-turno-agente .tq-md {
+  --tq-md-enfase: rgb(var(--c-taq-enfase));
+  --tq-md-sub: rgb(var(--c-taq-texto));
+  --tq-md-marcador: rgb(var(--c-taq-acento));
+  --tq-md-traco: rgb(var(--c-taq-acento) / 0.35);
+}
+
+.tq-home .tq-turno-agente .tq-md :is(h3, h4) {
+  letter-spacing: -0.025em;
+  font-weight: 700;
+}
+
+.tq-home .tq-turno-agente .tq-falhou {
+  color: var(--e-atencao);
+}
+
+/* Perguntas, espera e ações continuam com a mesma voz da resposta. */
+.tq-home .tq-resposta-texto {
+  font-family: var(--font-taq);
+}
+
+.tq-home .tq-exec-etapa {
+  color: var(--ideia-clara);
+}
+
+.tq-home .tq-resp-opcoes button {
+  border-color: rgb(var(--c-taq-acento) / 0.3);
+  background: rgb(var(--c-taq-acento) / 0.06);
+  color: var(--ideia-clara);
+  padding: 12px 14px;
+  transition: background 180ms, border-color 180ms;
+}
+
+.tq-home .tq-resp-opcoes button:hover:not(:disabled) {
+  border-color: rgb(var(--c-taq-acento) / 0.6);
+  background: rgb(var(--c-taq-acento) / 0.12);
+}
+
+.tq-home .tq-resp-opcoes button:focus-visible {
+  outline-color: var(--ideia);
 }
 
 /*
- * O compositor: o texto nasce direto na página, grande, na Barlow. Sem placa e
+ * O compositor: o texto nasce direto na página, grande, na Manrope. Sem placa e
  * sem botão de enviar à vista — Enter envia. O botão continua no DOM, só para
  * leitor de tela e teclado. (O "+" de anexar saiu; anexar não existe nesta
  * versão — ver a entrada `anexar_arquivo` da ajuda.)
  */
 .tq-campo textarea {
-  font-family: var(--font-titulo);
+  font-family: var(--font-taq);
   font-size: 24px;
   line-height: 1.35;
   min-height: 44px;
@@ -2454,7 +2502,7 @@ body .tq-home [role='dialog'] button {
 }
 
 .tq-campo textarea::placeholder {
-  color: #6e7379;
+  color: rgb(var(--c-taq-texto) / 0.6);
 }
 
 .tq-escrita .tq-enviar {

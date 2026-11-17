@@ -53,12 +53,26 @@ describe('BotaoNaBarra', () => {
     const aoClicar = vi.fn();
     const botao = new BotaoNaBarra(aoClicar);
     botao.sincronizar(ESTADO);
-    botao.sincronizar({ tom: 'verde', pulsando: true, rotulo: 'Gravando' });
+    botao.sincronizar({ tom: 'verde', pulsando: true, rotulo: 'Gravando', texto: 'Transcrevendo' });
     const meu = document.getElementById('taqciti-botao-na-barra') as HTMLButtonElement;
     expect(meu.getAttribute('aria-label')).toBe('Gravando');
     expect(meu.getAttribute('data-taqciti-estado')).toBe('pulsando');
+    expect(meu.textContent).toContain('Transcrevendo');
     meu.click();
     expect(aoClicar).toHaveBeenCalledTimes(1);
+  });
+
+  it('atualizar o estado conserva o ícone e o foco, sem reiniciar a animação', () => {
+    barraDoMeet();
+    const botao = new BotaoNaBarra(() => undefined);
+    botao.sincronizar(ESTADO);
+    const meu = document.getElementById('taqciti-botao-na-barra')!;
+    const svg = meu.querySelector('svg');
+    meu.focus();
+    botao.sincronizar({ tom: 'ambar', pulsando: false, rotulo: 'Captura pausada', texto: 'Pausado' });
+    expect(meu.querySelector('svg')).toBe(svg);
+    expect(document.activeElement).toBe(meu);
+    expect(meu.textContent).toContain('Pausado');
   });
 
   it('clique sintético da página (isTrusted: false) não começa a captura', () => {
