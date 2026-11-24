@@ -209,6 +209,12 @@ export const MEET_END_CONFIRM_POLLS = 2;
 export const AUTO_CAPTIONS_MAX_ATTEMPTS = 6;
 /** Depois da rajada o vigia não desiste: tenta de novo neste ritmo, sem fim. */
 export const AUTO_CAPTIONS_INTERVALO_LENTO_MS = 10_000;
+/**
+ * Ao ENTRAR na sala (antes de qualquer "sim" para gravar), quantos polls a
+ * extensão tenta ligar a legenda e pô-la em português. Depois disso ela larga:
+ * quem desligar a legenda ou trocar o idioma de propósito não é contrariado.
+ */
+export const LEGENDAS_NA_ENTRADA_MAX_POLLS = 20;
 
 /**
  * Intervalo mínimo entre varreduras da região de legendas. O Meet reescreve
