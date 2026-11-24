@@ -184,13 +184,6 @@ export const STORAGE_KEYS = {
   conducao: 'taq:conducao',
 
   /**
-   * chrome.storage.local — as sugestões de condução (privadas, para quem
-   * conduz) e o feedback sobre elas. Derivados da reunião: apagá-la leva as
-   * dela. Ver `features/apoio/store.ts`.
-   */
-  apoio: 'taq:apoio',
-
-  /**
    * chrome.storage.local — o estado dos pontos de cada reunião (a esclarecer,
    * discutido, a confirmar, decidido, adiado), com a fala que sustenta cada um.
    * Derivado da reunião: apagá-la leva o dela. Ver `features/estado/store.ts`.
@@ -252,7 +245,7 @@ export const LIVE_SAVE_THROTTLE_MS = 4000;
 export const ACTIVE_IDENTITY_NAMESPACE_KEY = 'taq:activeIdentityNamespace';
 /** Versão global das migrações locais; não pertence a um usuário. */
 export const LOCAL_STORAGE_SCHEMA_VERSION_KEY = 'taq:storageSchemaVersion';
-export const LOCAL_STORAGE_SCHEMA_VERSION = 4;
+export const LOCAL_STORAGE_SCHEMA_VERSION = 5;
 export const ANONYMOUS_IDENTITY_NAMESPACE = 'anonymous';
 
 export const PROVIDER_GOOGLE_MEET = 'google-meet';

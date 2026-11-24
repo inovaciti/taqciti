@@ -44,8 +44,8 @@ troca-se o valor, não o código.
 
 ## Manter sem custos e trocar a chave depois
 
-A busca na internet nasce desligada: mantenha `TAQ_BUSCA_NA_INTERNET=desligada`
-(ausência da variável também desliga). Não há consulta de teste ao modelo ao abrir
+Não há busca na internet (saiu em 23/11/2026; `TAQ_BUSCA_NA_INTERNET` não é mais
+lida e pode ser apagada do host). Não há consulta de teste ao modelo ao abrir
 a extensão: `GET /api/taq/estado` apenas lê configuração, sem validar a chave no
 provedor e sem gastar tokens. Uma chave presente pode estar expirada ou sem cota;
 nesses casos, o erro só será conhecido ao fazer um pedido real.
@@ -64,27 +64,16 @@ Quando houver uma chave funcional:
    tratamento compatível, sem uso dos dados para treinamento. Ajuste
    `TAQ_ORQUESTRADOR`, `DOCCITI_LEITOR` e `DOCCITI_AUDITOR` se precisar trocar
    também os modelos, verificando disponibilidade e preços do provedor.
-3. **Só quando aceitar os custos de pesquisa**, use
-   `TAQ_BUSCA_NA_INTERNET=ligada`. A integração atual aceita Google Gemini 3 com
-   busca nativa e ferramentas locais; outros modelos mantêm a busca indisponível.
-4. Publique o código preparado com `vercel deploy --prod` a partir do projeto
+3. Publique o código preparado com `vercel deploy --prod` a partir do projeto
    ligado. Para futuras trocas apenas de variável, faça **Redeploy** do deploy que
    já contém este código. Redeploy de uma versão antiga não publica mudanças locais.
-5. Volte à janela da extensão: ela consulta a disponibilidade ao ganhar foco e a
+4. Volte à janela da extensão: ela consulta a disponibilidade ao ganhar foco e a
    cada minuto enquanto visível. A partir desta atualização da extensão, futuras
    trocas de chave não precisam de reinstalação ou rebuild. A primeira atualização
    do cliente ainda precisa ser carregada em `chrome://extensions`.
 
-Para pesquisar, no perfil **Personalizado**, abra **Busca na internet**, marque
-**Permitir quando estiver disponível** e salve em **Usar este assistente**. A
-permissão vale para as conversas com o Taq, não para geração automática de
-documentos nem apoio automático durante a reunião. Reuniões já iniciadas mantêm
-o perfil com que começaram. As respostas guardam os links e as sugestões da
-pesquisa; as sugestões são renderizadas em iframe isolado, sem scripts.
-
-Desligar só a busca **não impede custos das outras chamadas de IA** depois de
-instalar uma chave paga. Para manter custo zero agora, não ative faturamento nem
-use uma chave paga. Os testes desta integração usam respostas simuladas.
+Uma chave paga **gera custo nas chamadas de IA** depois de instalada. Para manter
+custo zero agora, não ative faturamento nem use uma chave paga. Os testes desta integração usam respostas simuladas.
 
 ## 1. Criar o projeto
 
@@ -137,7 +126,6 @@ de host para host.
 | `DOCCITI_TIMEZONE` | não | Fuso usado para a data da reunião (`lib/dataDaReuniao.ts`). |
 | `TAQ_ORQUESTRADOR` | não | Modelo do Taq, `provedor:modelo`. Padrão `google:gemini-3.5-flash`; só `google` e `groq` têm adaptador com ferramentas, outro provedor deixa o Taq pendente (`lib/taq/config.ts`). |
 | `TAQ_MAX_CONTEXTO_CHARS` | não | Teto do pedido do Taq, em caracteres. Padrão 300000 (`lib/taq/atender.ts`). |
-| `DOCCITI_MODELO_TRANSCRICAO` | não | Modelo de transcrição de áudio/vídeo da importação (`/api/importacao/transcrever`, `lib/importacao/transcrever.ts`). A rota usa `GROQ_API_KEY`, exige `DOCCITI_DATA_POLICY=private` (sem isso, 503) e aceita até 4 MB por arquivo. |
 | `OPENAI_API_KEY` | só com o provedor OpenAI | Chave do provedor (`lib/ai/providers/openai.ts`). |
 | `DOCCITI_PROMPTS` | não | `anteriores` volta às versões de prompt anteriores sem deploy de código (`lib/prompts/index.ts`). |
 | `DOCUMENTOS_RACIOCINIO_GERACAO` / `DOCUMENTOS_RACIOCINIO_EDICAO` | não | Esforço de raciocínio (`low`, `medium`, `high`) ao gerar e ao editar documento personalizado. Padrões `medium` e `low` (`lib/documentos/gerar.ts`). |
