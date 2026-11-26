@@ -174,12 +174,17 @@ const MOTIVO_IMPESSOAL =
   'solicitado", "foi informado que"; "o cliente" ou "a equipe" quando o lado importar). ' +
   'Não retire, e dê de novo as citações que sustentam a frase.';
 
-/** Os nomes dos participantes, para achar frase pessoal numa seção impessoal. */
-function regexDosNomes(data: DocumentData): RegExp | null {
+/**
+ * Os nomes de quem estava na reunião — os participantes do documento e os
+ * rótulos de fala da transcrição (o Resumo não tem lista de participantes) —,
+ * para achar frase pessoal numa seção impessoal.
+ */
+function regexDosNomes(data: DocumentData, transcript: string): RegExp | null {
   const PARTICULAS = new Set(['de', 'da', 'do', 'das', 'dos', 'e']);
   const partes = new Set<string>();
-  for (const p of data.participants ?? []) {
-    for (const parte of p.name.replace(/[()]/g, ' ').split(/\s+/)) {
+  const rotulos = [...transcript.matchAll(/^\[\d{1,2}:\d{2}(?::\d{2})?\]\s+([^:\n]+?):\s/gm)].map((m) => m[1]!);
+  for (const nome of [...(data.participants ?? []).map((p) => p.name), ...rotulos]) {
+    for (const parte of nome.replace(/[()]/g, ' ').split(/\s+/)) {
       if (parte.length >= 3 && !PARTICULAS.has(parte.toLowerCase()) && !ehRotuloDeSelf(parte)) partes.add(parte);
     }
   }
@@ -273,7 +278,7 @@ export async function apurar(input: ApurarInput): Promise<ApurarResult> {
   // vai ao reparo para perder o nome (26/11/2026: a instrução sozinha deixava
   // escapar "Fulano disse acreditar ser possível"). É só redação — se o reparo
   // não reescrever, ou a reescrita não passar no Auditor, volta a frase original.
-  const nomes = regexDosNomes(data);
+  const nomes = regexDosNomes(data, input.transcript);
   const soEstilo = new Map<string, AuditVerdict>();
   if (nomes) {
     for (const { section, claim } of afirmacoes) {

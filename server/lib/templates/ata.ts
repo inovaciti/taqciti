@@ -1,4 +1,5 @@
 import type { DocumentTemplate } from './types';
+import { REDACAO_IMPESSOAL } from './estilo';
 
 /**
  * As nove seções vêm do `Modelo_Ata_de_Reunião.pdf` e da especificação do
@@ -40,21 +41,8 @@ import type { DocumentTemplate } from './types';
  * Campo ausente continua não entrando (sem `[A preencher]`): ação sem dono vai
  * para "Sem responsável definido", que é informação, não lacuna.
  */
-/**
- * Ata é registro institucional, não narrativa de quem disse o quê (pedido do
- * usuário, 26/11/2026: a ata dizia "Fulano disse…" onde cabia "foi acordado…"). Vale para
- * todas as seções de texto; nomes ficam só em Participantes e no responsável
- * de cada encaminhamento. Hipótese continua hipótese, sem nome: "foi levantada
- * a hipótese de que…".
- */
-const IMPESSOAL = [
-  'REDAÇÃO IMPESSOAL: escreva em voz passiva ou impessoal ("foi informado que",',
-  '"acordou-se", "foi solicitado", "foi levantada a dúvida sobre"). Não use nome de',
-  'pessoa neste campo — nomes só entram em Participantes e no responsável de um',
-  'encaminhamento. Quando importar de que lado veio, use o papel ("o cliente", "a',
-  'equipe do projeto"), nunca o nome. Hipótese continua hipótese ("foi levantada a',
-  'hipótese de que").',
-].join(' ');
+/** Redação impessoal nas seções de texto (26/11/2026) — ver `estilo.ts`. */
+const IMPESSOAL = REDACAO_IMPESSOAL;
 
 export const ata: DocumentTemplate = {
   documentType: 'ata',
