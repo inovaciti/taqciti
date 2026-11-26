@@ -103,8 +103,19 @@ const HEDGE = [
   /\bquem sabe\b/,
 ];
 
-/** Marcadores de que a frase JÁ mantém a dúvida — não se mexe nela. */
-const MANTEM_A_DUVIDA = /\b(provavel|provavelmente|possivelmente|talvez|hipotese|suposicao|sugeriu|supos|levantou a possibilidade|pode ter|poderia)\b/;
+/** Marcadores de que a frase JÁ mantém a dúvida — não se mexe nela. "A ser
+ *  confirmada" entrou em 25/11/2026: o "confirmada" dela casava com
+ *  `AFIRMA_CAUSA` e derrubava justamente a frase que registrava a pendência. */
+const MANTEM_A_DUVIDA =
+  /\b(provavel|provavelmente|possivelmente|talvez|hipotese|suposicao|sugeriu|supos|levantou a possibilidade|pode ter|poderia|a ser confirmad[oa]s?|a confirmar|ainda nao confirmad[oa]s?|pendente de confirmacao)\b/;
+
+/**
+ * "Acho que é válido ressaltar", "acho que vale a pena": opinião sobre o que
+ * dizer, não dúvida sobre o fato. Sem tirar isso, numa reunião real (25/11/2026)
+ * um "acho que é válido ressaltar…" sobre o mesmo assunto derrubou uma frase de
+ * causa que o cliente tinha CONFIRMADO na fala seguinte.
+ */
+const OPINIAO_NAO_E_DUVIDA = /\bacho que (e )?(valido|importante|interessante|vale a pena|bom|legal|melhor)\b/g;
 
 const PALAVRAS_DE_LIGACAO = new Set([
   'para', 'como', 'esta', 'este', 'esse', 'essa', 'pelo', 'pela', 'pelos', 'pelas', 'sobre',
@@ -128,7 +139,7 @@ export function certezaIndevida(frase: string, citacoes: readonly string[]): boo
   if (MANTEM_A_DUVIDA.test(f)) return false;
   const daFrase = palavrasDeConteudo(frase);
   return citacoes.some((citacao) => {
-    const c = normalizar(citacao);
+    const c = normalizar(citacao).replace(OPINIAO_NAO_E_DUVIDA, ' ');
     if (!HEDGE.some((p) => p.test(c))) return false;
     const emComum = [...palavrasDeConteudo(citacao)].filter((p) => daFrase.has(p));
     return emComum.length >= 2;

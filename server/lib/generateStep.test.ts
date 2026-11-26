@@ -269,7 +269,7 @@ describe('montagem da Ata', () => {
 });
 
 describe('o que o Auditor rejeita', () => {
-  it('sai do documento, fica no relatório e não vira pergunta — sem segunda leitura', async () => {
+  it('sai do documento, fica no relatório e não vira pergunta — depois de UM reparo', async () => {
     mockPipeline({}, ['Adiar a entrega']);
     const { documentData, sections, gaps, report } = await run();
 
@@ -280,8 +280,41 @@ describe('o que o Auditor rejeita', () => {
     expect(report.discarded).toEqual([
       expect.objectContaining({ sectionId: 'decisoes', path: 'decisions[0]', reason: 'motivo do auditor' }),
     ]);
-    // Rejeitar não relê a reunião: continua uma leitura só.
-    expect(chamadasDe('leitor')).toHaveLength(1);
+    // Desde 25/11/2026 a reprovada volta UMA vez ao Leitor, com o motivo
+    // (`agents/reparo.ts`). Sem reparo aproveitável, não há segunda conferência.
+    expect(chamadasDe('leitor')).toHaveLength(2);
+    expect(chamadasDe('leitor')[1]![1].messages[0].content).toContain('Motivo da reprovação: motivo do auditor');
+    expect(chamadasDe('auditor')).toHaveLength(1);
+  });
+
+  it('reparo que cita a fala que faltou volta ao Auditor, e a afirmação fica', async () => {
+    let conferencias = 0;
+    complete.mockImplementation(async (agent: string, req: { messages: { content: string }[]; jsonSchema?: { properties?: Record<string, unknown> } }) => {
+      if (agent === 'auditor') {
+        conferencias += 1;
+        const blocos = req.messages[0]!.content.split('\n\n---\n\n');
+        return reply({
+          verdicts: blocos.map((bloco) => ({
+            id: /^# Afirmação (\S+)/.exec(bloco)![1],
+            // Na primeira conferência a decisão cai; na segunda, com a citação nova, passa.
+            supported: conferencias > 1 || !bloco.includes('Adiar a entrega'),
+            reason: 'faltou a fala',
+          })),
+        });
+      }
+      if (req.jsonSchema?.properties?.itens) {
+        return reply({ itens: [{ id: 'r1', acao: 'citar', texto: '', quotes: ['Joao explicou o pipeline.'] }] });
+      }
+      return reply(DOCUMENTO);
+    });
+    const { documentData, report } = await run();
+
+    expect(documentData.decisions?.map((d) => d.text)).toEqual(['Adiar a entrega para sexta-feira']);
+    expect(report.reparos).toEqual([{ path: 'decisions[0]', acao: 'citar' }]);
+    expect(chamadasDe('auditor')).toHaveLength(2);
+    // A segunda conferência leva só o que o reparo mexeu.
+    expect(chamadasDe('auditor')[1]![1].messages[0].content.split('\n\n---\n\n')).toHaveLength(1);
+    expect(report.calls).toBe(4);
   });
 
   it('participante rejeitado não deixa pergunta de cargo para trás', async () => {

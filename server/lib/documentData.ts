@@ -88,6 +88,14 @@ export interface Participant {
    * `participants[i].atuacao`): atuação reprovada some e a pessoa fica.
    */
   atuacao?: string;
+  /**
+   * Prova a presença E cada ação da atuação. Desde 25/11/2026 o schema pede
+   * uma fala por ação: com só a fala de apresentação ("Meu nome é Carlos"), o
+   * Auditor reprovava, com razão, "perguntou sobre a transição das planilhas".
+   * Um campo separado para a atuação seria mais limpo, mas estourou o tamanho
+   * de gramática da saída estruturada da Anthropic (400 "compiled grammar is
+   * too large").
+   */
   quotes: AnchoredQuote[];
 }
 
@@ -297,6 +305,15 @@ export interface AuditableClaim {
    * concordância não foi localizada na transcrição.
    */
   blocker?: string;
+  /**
+   * A afirmação diz SÓ que esta pessoa participou. Quando uma das âncoras cai
+   * numa fala rotulada com o nome dela, o código aprova sem chamar o modelo:
+   * o rótulo da linha é a prova, e não há o que interpretar. Existe desde
+   * 25/11/2026, quando o Auditor (Haiku, prompt v5) reprovou a presença de
+   * quatro de cinco participantes de uma reunião real, cada um com a própria
+   * fala de apresentação marcada ("não sustenta que participou").
+   */
+  presencaDe?: string;
 }
 
 export interface SectionDataSpec {
@@ -367,7 +384,11 @@ const QUOTES: JsonSchema = {
   description:
     'Citações LITERAIS da transcrição que sustentam esta afirmação, copiadas ' +
     'caractere por caractere. Não parafraseie e não corrija: a citação é ' +
-    'procurada na transcrição, e a que não for encontrada invalida a afirmação.',
+    'procurada na transcrição, e a que não for encontrada invalida a afirmação. ' +
+    'CADA parte da afirmação precisa da sua citação: o conferente vê só as falas ' +
+    'citadas, e a parte sem fala derruba a afirmação inteira. Combinado cita o ' +
+    'pedido E a resposta de quem aceitou; pendência cita a fala que adia ou ' +
+    'pergunta. Cite a fala que diz a coisa, não a fala de apresentação.',
 };
 
 /**
@@ -543,7 +564,8 @@ export const SECTION_DATA_SPECS: Record<string, SectionDataSpec> = {
     markdown(data, _section, gaps) {
       const projeto = data.metadata?.projectName ?? marcador(lacunaDoCampo(gaps, 'metadata.projectName'));
       const quando = data.metadata?.date ?? marcador(lacunaDoCampo(gaps, 'metadata.date'));
-      const subtitulo = [projeto, quando].filter(Boolean).join(' - ');
+      // Sem projeto, o subtítulo seria só a data, repetida logo abaixo em DATA:.
+      const subtitulo = projeto ? [projeto, quando].filter(Boolean).join(' - ') : '';
       return [
         '## Identificação',
         ...(subtitulo ? ['', subtitulo] : []),
@@ -608,7 +630,14 @@ export const SECTION_DATA_SPECS: Record<string, SectionDataSpec> = {
                   'passado ("apresentou o cronograma; levantou a dúvida sobre o acesso"). ' +
                   'OMITA se as falas dela não mostram nada além de presença.',
               },
-              quotes: QUOTES,
+              quotes: {
+                ...QUOTES,
+                description:
+                  'Falas LITERAIS da própria pessoa, copiadas caractere por caractere: uma que prova a ' +
+                  'presença e, havendo atuação, uma para CADA ação descrita (a pergunta feita, o pedido, ' +
+                  'a explicação). A fala de apresentação não prova atuação; ação sem fala citada aqui ' +
+                  'não pode estar na atuação.',
+              },
             },
             required: ['name', 'roleSource', 'quotes'],
           },
@@ -645,6 +674,8 @@ export const SECTION_DATA_SPECS: Record<string, SectionDataSpec> = {
             ? `${p.name} participou da reunião e tem o cargo/papel de ${p.role}.`
             : `${p.name} participou da reunião.`,
           anchors: located(p.quotes),
+          // Só presença, sem cargo: o rótulo da fala basta (ver AuditableClaim).
+          ...(p.role ? {} : { presencaDe: p.name }),
         },
         // A atuação é outra afirmação: reprovada, cai só ela, e a pessoa fica.
         ...(p.atuacao

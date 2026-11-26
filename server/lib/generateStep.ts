@@ -22,11 +22,13 @@
  * são duas. O que saiu era compensação por limitação que o modelo não tem
  * mais — ver `agents/leitor.ts` para o porquê de cada corte.
  *
- * O que NÃO há mais: segunda passada. Antes, a afirmação rejeitada voltava ao
- * Pensante com o motivo e ganhava outra chance. Aqui ela vira lacuna direto.
- * Refazer significaria reler a reunião inteira por causa de um cargo, e a
- * lacuna já é o comportamento certo para o que não se sustentou: quem gerou a
- * ata responde, e a resposta não custa chamada (`POST /api/answers`).
+ * Segunda passada: de 23/09 a 25/11/2026 não houve — a afirmação rejeitada
+ * virava lacuna direto, porque refazer seria reler a reunião inteira por causa
+ * de um cargo. Voltou como REPARO (`agents/reparo.ts`), uma chamada do Leitor
+ * só com as reprovadas e o motivo, mais uma do Auditor só com o que mudou: numa
+ * reunião real a maior parte das reprovações era citação faltando, não
+ * afirmação falsa, e a lacuna esvaziava a Ata. Com prompt cache a releitura
+ * custa pouco. Sem reprovação, continuam duas chamadas.
  */
 import type { DocumentType } from './documentTypes';
 import { TEMPLATES } from './templates';
@@ -36,6 +38,7 @@ import { guardarFidelidade } from './guardaDeFidelidade';
 export type { DocumentData, Gap };
 import { detectGaps, ler, type SecaoLida } from './agents/leitor';
 import { auditar, type AuditVerdict } from './agents/auditor';
+import { reparar, type ReparoAplicado } from './agents/reparo';
 import { assertSemVazamento, confidenceFor, marcadorDeLacuna } from './vazamento';
 import type { CompletionUsage } from './ai';
 
@@ -91,11 +94,14 @@ export interface DiscardedClaim {
 /** O que a geração gastou e como as citações se saíram. Para o relatório. */
 export interface GenerateStepReport {
   usage: Required<CompletionUsage>;
-  /** Chamadas a modelo nesta passada: 0, 1 (só Leitor) ou 2. */
+  /** Chamadas a modelo nesta passada: 0, 1 (só Leitor), 2, ou 4 com reparo. */
   calls: number;
   porSecao: SecaoLida[];
+  /** O veredito FINAL de cada afirmação (o da segunda conferência, se houve reparo). */
   verdicts: (AuditVerdict & { sectionId: string })[];
   discarded: DiscardedClaim[];
+  /** O que o reparo fez com as reprovadas. Vazio quando nada foi reprovado. */
+  reparos?: ReparoAplicado[];
 }
 
 export interface GenerateStepResult {
@@ -219,13 +225,43 @@ export async function apurar(input: ApurarInput): Promise<ApurarResult> {
   somar(audit.usage);
   calls += audit.calls.length;
 
+  // 3b. Reparo: a reprovada volta uma vez ao Leitor com o motivo (cita o que
+  // faltou, diz menos, ou retira), e o que ele mexeu volta ao Auditor. O que o
+  // código reprovou (`blocker`) não entra. Ver `agents/reparo.ts`.
+  const porPath = new Map(audit.verdicts.map((v) => [v.path, v]));
+  const aReparar = afirmacoes
+    .filter(({ claim }) => !claim.blocker && porPath.get(claim.path)?.supported === false)
+    .map(({ claim }) => ({ path: claim.path, texto: claim.text, motivo: porPath.get(claim.path)!.reason }));
+  let reparos: ReparoAplicado[] = [];
+  if (aReparar.length > 0) {
+    const reparo = await reparar(data, aReparar, input.transcript);
+    somar(reparo.usage);
+    if (reparo.meta) calls += 1;
+    reparos = reparo.aplicados;
+    if (reparo.aConferir.size > 0) {
+      const deNovo = strict
+        .flatMap((section) => specForSection(section).claims(data, section.id))
+        .filter((claim) => reparo.aConferir.has(claim.path));
+      const segunda = await auditar({ claims: deNovo, transcript: input.transcript });
+      somar(segunda.usage);
+      calls += segunda.calls.length;
+      for (const v of segunda.verdicts) porPath.set(v.path, v);
+      // O texto reescrito é o que vai para o documento e para a conferência.
+      for (const a of afirmacoes) {
+        const nova = deNovo.find((c) => c.path === a.claim.path);
+        if (nova) a.claim = nova;
+      }
+    }
+  }
+  const vereditosFinais = audit.verdicts.map((v) => porPath.get(v.path) ?? v);
+
   // O path é único entre seções (`participants[0]`, `decisions[0]`,
   // `generic.<seção>[0]`), então ele basta para devolver cada veredito à sua.
   const secaoDoPath = new Map(afirmacoes.map(({ section, claim }) => [claim.path, section.id]));
-  const verdicts = audit.verdicts.map((v) => ({ ...v, sectionId: secaoDoPath.get(v.path) ?? '' }));
+  const verdicts = vereditosFinais.map((v) => ({ ...v, sectionId: secaoDoPath.get(v.path) ?? '' }));
 
   // 4. Rejeitada sai do documento e vira lacuna.
-  const rejeitadas = new Set(audit.rejected.map((v) => v.path));
+  const rejeitadas = new Set(vereditosFinais.filter((v) => !v.supported).map((v) => v.path));
   const discarded: DiscardedClaim[] = descartesDeFidelidade.map((d) => ({
     sectionId: d.sectionId,
     path: d.path,
@@ -236,7 +272,7 @@ export async function apurar(input: ApurarInput): Promise<ApurarResult> {
 
   for (const { section, claim } of afirmacoes) {
     if (!rejeitadas.has(claim.path)) continue;
-    const verdict = audit.verdicts.find((v) => v.path === claim.path)!;
+    const verdict = porPath.get(claim.path)!;
     const item = { sectionId: section.id, path: claim.path, text: claim.text, reason: verdict.reason };
     discarded.push(item);
     descartadasPorSecao.set(section.id, [...(descartadasPorSecao.get(section.id) ?? []), item]);
@@ -244,6 +280,15 @@ export async function apurar(input: ApurarInput): Promise<ApurarResult> {
   for (const section of strict) {
     const paths = new Set((descartadasPorSecao.get(section.id) ?? []).map((d) => d.path));
     if (paths.size > 0) specForSection(section).drop(data, paths, section.id);
+  }
+
+  // Texto reescrito no reparo passa pelas mesmas guardas de fidelidade que o
+  // original passou. DEPOIS do descarte: as guardas também tiram itens, e os
+  // paths do Auditor são por índice.
+  if (reparos.some((r) => r.acao === 'reescrever')) {
+    for (const d of guardarFidelidade(data, input.transcript)) {
+      discarded.push({ sectionId: d.sectionId, path: d.path, text: d.texto, reason: d.motivo });
+    }
   }
 
   // Lacuna calculada DEPOIS do descarte: o participante rejeitado não pode
@@ -266,7 +311,7 @@ export async function apurar(input: ApurarInput): Promise<ApurarResult> {
   return {
     data,
     gapsPorSecao,
-    report: { usage, calls, porSecao: lido.porSecao, verdicts, discarded },
+    report: { usage, calls, porSecao: lido.porSecao, verdicts, discarded, reparos },
   };
 }
 

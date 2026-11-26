@@ -95,6 +95,29 @@ describe('certeza indevida', () => {
     ).toBe(true);
   });
 
+  // 25/11/2026: numa reunião real as duas regras abaixo derrubaram frases boas.
+  it('"a ser confirmada" registra pendência, não afirma fato apurado', () => {
+    expect(
+      certezaIndevida('Preferência pessoal por interface limpa, a ser confirmada com os demais usuários.', [
+        'Eu acho que prefiro uma interface limpa, mas vale perguntar pros demais usuários.',
+      ]),
+    ).toBe(false);
+  });
+
+  it('"acho que é válido ressaltar" é opinião sobre o que dizer, não dúvida sobre o fato', () => {
+    expect(
+      certezaIndevida('O banco de dados funcionará como cache por causa da indisponibilidade do sistema de gestão.', [
+        'Acho que é válido ressaltar que esse banco de dados também vai guardar os dados novos do sistema.',
+      ]),
+    ).toBe(false);
+    // Mas o "acho que é" de hipótese continua derrubando.
+    expect(
+      certezaIndevida('O banco de dados ficou lento por causa da indisponibilidade do sistema de gestão.', [
+        'Acho que é o banco de dados, pode ser a indisponibilidade do sistema.',
+      ]),
+    ).toBe(true);
+  });
+
   it('frases() preserva o texto inteiro', () => {
     const texto = 'Primeira frase. Segunda frase! Terceira?';
     expect(frases(texto).join('')).toBe(texto);

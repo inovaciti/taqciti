@@ -42,7 +42,7 @@ const resposta = (
   }) as unknown as RespostaDoTurno;
 
 describe('revisão posterior ao salvamento', () => {
-  it('não envia reuniões vazias nem acima do teto de contexto do servidor', async () => {
+  it('não envia reuniões vazias nem fala maior que um lote', async () => {
     const turno = vi.fn();
     await revisarTranscricao({ ...original, segments: [] }, { turno });
     await revisarTranscricao({ ...original, segments: original.segments.map((s) => ({ ...s, text: 'a'.repeat(40001) })) }, { turno });
@@ -67,6 +67,12 @@ describe('revisão posterior ao salvamento', () => {
     });
     expect(turno).toHaveBeenCalledTimes(1);
     expect(turno.mock.calls[0]![0].ferramentas).toEqual([]);
+    // Em lotes desde 25/11/2026: o contexto separa as falas a revisar das anteriores.
+    expect(turno.mock.calls[0]![0].instrucoes).toBe('transcricao-v2');
+    expect(JSON.parse(turno.mock.calls[0]![0].contexto)).toEqual({
+      anteriores: [],
+      falas: [{ id: 'fala', pessoa: 'Ana', texto: 'nos decidiu manter API' }],
+    });
     await revisarTranscricao(salvo, { turno });
     expect(turno).toHaveBeenCalledTimes(1);
   });

@@ -1,8 +1,12 @@
 /**
  * Auditor: uma afirmação está sustentada pelo trecho ORIGINAL da reunião?
  *
- * Roda somente em seções `audit: 'strict'` — hoje Participantes e Decisões —
- * e é a única segunda opinião que sobrou no pipeline. Fica porque não é
+ * Roda somente em seções `audit: 'strict'` (na Ata: resumo executivo,
+ * participantes, decisões, encaminhamentos, outcomes, outputs e em aberto) e
+ * é a única segunda opinião que sobrou no pipeline. O que é determinístico não
+ * vai ao modelo: decisão sem concordância localizada cai em código
+ * (`blocker`), e presença com fala rotulada da pessoa passa em código
+ * (`presencaDe`). Fica porque não é
  * redundante com o Leitor: ele julga uma afirmação vendo SÓ o trecho citado,
  * o que pega exatamente o erro que quem leu a reunião inteira não vê em si
  * mesmo (o cargo deduzido do tom, a concordância que era de outro assunto).
@@ -46,12 +50,19 @@ const VERDICTS_SCHEMA: JsonSchema = {
       type: 'array',
       items: {
         type: 'object',
+        // A justificativa vem ANTES do veredito, de propósito: o modelo gera os
+        // campos na ordem, e com `supported` primeiro ele decidia e depois
+        // justificava — saíram vereditos `false` com motivo "isso sustenta, mas
+        // o veredito conservador foi dado por dúvida" (25/11/2026, Haiku e Sonnet).
         properties: {
           id: { type: 'string', description: 'O id da afirmação julgada.' },
-          supported: { type: 'boolean' },
-          reason: { type: 'string', description: 'Uma frase.' },
+          reason: {
+            type: 'string',
+            description: 'Primeiro: cada parte da afirmação e a fala marcada que a sustenta (ou que falta). Uma ou duas frases.',
+          },
+          supported: { type: 'boolean', description: 'Coerente com o motivo: todas as partes sustentadas = true.' },
         },
-        required: ['id', 'supported', 'reason'],
+        required: ['id', 'reason', 'supported'],
       },
     },
   },
@@ -140,6 +151,40 @@ function renderRange(transcript: string, range: Range, anchors: LocatedAnchor[])
   return out + transcript.slice(cursor, range.end);
 }
 
+/** `[12:21] Nome: fala` — o cabeçalho de fala que a extensão escreve
+ *  (`transcriptToText`). Linha sem cabeçalho continua a fala anterior. */
+const CABECALHO_DE_FALA = /^\[\d{1,2}:\d{2}(?::\d{2})?\]\s+([^:\n]+?):\s/;
+
+function normalizarNome(nome: string): string {
+  return nome.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+/** Quem está falando na posição `pos`, pelo último cabeçalho antes dela. */
+export function falanteEm(transcript: string, pos: number): string | null {
+  // Até o fim da linha de `pos`: a citação pode começar antes do fim do cabeçalho.
+  const fim = transcript.indexOf('\n', pos);
+  const linhas = transcript.slice(0, fim === -1 ? undefined : fim).split('\n');
+  for (let i = linhas.length - 1; i >= 0; i -= 1) {
+    const m = CABECALHO_DE_FALA.exec(linhas[i]!);
+    if (m) return m[1]!;
+  }
+  return null;
+}
+
+/**
+ * O rótulo da fala é desta pessoa? Tolera a duplicação que o Meet às vezes
+ * deixa no rótulo ("Ana Souzaana Souza", "Carlos Lima Duartecarlos"): o que
+ * sobra depois do nome tem de ser começo do
+ * próprio nome, ou começar fora de uma palavra. "Ana" não casa com "Anabela".
+ */
+export function rotuloEhDe(rotulo: string, nome: string): boolean {
+  const r = normalizarNome(rotulo);
+  const n = normalizarNome(nome);
+  if (!n || !r.startsWith(n)) return false;
+  const resto = r.slice(n.length);
+  return resto === '' || /^[^a-z0-9]/.test(resto) || n.startsWith(resto.trim());
+}
+
 /**
  * UMA chamada para todas as afirmações, e não uma por afirmação.
  *
@@ -168,6 +213,26 @@ export async function auditar(input: AuditarInput): Promise<AuditarResult> {
     }
 
     const excerpt = buildExcerpt(claim.anchors, input.transcript, padding);
+
+    // Aprovação decidida em CÓDIGO, o espelho do `blocker`: presença pura com
+    // uma citação dentro de uma fala rotulada com o nome da pessoa.
+    const presente = claim.presencaDe;
+    if (
+      presente &&
+      excerpt !== null &&
+      claim.anchors.some((a) => {
+        const rotulo = falanteEm(input.transcript, a.start);
+        return rotulo !== null && rotuloEhDe(rotulo, presente);
+      })
+    ) {
+      verdicts.push({
+        path: claim.path,
+        supported: true,
+        reason: `A citação é uma fala de ${presente}: a presença está no rótulo da própria transcrição.`,
+        excerpt,
+      });
+      continue;
+    }
 
     if (excerpt === null) {
       verdicts.push({

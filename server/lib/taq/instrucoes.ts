@@ -27,6 +27,13 @@ export const VERSAO_DAS_INSTRUCOES = 'taq-v7';
  */
 const ARQUIVO_POR_VERSAO: Record<string, string> = {
   'transcricao-v1': 'transcricao-v1.md',
+  /**
+   * v2 (25/11/2026): a revisão vai em LOTES, com as falas anteriores como
+   * contexto só de leitura, e corrige palavra trocada pelo reconhecimento de voz
+   * quando o assunto a torna inequívoca. A v1 ia numa chamada só, e numa reunião
+   * real de 26 minutos levou 42 s e estourou a saída — nunca chegou a revisar.
+   */
+  'transcricao-v2': 'transcricao-v2.md',
   'taq-v1': 'v1.md',
   /** v2: o fluxo de documentos pelo catálogo e os pedidos fora dele. */
   'taq-v2': 'v2.md',

@@ -23,7 +23,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-export type PromptAgent = 'leitor' | 'auditor' | 'taq' | 'redator';
+export type PromptAgent = 'leitor' | 'auditor' | 'reparo' | 'taq' | 'redator';
 export type PromptVersion = `v${number}`;
 
 /** Cache por arquivo. Prompt não muda em runtime; ler a cada chamada seria
@@ -115,7 +115,7 @@ export function renderPrompt(
  * ficam para comparação: `DOCCITI_PROMPTS=anteriores` volta a elas sem deploy
  * de código, e é assim que o teste ao vivo de injeção mede as duas.
  */
-export type PapelDoPrompt = 'leitor' | 'auditor' | 'redatorGeracao' | 'redatorEdicao';
+export type PapelDoPrompt = 'leitor' | 'auditor' | 'reparo' | 'redatorGeracao' | 'redatorEdicao';
 
 /**
  * O redator está na versão nova desde 21/10/2026, medida com
@@ -131,10 +131,28 @@ export type PapelDoPrompt = 'leitor' | 'auditor' | 'redatorGeracao' | 'redatorEd
  * `GROQ_TPM_LIMIT=9800`, porque a estimativa local da entrada é conservadora.
  * Se uma rodada futura falhar, `DOCCITI_PROMPTS=anteriores` volta às versões
  * anteriores sem deploy de código.
+ *
+ * 25/11/2026 — `leitor/v4`, `auditor/v7` e `reparo/v1`. Numa reunião real
+ * (legenda do Meet, sem pontuação, "Cash" por "cache"), a `v5` do Auditor no
+ * Haiku reprovou 24 de 24 afirmações da Ata, presença inclusive, e a Ata saiu
+ * sem resumo, sem encaminhamentos e com dois de cinco participantes.
+ * - `auditor/v7` diz o que a transcrição é (automática, com ruído; "Você" é
+ *   participante) e o que conta como combinado e como pendência (partiu de um
+ *   rascunho local, a `v6`, que nunca entrou em uso nem no repositório), e
+ *   pede: justificativa ANTES do veredito, partes em falas diferentes
+ *   valem, "do que se tratou" não exige frase literal, adiar para consultar é
+ *   pendência. Na mesma leitura: 7 → 14 de 25 aprovadas, e as reprovações que
+ *   sobraram eram citação faltando.
+ * - `leitor/v4`: uma citação para CADA parte (a `v3` pedia "o trecho mínimo,
+ *   uma frase costuma bastar", e o Leitor citava a apresentação para provar a
+ *   atuação e o pedido sem o aceite para provar o combinado).
+ * - `reparo/v1`: a passada de reparo (`agents/reparo.ts`).
+ * Decisão, cargo e grau de certeza não afrouxaram.
  */
 const EM_USO: Record<PapelDoPrompt, PromptVersion> = {
-  leitor: 'v3',
-  auditor: 'v5',
+  leitor: 'v4',
+  auditor: 'v7',
+  reparo: 'v1',
   redatorGeracao: 'v5',
   redatorEdicao: 'v6',
 };
@@ -142,6 +160,7 @@ const EM_USO: Record<PapelDoPrompt, PromptVersion> = {
 const ANTERIORES: Record<PapelDoPrompt, PromptVersion> = {
   leitor: 'v2',
   auditor: 'v4',
+  reparo: 'v1',
   redatorGeracao: 'v3',
   redatorEdicao: 'v4',
 };
