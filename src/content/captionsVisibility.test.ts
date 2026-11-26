@@ -48,6 +48,20 @@ describe('ocultar legendas preserva os controles do Meet', () => {
     expect(region.parentElement!.hasAttribute(WRAPPER)).toBe(false);
   });
 
+  // A legenda "pulava" (25/11/2026): a marca por atributo chega um quadro
+  // depois, e a linha nova aparecia antes de sumir. A regra pelo seletor do
+  // Meet vale desde a primeira pintura.
+  it('oculta linha nova pelo seletor, sem esperar a marcação do quadro seguinte', () => {
+    document.body.innerHTML = '<div role="region" aria-label="Legendas"><button>Português</button></div>';
+    setNativeCaptionsHidden(true);
+    const css = document.getElementById('taqciti-captions-visibility')!.textContent ?? '';
+    expect(css).toContain('div[role="region"][aria-label*="legenda" i] .nMcdL:not(:has(');
+    const linha = document.createElement('div');
+    linha.className = 'nMcdL';
+    document.querySelector('[role="region"]')!.appendChild(linha);
+    expect(linha.matches('div[role="region"][aria-label*="legenda" i] .nMcdL')).toBe(true);
+  });
+
   it('não colapsa body mesmo quando a região é seu único filho', () => {
     document.body.innerHTML = '<div role="region" aria-label="Legendas"></div>';
     setNativeCaptionsHidden(true);

@@ -215,6 +215,12 @@ export const AUTO_CAPTIONS_INTERVALO_LENTO_MS = 10_000;
  * quem desligar a legenda ou trocar o idioma de propósito não é contrariado.
  */
 export const LEGENDAS_NA_ENTRADA_MAX_POLLS = 20;
+/**
+ * Intervalo mínimo entre duas aberturas do painel "Legendas e tradução" para
+ * ligar a legenda. Abrir o painel mexe na tela da pessoa; sem freio, o vigia
+ * o abria e fechava a cada poll (legenda "pulando", 25/11/2026).
+ */
+export const PAINEL_DE_LEGENDAS_INTERVALO_MS = 8_000;
 
 /**
  * Intervalo mínimo entre varreduras da região de legendas. O Meet reescreve

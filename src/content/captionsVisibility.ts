@@ -20,6 +20,10 @@
  * medindo 1px num canto, escrevendo legenda que ninguém vê.
  *
  * `clip-path` remata o 1px residual sem afetar medida alguma.
+ *
+ * POR QUE AS REGRAS TAMBÉM VÃO PELOS SELETORES (25/11/2026). Só com a marcação
+ * por atributo, cada linha nova aparecia por um quadro antes de sumir — a
+ * legenda "pulava" na tela. Ver `regrasPorSeletor`.
  */
 import { CAPTION_LINE_SHAPES, CAPTION_REGION_SELECTORS } from './providers/googleMeet/selectors';
 
@@ -97,6 +101,28 @@ function marcarInvolucros(): void {
   reconciliar(WRAPPER_ATTR, involucros);
 }
 
+/**
+ * As mesmas regras, escritas direto pelos seletores do Meet.
+ *
+ * A marcação por atributo chega um quadro DEPOIS da mutação (é o
+ * `requestAnimationFrame` do observador). No Meet de 11/2026 o seletor
+ * "Idioma da reunião" mora dentro da região de legenda, então a ocultação é
+ * linha a linha — e cada linha nova nascia visível, aparecia por um quadro e
+ * sumia, empurrando a grade de vídeo a cada fala: a legenda "pulando" relatada
+ * em 25/11/2026. Regra de CSS vale desde a primeira pintura do nó; o atributo
+ * continua como reforço para o invólucro, que CSS não alcança bem.
+ */
+function regrasPorSeletor(): string[] {
+  const regras: string[] = [];
+  for (const regiao of CAPTION_REGION_SELECTORS) {
+    regras.push(`${regiao}:not(:has(${CONTROLES})) { ${REGRAS_OCULTAR}; }`);
+    for (const { line } of CAPTION_LINE_SHAPES) {
+      regras.push(`${regiao} ${line}:not(:has(${CONTROLES})) { ${REGRAS_OCULTAR}; }`);
+    }
+  }
+  return regras;
+}
+
 function reconciliar(atributo: string, atuais: Set<Element>): void {
   for (const node of document.querySelectorAll(`[${atributo}]`)) {
     if (!atuais.has(node)) node.removeAttribute(atributo);
@@ -138,6 +164,7 @@ export function setNativeCaptionsHidden(hidden: boolean): void {
     style.textContent = [
       // :has protege os controles imediatamente, antes do próximo quadro.
       `[${REGION_ATTR}]:not(:has(${CONTROLES})) { ${REGRAS_OCULTAR}; }`,
+      ...regrasPorSeletor(),
       `[${WRAPPER_ATTR}]:not(:has(${CONTROLES})) { height: 0 !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important; }`,
     ].join('\n');
     document.head.appendChild(style);

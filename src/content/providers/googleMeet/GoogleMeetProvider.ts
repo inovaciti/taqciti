@@ -30,6 +30,7 @@ import {
   LEGENDAS_NA_ENTRADA_MAX_POLLS,
   MEET_END_CONFIRM_POLLS,
   MEET_POLL_INTERVAL_MS,
+  PAINEL_DE_LEGENDAS_INTERVALO_MS,
 } from '@/shared/config/constants';
 import { sanitizeCaptionText } from '@/features/transcription/sanitize';
 import {
@@ -87,6 +88,21 @@ function safely<T>(what: string, fn: () => T, fallback: T): T {
  */
 function visivel(el: Element): boolean {
   return typeof el.checkVisibility !== 'function' || el.checkVisibility();
+}
+
+/**
+ * O botão de ligar/desligar do painel diz que a legenda está DESLIGADA?
+ * `aria-pressed` vence; sem ele, o rótulo tem de ser a ação de LIGAR ("Ativar
+ * legendas", "Turn on captions"). "Desativar" contém "ativar", daí o limite de
+ * palavra. Na dúvida, `false`: não clicar é melhor que desligar a legenda.
+ */
+function botaoDizDesligada(toggle: HTMLElement): boolean {
+  const pressed = toggle.getAttribute('aria-pressed');
+  if (pressed === 'true') return false;
+  if (pressed === 'false') return true;
+  const label = toggle.getAttribute('aria-label') ?? '';
+  if (/desativar|turn off|disable/i.test(label)) return false;
+  return /(^|[^a-zà-ú])(ativar|turn on|enable)\b/i.test(label);
 }
 
 function botaoDeSairVisivel(): boolean {
@@ -163,6 +179,8 @@ export class GoogleMeetProvider implements MeetingProvider {
   private idiomaResolvido = false;
   /** O painel "Legendas e tradução" foi aberto por nós e ainda não fechou. */
   private abrindoPainel = false;
+  /** Quando abrimos o painel pela última vez (freio, ver `ligarPeloPainel`). */
+  private ultimoPainelEm = Number.NEGATIVE_INFINITY;
 
   private readonly startCbs: Callbacks<MeetingSession> = new Set();
   private readonly endCbs: Callbacks<MeetingSession> = new Set();
@@ -281,6 +299,11 @@ export class GoogleMeetProvider implements MeetingProvider {
         if (menuPressed === 'true') return true;
         if (menuPressed === 'false') return false;
 
+        // Sem botão que diga: o combobox "Idioma da reunião" só existe com a
+        // legenda ligada. Sem esta prova, em silêncio a resposta era "desligada"
+        // e o vigia abria e fechava o painel a cada poll (25/11/2026).
+        if (queryFirst(document, MEETING_LANGUAGE_COMBOBOX_SELECTORS)) return true;
+
         const region = queryFirst(document, CAPTION_REGION_SELECTORS);
         return (region?.textContent ?? '').trim().length > 0;
       },
@@ -343,6 +366,12 @@ export class GoogleMeetProvider implements MeetingProvider {
    */
   private ligarPeloPainel(menu: HTMLElement): void {
     if (this.abrindoPainel) return;
+    // Abrir o painel mexe na tela da pessoa: no máximo uma vez a cada
+    // PAINEL_DE_LEGENDAS_INTERVALO_MS, mesmo com o vigia chamando a cada poll.
+    // Sem o freio, um "desligada" errado virava painel piscando sem fim.
+    const agora = Date.now();
+    if (agora - this.ultimoPainelEm < PAINEL_DE_LEGENDAS_INTERVALO_MS) return;
+    this.ultimoPainelEm = agora;
     this.abrindoPainel = true;
     menu.click();
     let esperas = 0;
@@ -358,8 +387,11 @@ export class GoogleMeetProvider implements MeetingProvider {
           }
           this.abrindoPainel = false;
           if (!toggle) return; // o painel não abriu: nada a fechar
-          const label = toggle.getAttribute('aria-label') ?? '';
-          if (!/desativar|turn off|disable/i.test(label)) toggle.click();
+          // Só clica com prova de que a legenda está DESLIGADA. Antes clicava
+          // em tudo que não dissesse "desativar" — rótulo diferente do esperado
+          // (outra versão/idioma do Meet) DESLIGAVA a legenda, e o vigia a
+          // religava no poll seguinte: a legenda piscando.
+          if (botaoDizDesligada(toggle)) toggle.click();
           // Fecha o painel se ele continuou aberto depois do clique.
           setTimeout(() => {
             safely(

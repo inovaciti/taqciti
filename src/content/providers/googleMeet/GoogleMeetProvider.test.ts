@@ -118,6 +118,58 @@ describe('GoogleMeetProvider — legenda pelo painel "Legendas e tradução"', (
   });
 });
 
+/*
+ * Legenda "pulando" em vários computadores (25/11/2026): o vigia chama
+ * `requestEnableCaptions` a cada poll. Com um "desligada" errado, o painel
+ * abria e fechava sem parar; com um rótulo inesperado, o clique DESLIGAVA a
+ * legenda e o poll seguinte a religava.
+ */
+describe('GoogleMeetProvider — o painel de legendas não pisca', () => {
+  function painelComRotulo(rotulo: string, aoClicar: () => void): HTMLElement {
+    render(`<button aria-label="Legendas e tradução" aria-haspopup="dialog">cc</button>`);
+    const menu = document.querySelector<HTMLElement>('[aria-label="Legendas e tradução"]')!;
+    menu.addEventListener('click', () => {
+      const painel = document.getElementById('painel');
+      if (painel) return painel.remove();
+      document.body.insertAdjacentHTML(
+        'beforeend',
+        `<div id="painel"><button jsname="RrG0hf" aria-label="${rotulo}">cc</button></div>`,
+      );
+      document.querySelector('#painel button')!.addEventListener('click', aoClicar);
+    });
+    return menu;
+  }
+
+  it('rótulo que não é "ativar": não clica (clicar podia desligar a legenda)', () => {
+    vi.useFakeTimers();
+    const clique = vi.fn();
+    painelComRotulo('Legenda instantânea', clique);
+    new GoogleMeetProvider().requestEnableCaptions();
+    vi.advanceTimersByTime(1_000);
+    expect(clique).not.toHaveBeenCalled();
+  });
+
+  it('abre o painel no máximo uma vez a cada 8 s, mesmo chamado a cada poll', () => {
+    vi.useFakeTimers();
+    const menu = painelComRotulo('Ativar legendas', () => {});
+    const aberturas = vi.fn();
+    menu.addEventListener('click', aberturas);
+    const provider = new GoogleMeetProvider();
+    for (let i = 0; i < 5; i += 1) {
+      provider.requestEnableCaptions();
+      vi.advanceTimersByTime(1_500);
+    }
+    // Abrir + fechar = 2 cliques no botão da barra, uma única vez.
+    expect(aberturas).toHaveBeenCalledTimes(2);
+  });
+
+  it('combobox "Idioma da reunião" na tela prova legenda ligada (sem aria-pressed)', () => {
+    render(`<button aria-label="Legendas e tradução" aria-haspopup="dialog">cc</button>
+      <div role="combobox" aria-label="Idioma da reunião">Português (Brasil)</div>`);
+    expect(new GoogleMeetProvider().areCaptionsEnabled()).toBe(true);
+  });
+});
+
 function idiomaDaReuniao(selecionado: string): void {
   document.body.insertAdjacentHTML(
     'beforeend',
