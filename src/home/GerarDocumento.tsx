@@ -52,6 +52,7 @@ import {
 } from '@/document/baixarDocumento';
 import { nomeDoArquivo, oauthConfigurado } from '@/document/googleDocs';
 import { transcriptToText } from '@/features/history/export';
+import { prepararFonte } from '@/features/transcription/prepararFonte';
 import { gerarPersonalizado } from '@/features/documents/personalizado/cliente';
 import { guardarGeracao } from '@/features/documents/personalizado/documento';
 import type { ResultadoDoServidor } from '@/features/documents/personalizado/tipos';
@@ -226,7 +227,11 @@ export function GerarDocumento({ registro, onAbrirDocumento, onPedirLivre }: Pro
     setEnvioAoDocs(null);
     setEstado({ fase: 'gerando', tipo });
 
-    void requestGeneration(registro, tipo, novoControle()).then(async (geracao) => {
+    const controle = novoControle();
+    // Da transcrição revisada e com nomes (`prepararFonte`), e não da legenda crua.
+    void prepararFonte(registro)
+      .then((fonte) => requestGeneration(fonte, tipo, controle))
+      .then(async (geracao) => {
       if (geracao.status === 'canceled') {
         setEstado({ fase: 'parado' });
         return;
@@ -273,7 +278,7 @@ export function GerarDocumento({ registro, onAbrirDocumento, onPedirLivre }: Pro
 
     const pedidoDeGeracao = {
       pedido,
-      fontes: [{ id: registro.id, titulo: registro.title, texto: transcriptToText(registro.segments) }],
+      fontes: [{ id: registro.id, titulo: registro.title, texto: transcriptToText((await prepararFonte(registro)).segments) }],
       capa: { data: new Date().toLocaleDateString('pt-BR') },
       variante: 'editorial',
     };

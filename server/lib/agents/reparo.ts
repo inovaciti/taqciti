@@ -58,7 +58,7 @@ function alvoDoPath(data: DocumentData, path: string): Alvo | null {
     const item = (data[m[1] as 'executiveSummary'] ?? [])[Number(m[2])];
     return item ? { quotes: item.quotes, trocarTexto: (novo) => (item.text = novo) } : null;
   }
-  m = /^participants\[(\d+)\](\.atuacao)?$/.exec(path);
+  m = /^participants\[(\d+)\](\.atuacao|\.role)?$/.exec(path);
   if (m) {
     const p = (data.participants ?? [])[Number(m[1])];
     if (!p) return null;
@@ -71,14 +71,22 @@ function alvoDoPath(data: DocumentData, path: string): Alvo | null {
       if (t.toLowerCase().startsWith(p.name.toLowerCase())) t = t.slice(p.name.length).trim();
       return t;
     };
-    return m[2]
+    // Nome e cargo não se reescrevem (`.role`: só citar a fala do cargo).
+    return m[2] === '.atuacao'
       ? { quotes: p.quotes, compartilhadas: true, trocarTexto: (novo) => (p.atuacao = semNome(novo)) }
       : { quotes: p.quotes, compartilhadas: true };
   }
-  m = /^(actionItems|periods)\[(\d+)\]$/.exec(path);
+  m = /^actionItems\[(\d+)\]$/.exec(path);
   if (m) {
-    const item = (data[m[1] as 'actionItems'] ?? [])[Number(m[2])];
+    const item = (data.actionItems ?? [])[Number(m[1])];
     return item ? { quotes: item.quotes } : null;
+  }
+  // Trecho do Resumo: reescrever tira o detalhe sem fala e salva o resto do
+  // trecho (26/11/2026: três de seis trechos caíam por um detalhe cada).
+  m = /^periods\[(\d+)\]$/.exec(path);
+  if (m) {
+    const item = (data.periods ?? [])[Number(m[1])];
+    return item ? { quotes: item.quotes, trocarTexto: (novo) => (item.summary = novo.replace(/^na reuni[aã]o foi tratado \([^)]*\):\s*/i, '')) } : null;
   }
   m = /^generic\.(.+)\[(\d+)\]$/.exec(path);
   if (m) {

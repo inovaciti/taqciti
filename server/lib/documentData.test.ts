@@ -160,9 +160,10 @@ describe('participantes', () => {
     expect(data.participants![0]!.role).toBeUndefined();
   });
 
-  it('a afirmação auditável inclui o cargo quando há cargo', () => {
+  it('o cargo é uma afirmação auditável própria, ao lado da presença', () => {
     // Auditar só o nome deixaria o cargo passar sem conferência, e cargo
-    // inventado é o erro que a Ata mais precisa evitar.
+    // inventado é o erro que a Ata mais precisa evitar. Desde 26/11/2026 ele é
+    // conferido À PARTE: reprovado, cai só o cargo, e a pessoa fica na ata.
     const data: DocumentData = {};
     spec.merge(
       data,
@@ -179,10 +180,19 @@ describe('participantes', () => {
       'participantes',
       locator(),
     );
-    const claim = spec.claims(data, 'participantes')[0]!;
-    expect(claim.text).toContain('Maria');
-    expect(claim.text).toContain('Gerente de Dados');
+    const [presenca, cargo] = spec.claims(data, 'participantes');
+    expect(presenca!.text).toBe('Maria participou da reunião.');
+    expect(presenca!.presencaDe).toBe('Maria');
+    expect(cargo!.path).toBe('participants[0].role');
+    expect(cargo!.text).toContain('Gerente de Dados');
+    expect(cargo!.presencaDe).toBeUndefined();
+    const claim = cargo!;
     expect(claim.anchors).toHaveLength(1);
+
+    // Cargo reprovado: sai o cargo, fica a pessoa.
+    spec.drop(data, new Set(['participants[0].role']), 'participantes');
+    expect(data.participants).toEqual([expect.objectContaining({ name: 'Maria', roleSource: 'unknown' })]);
+    expect(data.participants![0]!.role).toBeUndefined();
   });
 
   it('drop remove exatamente a afirmação rejeitada', () => {

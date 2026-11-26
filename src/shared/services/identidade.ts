@@ -426,6 +426,21 @@ export async function entrarParaIa(): Promise<{ email?: string; erro?: string }>
   return { email };
 }
 
+/**
+ * O e-mail da conta do CITi ligada ao TaqCiti (a da sincronização ou a da IA),
+ * sem abrir janela nem pedir token. Serve para dar nome a quem o Meet chama de
+ * "Você" na transcrição (`fonteDoDocumento.ts`); não é autoridade sobre nada.
+ */
+export async function emailDaConta(): Promise<string | null> {
+  try {
+    const sim = await lerSim();
+    const conta = await readLocal<{ email?: string }>(STORAGE_KEYS.contaDaIa);
+    return (sim.ligada ? sim.email : undefined) ?? conta?.email ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Sair: esquece a conta da IA e o token em memória. Não mexe na sincronização. */
 export async function sairDaIa(): Promise<void> {
   emCache = null;

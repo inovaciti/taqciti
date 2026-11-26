@@ -55,6 +55,15 @@ export function anchorQuotes(raw: unknown, locate: Locate): AnchoredQuote[] {
     .map((quote) => ({ quote, anchor: locate(quote) }));
 }
 
+/**
+ * Item de lista começa com maiúscula. O Haiku como Leitor (26/11/2026) devolve
+ * às vezes "entregar o design system…", e o item ia assim para o PDF.
+ */
+export function comMaiuscula(texto: string): string {
+  const t = texto.trim();
+  return t.charAt(0).toLocaleUpperCase('pt-BR') + t.slice(1);
+}
+
 /** As âncoras que realmente se localizaram. É o que o Auditor pode recortar. */
 export function located(quotes: AnchoredQuote[] | undefined): LocatedAnchor[] {
   return (quotes ?? [])
@@ -422,7 +431,7 @@ function listSpec(
     merge(data, payload, _sectionId, locate) {
       data[key] = ((payload as { items?: { text?: string; quotes?: unknown }[] })?.items ?? [])
         .filter((i) => i?.text)
-        .map((i) => ({ text: i.text!, quotes: anchorQuotes(i.quotes, locate) }));
+        .map((i) => ({ text: comMaiuscula(i.text!), quotes: anchorQuotes(i.quotes, locate) }));
     },
     claims(data) {
       return (data[key] ?? []).map((item, index) => ({
@@ -667,16 +676,24 @@ export const SECTION_DATA_SPECS: Record<string, SectionDataSpec> = {
       return (data.participants ?? []).flatMap((p, index) => [
         {
           path: `participants[${index}]`,
-          // O que se audita é a afirmação inteira: quem participou E qual o
-          // cargo. Auditar só o nome deixaria o cargo passar sem conferência,
-          // e cargo inventado é o erro que a Ata mais precisa evitar.
-          text: p.role
-            ? `${p.name} participou da reunião e tem o cargo/papel de ${p.role}.`
-            : `${p.name} participou da reunião.`,
+          text: `${p.name} participou da reunião.`,
           anchors: located(p.quotes),
-          // Só presença, sem cargo: o rótulo da fala basta (ver AuditableClaim).
-          ...(p.role ? {} : { presencaDe: p.name }),
+          // Presença: o rótulo da fala basta (ver AuditableClaim).
+          presencaDe: p.name,
         },
+        // O cargo é conferido SEMPRE, e à parte desde 26/11/2026: reprovado, cai
+        // só ele e a pessoa fica. Junto com a presença, um cargo sem citação
+        // tirava da ata quem tinha participado — numa reunião real, quem a
+        // conduziu. Cargo inventado continua sendo o erro mais caro da Ata.
+        ...(p.role
+          ? [
+              {
+                path: `participants[${index}].role`,
+                text: `${p.name} tem o cargo/papel de ${p.role}.`,
+                anchors: located(p.quotes),
+              },
+            ]
+          : []),
         // A atuação é outra afirmação: reprovada, cai só ela, e a pessoa fica.
         ...(p.atuacao
           ? [
@@ -692,9 +709,16 @@ export const SECTION_DATA_SPECS: Record<string, SectionDataSpec> = {
     drop(data, paths) {
       data.participants = (data.participants ?? [])
         .map((p, index) => {
-          if (!paths.has(`participants[${index}].atuacao`)) return p;
-          const { atuacao: _fora, ...resto } = p;
-          return resto;
+          let atual: Participant = p;
+          if (paths.has(`participants[${index}].role`)) {
+            const { role: _cargo, ...resto } = atual;
+            atual = { ...resto, roleSource: 'unknown' };
+          }
+          if (paths.has(`participants[${index}].atuacao`)) {
+            const { atuacao: _fora, ...resto } = atual;
+            atual = resto;
+          }
+          return atual;
         })
         .filter((_, index) => !paths.has(`participants[${index}]`));
     },
@@ -755,7 +779,7 @@ export const SECTION_DATA_SPECS: Record<string, SectionDataSpec> = {
       )
         .filter((i) => i?.acao?.trim())
         .map((i) => ({
-          acao: i.acao!.trim(),
+          acao: comMaiuscula(i.acao!.trim()),
           ...(i.responsavel?.trim() && !ehRotuloDeSelf(i.responsavel) ? { responsavel: limparRotuloDeSelf(i.responsavel.trim()) } : {}),
           ...(i.prazo?.trim() ? { prazo: i.prazo.trim() } : {}),
           quotes: anchorQuotes(i.quotes, locate),
@@ -902,7 +926,7 @@ export const SECTION_DATA_SPECS: Record<string, SectionDataSpec> = {
         .map((d) => {
           const agreementQuote = typeof d.agreementQuote === 'string' ? d.agreementQuote : '';
           return {
-            text: d.text!,
+            text: comMaiuscula(d.text!),
             agreement: {
               quote: agreementQuote,
               anchor: agreementQuote.trim() ? locate(agreementQuote) : null,

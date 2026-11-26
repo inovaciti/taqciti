@@ -148,11 +148,19 @@ export type PapelDoPrompt = 'leitor' | 'auditor' | 'reparo' | 'redatorGeracao' |
  *   atuação e o pedido sem o aceite para provar o combinado).
  * - `reparo/v1`: a passada de reparo (`agents/reparo.ts`).
  * Decisão, cargo e grau de certeza não afrouxaram.
+ *
+ * 26/11/2026 — `auditor/v8` e `reparo/v2`, com Leitor Haiku e Auditor Sonnet
+ * sobre a transcrição revisada. No Resumo, três de seis trechos caíam por um
+ * detalhe cada ("ícones", "a marca da empresa") fora das marcas: a `v8` deixa a
+ * vizinhança valer para DETALHE de resumo de trecho (o ponto principal, decisão,
+ * combinado, prazo e cargo seguem exigindo marca) e explica o `[fala de Nome]`
+ * que o recorte ganhou; a `reparo/v2` prefere reescrever sem o detalhe a
+ * insistir em citá-lo.
  */
 const EM_USO: Record<PapelDoPrompt, PromptVersion> = {
   leitor: 'v4',
-  auditor: 'v7',
-  reparo: 'v1',
+  auditor: 'v8',
+  reparo: 'v2',
   redatorGeracao: 'v5',
   redatorEdicao: 'v6',
 };

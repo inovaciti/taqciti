@@ -21,12 +21,35 @@ export function sanitizeCaptionText(raw: string): string {
 
 export function sanitizeSpeakerName(raw: string | null): string | null {
   if (raw === null) return null;
-  const clean = raw
-    .replace(CONTROL_CHARS, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, MAX_NAME_LENGTH);
+  const clean = desfazerNomeDuplicado(
+    raw
+      .replace(CONTROL_CHARS, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, MAX_NAME_LENGTH),
+  );
   return clean.length > 0 ? clean : null;
+}
+
+/**
+ * O Meet às vezes entrega o nome colado a uma segunda cópia dele, sem espaço:
+ * "Ana Souzaana Souza", "Carlos Lima Duartecarlos". Visto numa reunião real em
+ * 25/11/2026, em TODOS os participantes — e o nome duplicado ia para a
+ * transcrição, a ata e a lista de participantes. A cópia começa no meio de uma
+ * palavra, repete o começo do próprio nome e começa pelo primeiro nome INTEIRO
+ * — sem essa última condição, "Marimar" virava "Mari".
+ */
+export function desfazerNomeDuplicado(nome: string): string {
+  const minusculo = nome.toLocaleLowerCase('pt-BR');
+  const primeiroNome = minusculo.split(' ')[0]!;
+  for (let i = 3; i <= nome.length - 3; i += 1) {
+    if (/\s/.test(nome[i - 1]!) || /\s/.test(nome[i]!)) continue;
+    const resto = minusculo.slice(i);
+    if (resto.startsWith(primeiroNome) && minusculo.slice(0, i).startsWith(resto)) {
+      return nome.slice(0, i);
+    }
+  }
+  return nome;
 }
 
 /** No máximo os N primeiros nomes: nome comprido não domina a coluna de falas. */

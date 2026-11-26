@@ -20,11 +20,9 @@ export interface AgentModelConfig {
 }
 
 /**
- * Configuração ATIVA: Anthropic, `sonnet` na leitura e `haiku` na conferência
- * (desde 23/11/2026, decisão do usuário: todos os agentes na Anthropic, na
- * MESMA divisão de antes — era Gemini `flash` na leitura e `flash-lite` na
- * conferência). Medido ao vivo no mesmo dia: com Sonnet também no Auditor, o
- * resumo executivo inteiro era derrubado por citação curta demais.
+ * Configuração ATIVA: Anthropic, `haiku` na leitura e `sonnet` na conferência
+ * desde 26/11/2026 (decisão do usuário; o porquê está em cada agente abaixo).
+ * De 23 a 26/11 era o contrário — `sonnet` na leitura e `haiku` na conferência.
  * São DUAS chamadas por documento — ver `generateStep.ts`.
  *
  * A configuração de produção pretendida está em `COMPARISON_MATRIX` e é
@@ -46,11 +44,24 @@ const DEFAULT_AGENT_CONFIG: Record<AgentName, AgentModelConfig> = {
   // já foi visto devolvendo "gesto" onde a transcrição diz "gestão" numa
   // execução do bench, derrubando a taxa de 100% para 29% — intermitente,
   // amostra de duas execuções. É a dívida #5 do handoff.
-  leitor: { provider: 'anthropic', model: 'claude-sonnet-5-5' },
+  //
+  // 26/11/2026 (decisão do usuário): Haiku. A transcrição agora chega
+  // REVISADA pelo Sonnet (`TAQ_REVISAO`, ver `lib/taq/config.ts`), e com o
+  // ruído limpo o Haiku passou no gabarito (`ataResumo.live.test.ts`) e numa
+  // reunião real. Ele é mais lento aqui (~100 s contra ~40 s), porque raciocina
+  // mais; o custo da leitura cai de ~US$ 0,14 para ~US$ 0,02.
+  leitor: { provider: 'anthropic', model: 'claude-haiku-5-5' },
 
   // A CONFERÊNCIA — julgamento binário sobre excertos curtos, todos numa
   // chamada. É verificação, não deliberação.
-  auditor: { provider: 'anthropic', model: 'claude-haiku-5-5' },
+  //
+  // Sonnet desde 26/11/2026 (decisão do usuário, depois de medir): o Haiku
+  // inventava motivo para reprovar ("a data foi contestada", sem ter sido) e
+  // derrubou a decisão principal de uma reunião real; não lia ruído de legenda
+  // ("data de reunião" = "ata da reunião"). A objeção de 23/11 — o Sonnet
+  // derrubava o resumo executivo inteiro — caiu com o reparo
+  // (`agents/reparo.ts`): ele reprova a frase, e o Leitor cita o que faltou.
+  auditor: { provider: 'anthropic', model: 'claude-sonnet-5-5' },
 };
 
 // ---------------------------------------------------------------------------

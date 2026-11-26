@@ -53,10 +53,24 @@ export interface ConfiguracaoDoTaq {
   pendencias: string[];
 }
 
-/** Pura sobre `env`: é o que deixa os testes dizerem qualquer cenário. */
-export function resolverConfiguracao(env: NodeJS.ProcessEnv = process.env): ConfiguracaoDoTaq {
+/**
+ * A revisão da transcrição (`transcricao-*`) tem modelo próprio desde
+ * 26/11/2026, por decisão do usuário: o Sonnet limpa o ruído da legenda, e com
+ * a transcrição limpa o Haiku basta para gerar os documentos. O Taq e os
+ * especialistas continuam em `TAQ_ORQUESTRADOR`.
+ */
+export const VARIAVEL_DA_REVISAO = 'TAQ_REVISAO';
+export const PADRAO_DA_REVISAO = 'anthropic:claude-sonnet-5-5';
+
+/**
+ * Pura sobre `env`: é o que deixa os testes dizerem qualquer cenário.
+ * `instrucoes` escolhe o modelo da revisão quando é uma `transcricao-*`.
+ */
+export function resolverConfiguracao(env: NodeJS.ProcessEnv = process.env, instrucoes?: string): ConfiguracaoDoTaq {
   const politicaDeDados = env.DOCCITI_DATA_POLICY?.trim() === 'training' ? 'training' : 'private';
-  const bruto = env[VARIAVEL_DO_MODELO]?.trim() || PADRAO;
+  const bruto = instrucoes?.startsWith('transcricao-')
+    ? env[VARIAVEL_DA_REVISAO]?.trim() || PADRAO_DA_REVISAO
+    : env[VARIAVEL_DO_MODELO]?.trim() || PADRAO;
 
   let provedor: ProvedorDoTaq;
   let modelo: string;

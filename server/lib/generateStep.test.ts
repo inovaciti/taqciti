@@ -116,15 +116,18 @@ describe('custo da Ata', () => {
     mockPipeline();
     const { report } = await run();
 
-    // A frase do resumo executivo, Maria, Joao e a decisão.
+    // A frase do resumo executivo, Maria (presença e cargo, à parte desde
+    // 26/11/2026), Joao e a decisão.
     expect(report.verdicts.map((v) => v.path)).toEqual([
       'executiveSummary[0]',
       'participants[0]',
+      'participants[0].role',
       'participants[1]',
       'decisions[0]',
     ]);
     expect(report.verdicts.map((v) => v.sectionId)).toEqual([
       'resumo_executivo',
+      'participantes',
       'participantes',
       'participantes',
       'decisoes',

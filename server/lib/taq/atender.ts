@@ -69,7 +69,7 @@ export async function atenderTurno(
   }
   const pedido = lido.data;
 
-  const config = resolverConfiguracao(env);
+  const config = resolverConfiguracao(env, pedido.instrucoes);
   if (config.pendencias.length || !config.provedor || !config.modelo) {
     return erro(503, 'configuracao_pendente', config.pendencias.join(' '));
   }
