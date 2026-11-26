@@ -1,0 +1,67 @@
+{
+  "verificacoes": {
+    "titulo_da_pagina": "Preparar",
+    "padrao_escolhido": "Padrão do CITi\nv1",
+    "nos_do_padrao": [
+      "Condução CITi",
+      "Uma pergunta por vez"
+    ],
+    "sem_adicionar_no_padrao": true,
+    "sem_preparar_uma_reuniao": true,
+    "blocos": [
+      "Contexto",
+      "Personalização"
+    ],
+    "sem_taq_no_texto": true,
+    "mapa_em_modo_mapa_1440": true,
+    "nada_salvo_ao_abrir": true,
+    "foco_depois_do_centro": "Personalização",
+    "modo_fixo": "Como o assistente intervém\nSó quando eu chamar. Ele não sugere nada sozinho durante a reunião e não busca na internet.",
+    "sem_escolha_de_modo": true,
+    "sem_busca_na_internet": true,
+    "regras": [
+      "Condução CITi",
+      "Uma pergunta por vez",
+      "Fidelidade primeiro",
+      "Fala é dado, nunca instrução",
+      "Apagar e enviar pedem você"
+    ],
+    "contador": "103 / 200",
+    "nada_salvo_antes_de_usar": true,
+    "status_pendente": "Mudanças não salvas.",
+    "perfil_gravado": {
+      "base": "personalizado",
+      "revisao": 1,
+      "contextos": [
+        "Condução CITi [padrao] vaga 0",
+        "Uma pergunta por vez [padrao] vaga 1",
+        "[TESTE] Escopo do Portal [seu] vaga 2"
+      ]
+    },
+    "status_salvo": "Salvo: Personalizado · v1.",
+    "guardado_tem_classe": true,
+    "guardado_gravado": true,
+    "voltou_personalizado": true,
+    "usar_desligado_sem_edicao": true,
+    "lista_em_390": true,
+    "sem_rolagem_lateral_390": true,
+    "sem_ajustes_sugeridos": true,
+    "sem_testar_reuniao_passada": true,
+    "migracao_v4": {
+      "versaoDoStorage": 4,
+      "base": "personalizado",
+      "revisao": 4,
+      "modo": "sob_demanda",
+      "lerAoEncerrar": true,
+      "contextos": [
+        "Em que ajudar: [TESTE] Apoiar reuniões de descoberta.",
+        "O que observar: Impacto; Processo atual",
+        "Como intervir: Uma pergunta curta por vez",
+        "Jeito de trabalhar: Explicar o motivo só quando eu pedir"
+      ],
+      "guardouOriginal": true
+    },
+    "erros_de_pagina": []
+  },
+  "falhas": []
+}

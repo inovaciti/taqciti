@@ -10,6 +10,246 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
+describe('GoogleMeetProvider — controle de idioma não é botão de legendas', () => {
+  it('liga as legendas sem clicar no menu de idioma que aparece antes delas', () => {
+    render(`<button aria-label="Idioma das legendas" aria-haspopup="menu">Português</button>
+      <button aria-label="Ativar legendas">CC</button>`);
+    const idioma = vi.fn();
+    const ativar = vi.fn();
+    document.querySelectorAll('button')[0]!.addEventListener('click', idioma);
+    document.querySelectorAll('button')[1]!.addEventListener('click', ativar);
+    expect(new GoogleMeetProvider().requestEnableCaptions()).toBe(true);
+    expect(ativar).toHaveBeenCalledTimes(1);
+    expect(idioma).not.toHaveBeenCalled();
+  });
+
+  it.each(['Desativar legendas', 'Turn off captions'])('não desliga legendas no silêncio: %s', (label) => {
+    render(`<button aria-label="${label}">CC</button><div role="region" aria-label="Legendas"></div>`);
+    const clique = vi.fn();
+    document.querySelector('button')!.addEventListener('click', clique);
+    const provider = new GoogleMeetProvider();
+    expect(provider.areCaptionsEnabled()).toBe(true);
+    provider.requestEnableCaptions();
+    provider.requestEnableCaptions();
+    expect(clique).not.toHaveBeenCalled();
+  });
+
+  it('não usa o nome do idioma como evidência de legendas ligadas', () => {
+    render(`<button aria-label="Ativar legendas">CC</button>
+      <div role="region" aria-label="Legendas"><button>Português</button></div>`);
+    expect(new GoogleMeetProvider().areCaptionsEnabled()).toBe(false);
+  });
+
+  it('só o menu de idioma presente não autoriza nenhum clique', () => {
+    render('<button aria-label="Caption language" aria-haspopup="menu">English</button>');
+    const clique = vi.fn();
+    document.querySelector('button')!.addEventListener('click', clique);
+    const provider = new GoogleMeetProvider();
+    expect(provider.areCaptionsAvailable()).toBe(false);
+    expect(provider.requestEnableCaptions()).toBe(false);
+    expect(clique).not.toHaveBeenCalled();
+  });
+
+  it('ignora o botão escondido do layout anterior', () => {
+    render(`<button aria-label="Ativar legendas"></button><button aria-label="Ativar legendas"></button>`);
+    const botoes = document.querySelectorAll('button');
+    botoes[0]!.checkVisibility = () => false;
+    const escondido = vi.fn();
+    const visivel = vi.fn();
+    botoes[0]!.addEventListener('click', escondido);
+    botoes[1]!.addEventListener('click', visivel);
+    new GoogleMeetProvider().requestEnableCaptions();
+    expect(escondido).not.toHaveBeenCalled();
+    expect(visivel).toHaveBeenCalledTimes(1);
+  });
+});
+
+/*
+ * Layout do Meet de 11/2026 (mapeado ao vivo em 24/11/2026): a barra só tem
+ * "Legendas e tradução", que abre um painel; o "Ativar legendas" mora dentro
+ * dele. Sem saber abrir o painel, a extensão nunca ligava a legenda sozinha.
+ */
+function barraComPainel(ligada = false, aoLigar: () => void = () => {}): void {
+  render(`<button aria-label="Sair da chamada">call_end</button>
+    <button aria-label="Legendas e tradução" aria-haspopup="dialog" aria-pressed="${ligada}">cc</button>`);
+  const menu = document.querySelector<HTMLElement>('[aria-label="Legendas e tradução"]')!;
+  menu.addEventListener('click', () => {
+    const painel = document.getElementById('painel');
+    if (painel) {
+      painel.remove();
+      return;
+    }
+    const div = document.createElement('div');
+    div.id = 'painel';
+    const ligado = menu.getAttribute('aria-pressed') === 'true';
+    div.innerHTML = `<button jsname="RrG0hf" aria-label="${ligado ? 'Desativar legenda instantânea' : 'Ativar legendas'}">cc</button>`;
+    div.querySelector('button')!.addEventListener('click', () => {
+      menu.setAttribute('aria-pressed', 'true');
+      aoLigar();
+    });
+    document.body.appendChild(div);
+  });
+}
+
+describe('GoogleMeetProvider — legenda pelo painel "Legendas e tradução"', () => {
+  it('lê o estado pelo aria-pressed do botão do painel', () => {
+    barraComPainel(true);
+    expect(new GoogleMeetProvider().areCaptionsEnabled()).toBe(true);
+    barraComPainel(false);
+    expect(new GoogleMeetProvider().areCaptionsEnabled()).toBe(false);
+  });
+
+  it('abre o painel, liga a legenda e fecha o painel', () => {
+    vi.useFakeTimers();
+    barraComPainel(false);
+    const provider = new GoogleMeetProvider();
+    expect(provider.requestEnableCaptions()).toBe(true);
+    vi.advanceTimersByTime(1_000);
+    expect(provider.areCaptionsEnabled()).toBe(true);
+    expect(document.getElementById('painel')).toBeNull();
+  });
+
+  it('legenda já ligada: não abre painel nenhum', () => {
+    barraComPainel(true);
+    const clique = vi.fn();
+    document.querySelector('[aria-label="Legendas e tradução"]')!.addEventListener('click', clique);
+    new GoogleMeetProvider().requestEnableCaptions();
+    expect(clique).not.toHaveBeenCalled();
+  });
+});
+
+/*
+ * Legenda "pulando" em vários computadores (25/11/2026): o vigia chama
+ * `requestEnableCaptions` a cada poll. Com um "desligada" errado, o painel
+ * abria e fechava sem parar; com um rótulo inesperado, o clique DESLIGAVA a
+ * legenda e o poll seguinte a religava.
+ */
+describe('GoogleMeetProvider — o painel de legendas não pisca', () => {
+  function painelComRotulo(rotulo: string, aoClicar: () => void): HTMLElement {
+    render(`<button aria-label="Legendas e tradução" aria-haspopup="dialog">cc</button>`);
+    const menu = document.querySelector<HTMLElement>('[aria-label="Legendas e tradução"]')!;
+    menu.addEventListener('click', () => {
+      const painel = document.getElementById('painel');
+      if (painel) return painel.remove();
+      document.body.insertAdjacentHTML(
+        'beforeend',
+        `<div id="painel"><button jsname="RrG0hf" aria-label="${rotulo}">cc</button></div>`,
+      );
+      document.querySelector('#painel button')!.addEventListener('click', aoClicar);
+    });
+    return menu;
+  }
+
+  it('rótulo que não é "ativar": não clica (clicar podia desligar a legenda)', () => {
+    vi.useFakeTimers();
+    const clique = vi.fn();
+    painelComRotulo('Legenda instantânea', clique);
+    new GoogleMeetProvider().requestEnableCaptions();
+    vi.advanceTimersByTime(1_000);
+    expect(clique).not.toHaveBeenCalled();
+  });
+
+  it('abre o painel no máximo uma vez a cada 8 s, mesmo chamado a cada poll', () => {
+    vi.useFakeTimers();
+    const menu = painelComRotulo('Ativar legendas', () => {});
+    const aberturas = vi.fn();
+    menu.addEventListener('click', aberturas);
+    const provider = new GoogleMeetProvider();
+    for (let i = 0; i < 5; i += 1) {
+      provider.requestEnableCaptions();
+      vi.advanceTimersByTime(1_500);
+    }
+    // Abrir + fechar = 2 cliques no botão da barra, uma única vez.
+    expect(aberturas).toHaveBeenCalledTimes(2);
+  });
+
+  it('combobox "Idioma da reunião" na tela prova legenda ligada (sem aria-pressed)', () => {
+    render(`<button aria-label="Legendas e tradução" aria-haspopup="dialog">cc</button>
+      <div role="combobox" aria-label="Idioma da reunião">Português (Brasil)</div>`);
+    expect(new GoogleMeetProvider().areCaptionsEnabled()).toBe(true);
+  });
+});
+
+function idiomaDaReuniao(selecionado: string): void {
+  document.body.insertAdjacentHTML(
+    'beforeend',
+    `<div role="combobox" aria-label="Idioma da reunião">${selecionado === 'pt-BR' ? 'Português (Brasil)' : 'Inglês'}</div>
+     <ul role="listbox" aria-label="Idioma da reunião">
+       <li role="option" data-value="en-US" aria-selected="${selecionado === 'en-US'}">Inglês</li>
+       <li role="option" data-value="pt-BR" aria-selected="${selecionado === 'pt-BR'}">Português (Brasil)</li>
+       <li role="option" data-value="pt-PT" aria-selected="${selecionado === 'pt-PT'}">Português (Portugal)</li>
+     </ul>`,
+  );
+  for (const li of document.querySelectorAll('[role="option"]')) {
+    li.addEventListener('click', () => {
+      for (const outro of document.querySelectorAll('[role="option"]')) {
+        outro.setAttribute('aria-selected', String(outro === li));
+      }
+    });
+  }
+}
+
+describe('GoogleMeetProvider — legenda em português ao entrar (decisão de 24/11/2026)', () => {
+  it('troca o idioma da reunião para pt-BR', () => {
+    vi.useFakeTimers();
+    render('');
+    idiomaDaReuniao('en-US');
+    const provider = new GoogleMeetProvider();
+    expect(provider.ajustarIdiomaDaLegenda()).toBe('trocando');
+    vi.advanceTimersByTime(500);
+    expect(provider.ajustarIdiomaDaLegenda()).toBe('pronto');
+  });
+
+  it('português de Portugal não conta como pronto', () => {
+    vi.useFakeTimers();
+    render('');
+    idiomaDaReuniao('pt-PT');
+    expect(new GoogleMeetProvider().ajustarIdiomaDaLegenda()).toBe('trocando');
+  });
+
+  it('já em pt-BR: não clica em nada', () => {
+    render('');
+    idiomaDaReuniao('pt-BR');
+    const clique = vi.fn();
+    document.querySelector('[role="combobox"]')!.addEventListener('click', clique);
+    expect(new GoogleMeetProvider().ajustarIdiomaDaLegenda()).toBe('pronto');
+    expect(clique).not.toHaveBeenCalled();
+  });
+
+  it('ao entrar na sala, liga a legenda e põe em português sem esperar o "sim"', () => {
+    vi.useFakeTimers();
+    window.history.replaceState(null, '', '/abc-defg-hij');
+    // O combobox de idioma só nasce com a legenda ligada.
+    barraComPainel(false, () => idiomaDaReuniao('en-US'));
+
+    const provider = new GoogleMeetProvider();
+    provider.start();
+    vi.advanceTimersByTime(6_000);
+    provider.stop();
+
+    expect(provider.areCaptionsEnabled()).toBe(true);
+    expect(
+      document.querySelector('[role="option"][aria-selected="true"]')?.getAttribute('data-value'),
+    ).toBe('pt-BR');
+  });
+
+  it('quem desliga a legenda depois da entrada não é contrariado', () => {
+    vi.useFakeTimers();
+    window.history.replaceState(null, '', '/abc-defg-hij');
+    barraComPainel(true);
+    idiomaDaReuniao('pt-BR');
+    const provider = new GoogleMeetProvider();
+    provider.start();
+    vi.advanceTimersByTime(3_000);
+    document.querySelector('[aria-label="Legendas e tradução"]')!.setAttribute('aria-pressed', 'false');
+    const clique = vi.fn();
+    document.querySelector('[aria-label="Legendas e tradução"]')!.addEventListener('click', clique);
+    vi.advanceTimersByTime(10_000);
+    provider.stop();
+    expect(clique).not.toHaveBeenCalled();
+  });
+});
+
 describe('GoogleMeetProvider — presença confiável e reconciliada', () => {
   it('não promove avatar/falante da legenda a participante', () => {
     render(`
@@ -105,5 +345,134 @@ describe('GoogleMeetProvider — captura degradada explícita', () => {
       text: 'fala preservada sem inventar um participante',
     });
     expect(health).toContainEqual([false, 'parser']);
+  });
+});
+
+/**
+ * O vigia da captura (`checkCaptureHealth`). Texto parado na região de legendas
+ * depois de 25 s não prova falha: a última legenda pode continuar visível no
+ * silêncio. Em 23/11/2026, no verify-ao-vivo, uma pausa assim virou "Erro na
+ * captura" com as 14 falas já capturadas. A regra: relê a região; só é falha se a
+ * releitura achar fala que o observer perdeu, ou se a região for outra.
+ */
+describe('GoogleMeetProvider — vigia da captura não confunde silêncio com falha', () => {
+  const LEGENDA = `
+    <div role="region" aria-label="Legendas">
+      <div class="nMcdL"><span class="KcIKyf">Ana Souza</span><div class="bh44bd">Fica combinado o envio na sexta.</div></div>
+    </div>`;
+
+  type Internos = {
+    captionRegion: Element | null;
+    captionsOn: boolean;
+    captureExpectedSince: number;
+    scanCaptions(): void;
+    checkCaptureHealth(): void;
+  };
+
+  function comLegendaJaLida() {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-23T10:00:00-03:00'));
+    render(LEGENDA);
+    const provider = new GoogleMeetProvider();
+    const health: Array<[boolean, string | undefined]> = [];
+    const chunks: string[] = [];
+    provider.onCaptureHealth((healthy, reason) => health.push([healthy, reason]));
+    provider.onCaptionChunk((chunk) => chunks.push(chunk.text));
+    const internos = provider as unknown as Internos;
+    internos.captionRegion = document.querySelector('[role="region"]');
+    internos.captionsOn = true;
+    internos.captureExpectedSince = Date.now();
+    internos.scanCaptions();
+    return { internos, health, chunks };
+  }
+
+  it('legenda já capturada parada na tela é silêncio, não falha', () => {
+    const { internos, health, chunks } = comLegendaJaLida();
+    expect(chunks).toEqual(['Fica combinado o envio na sexta.']);
+    vi.advanceTimersByTime(60_000);
+    internos.checkCaptureHealth();
+    expect(health).not.toContainEqual([false, 'stall']);
+    expect(chunks).toHaveLength(1);
+  });
+
+  it('fala que o observer perdeu é capturada na releitura e conta como falha', () => {
+    const { internos, health, chunks } = comLegendaJaLida();
+    vi.advanceTimersByTime(30_000);
+    document.querySelector('.bh44bd')!.textContent = 'Fica combinado o envio na sexta. E a revisão na segunda.';
+    internos.checkCaptureHealth();
+    expect(chunks.at(-1)).toContain('revisão na segunda');
+    expect(health).toContainEqual([false, 'stall']);
+  });
+
+  it('região trocada pelo Meet continua sendo falha', () => {
+    const { internos, health } = comLegendaJaLida();
+    internos.captionRegion = document.createElement('div');
+    vi.advanceTimersByTime(30_000);
+    internos.checkCaptureHealth();
+    expect(health).toContainEqual([false, 'stall']);
+  });
+});
+
+describe('GoogleMeetProvider — o fim da chamada', () => {
+  const EM_CHAMADA = '<button aria-label="Sair da chamada">call_end</button>';
+
+  function naSala(): void {
+    window.history.replaceState(null, '', '/abc-defg-hij');
+  }
+
+  it('reconhece a reunião com o botão de sair na tela', () => {
+    naSala();
+    render(EM_CHAMADA);
+    expect(new GoogleMeetProvider().detectMeeting()?.meetingCode).toBe('abc-defg-hij');
+  });
+
+  it('a tela pós-chamada encerra, mesmo com o botão de sair ainda no documento', () => {
+    naSala();
+    render(`${EM_CHAMADA}<button>Participar novamente</button>`);
+    expect(new GoogleMeetProvider().detectMeeting()).toBeNull();
+  });
+
+  it('um botão de sair que não é desenhado não conta como reunião', () => {
+    naSala();
+    render(EM_CHAMADA);
+    const botao = document.querySelector('button')!;
+    botao.checkVisibility = () => false;
+    expect(new GoogleMeetProvider().detectMeeting()).toBeNull();
+  });
+
+  it('sair da chamada dispara o fim depois da confirmação dupla', () => {
+    vi.useFakeTimers();
+    naSala();
+    render(EM_CHAMADA);
+    const provider = new GoogleMeetProvider();
+    const fim = vi.fn();
+    provider.onMeetingEnd(fim);
+    provider.start();
+
+    render('<button>Voltar à tela inicial</button>');
+    vi.advanceTimersByTime(10_000);
+    provider.stop();
+
+    expect(fim).toHaveBeenCalledTimes(1);
+    expect(fim.mock.calls[0]?.[0]).toMatchObject({ meetingCode: 'abc-defg-hij' });
+  });
+});
+
+describe('GoogleMeetProvider — outra sala na mesma aba', () => {
+  it('encerra a sala antiga e abre a nova, sem recarregar a página', () => {
+    vi.useFakeTimers();
+    window.history.replaceState(null, '', '/abc-defg-hij');
+    render('<button aria-label="Sair da chamada">call_end</button>');
+    const provider = new GoogleMeetProvider();
+    const eventos: string[] = [];
+    provider.onMeetingStart((s) => eventos.push(`inicio ${s.meetingCode}`));
+    provider.onMeetingEnd((s) => eventos.push(`fim ${s.meetingCode}`));
+    provider.start();
+
+    window.history.replaceState(null, '', '/xyz-wxyz-xyz');
+    vi.advanceTimersByTime(3_000);
+    provider.stop();
+
+    expect(eventos).toEqual(['inicio abc-defg-hij', 'fim abc-defg-hij', 'inicio xyz-wxyz-xyz']);
   });
 });

@@ -24,6 +24,15 @@ import { parseRetryAfter, requireApiKey, runCompletion, type RawInvocation } fro
 
 /** Modelos que aceitam `thinking: { type: 'adaptive' }` e `output_config.effort`. */
 const ADAPTIVE_THINKING_MODELS = new Set([
+  // A geração atual (conferida em 23/11/2026): raciocínio sempre ligado nos
+  // três primeiros, e `effort` aceito em todos.
+  'claude-fable-5-2',
+  'claude-mythos-5-2',
+  'claude-fable-5-1',
+  'claude-mythos-5-1',
+  'claude-opus-5-5',
+  'claude-sonnet-5-5',
+  'claude-haiku-5-5',
   'claude-fable-5',
   'claude-mythos-5',
   'claude-opus-5',
@@ -35,6 +44,13 @@ const ADAPTIVE_THINKING_MODELS = new Set([
 ]);
 
 const CONTEXT_WINDOWS: Record<string, number> = {
+  'claude-fable-5-2': 1_000_000,
+  'claude-mythos-5-2': 1_000_000,
+  'claude-fable-5-1': 1_000_000,
+  'claude-mythos-5-1': 1_000_000,
+  'claude-opus-5-5': 1_000_000,
+  'claude-sonnet-5-5': 1_000_000,
+  'claude-haiku-5-5': 1_000_000,
   'claude-fable-5': 1_000_000,
   'claude-mythos-5': 1_000_000,
   'claude-opus-5': 1_000_000,
@@ -49,6 +65,22 @@ const CONTEXT_WINDOWS: Record<string, number> = {
 /** Fallback conservador: errar pra baixo faz janelar demais, errar pra cima
  *  faz estourar contexto em produção. */
 const FALLBACK_CONTEXT_TOKENS = 200_000;
+
+/**
+ * Folga para o raciocínio adaptativo. Com `thinking` ligado, `max_tokens`
+ * conta o raciocínio E a resposta; os agentes dimensionam `maxTokens` só pela
+ * resposta (o Auditor pede 2000 + 500 por afirmação). Um raciocínio longo
+ * comia o orçamento e o JSON saía cortado — e JSON cortado não tem reparo:
+ * a segunda tentativa cortava igual e a geração inteira caía. `max_tokens` é
+ * teto, não custo: a folga só é gasta se o modelo de fato raciocinar.
+ * 8000 mantém o Leitor (48 000) abaixo de 64 000.
+ */
+export const FOLGA_DE_RACIOCINIO = 8_000;
+
+/** O `max_tokens` que vai à API: o pedido pelo agente, mais a folga quando há raciocínio. */
+export function orcamentoDeSaida(model: string, maxTokens: number): number {
+  return ADAPTIVE_THINKING_MODELS.has(model) ? maxTokens + FOLGA_DE_RACIOCINIO : maxTokens;
+}
 
 let cached: Anthropic | undefined;
 
@@ -67,8 +99,8 @@ function client(): Anthropic {
   return cached;
 }
 
-/** Reconhece sobrecarga — `overloaded_error` (529) e 5xx transitório. */
-function asOverloaded(model: string, error: unknown): OverloadedError | undefined {
+/** Reconhece sobrecarga — `overloaded_error` (529) e 5xx transitório. Também usado pelo Taq. */
+export function asOverloaded(model: string, error: unknown): OverloadedError | undefined {
   const status = (error as { status?: unknown })?.status;
   const isOverloaded =
     error instanceof Anthropic.InternalServerError ||
@@ -84,8 +116,8 @@ function asOverloaded(model: string, error: unknown): OverloadedError | undefine
   );
 }
 
-/** Reconhece 429 no formato que o SDK da Anthropic levanta. */
-function asRateLimit(model: string, error: unknown): RateLimitError | undefined {
+/** Reconhece 429 no formato que o SDK da Anthropic levanta. Também usado pelo Taq. */
+export function asRateLimit(model: string, error: unknown): RateLimitError | undefined {
   if (!(error instanceof Anthropic.RateLimitError)) return undefined;
   const headers = (error as { headers?: unknown }).headers;
   const retryAfter =
@@ -99,6 +131,23 @@ function asRateLimit(model: string, error: unknown): RateLimitError | undefined 
     parseRetryAfter(retryAfter),
     error,
   );
+}
+
+/**
+ * A saída estruturada da Anthropic recusa objeto sem `additionalProperties:
+ * false` explícito (400 "For 'object' type, 'additionalProperties' must be
+ * explicitly set to false", na primeira execução real, 23/11/2026). O schema
+ * vem de `jsonSchema.ts`, compartilhado com Google e OpenAI, que não exigem;
+ * por isso o ajuste é aqui, numa cópia. Exportado para teste.
+ */
+export function schemaParaAnthropic(no: unknown): unknown {
+  if (Array.isArray(no)) return no.map(schemaParaAnthropic);
+  if (!no || typeof no !== 'object') return no;
+  const copia: Record<string, unknown> = {};
+  for (const [chave, valor] of Object.entries(no)) copia[chave] = schemaParaAnthropic(valor);
+  const ehObjeto = copia.type === 'object' || (Array.isArray(copia.type) && copia.type.includes('object'));
+  if (ehObjeto && copia.additionalProperties === undefined) copia.additionalProperties = false;
+  return copia;
 }
 
 function buildMessages(invocation: RawInvocation): Anthropic.MessageParam[] {
@@ -147,9 +196,13 @@ export const anthropicProvider: Provider = {
       const supportsAdaptive = ADAPTIVE_THINKING_MODELS.has(model);
 
       try {
-        const response = await client().messages.create({
+        // STREAM, não `create`: a geração pede `max_tokens` alto, e o SDK recusa
+        // a chamada sem streaming ("Streaming is required for operations that may
+        // take longer than 10 minutes") — visto na primeira execução real, em
+        // 23/11/2026. `finalMessage()` devolve a mensagem inteira, como o `create`.
+        const response = await client().messages.stream({
           model,
-          max_tokens: invocation.maxTokens,
+          max_tokens: orcamentoDeSaida(model, invocation.maxTokens),
           system: invocation.system,
           messages: buildMessages(invocation),
           ...(supportsAdaptive ? { thinking: { type: 'adaptive' as const } } : {}),
@@ -157,7 +210,12 @@ export const anthropicProvider: Provider = {
             ? {
                 output_config: {
                   ...(invocation.jsonSchema
-                    ? { format: { type: 'json_schema' as const, schema: invocation.jsonSchema } }
+                    ? {
+                        format: {
+                          type: 'json_schema' as const,
+                          schema: schemaParaAnthropic(invocation.jsonSchema) as Record<string, unknown>,
+                        },
+                      }
                     : {}),
                   // `medium` é o ponto de equilíbrio custo/qualidade dos
                   // agentes deste pipeline; o harness da Fase 8 é o lugar
@@ -166,10 +224,22 @@ export const anthropicProvider: Provider = {
                 },
               }
             : {}),
-        });
+        }).finalMessage();
 
         if (response.stop_reason === 'refusal') {
           throw new ProviderError('anthropic', model, 'requisição recusada pelos classificadores.');
+        }
+
+        // Saída estruturada cortada pelo teto nunca é JSON válido, e o reparo
+        // (providers/shared.ts) pediria de novo com o mesmo teto. Melhor falhar
+        // já, dizendo o motivo, do que gastar outra chamada e acusar "schema".
+        if (response.stop_reason === 'max_tokens' && invocation.jsonSchema) {
+          throw new ProviderError(
+            'anthropic',
+            model,
+            `resposta cortada pelo limite de ${orcamentoDeSaida(model, invocation.maxTokens)} tokens de saída ` +
+              `(${response.usage.output_tokens} gerados, raciocínio incluso).`,
+          );
         }
 
         const text = response.content

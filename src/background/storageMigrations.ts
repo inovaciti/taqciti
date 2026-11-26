@@ -11,6 +11,7 @@ import { readLocal, removeLocal, writeLocal } from '@/shared/services/storage';
 import { logger } from '@/shared/services/log';
 import type { MeetingRecord, MeetingState } from '@/shared/types/domain';
 import { buildMeetingRecord } from '@/features/meeting/payload';
+import { migrarConducao } from '@/features/conducao/store';
 import { upsertRecord } from './history';
 
 export async function migrateLocalStorage(): Promise<void> {
@@ -34,6 +35,36 @@ export async function migrateLocalStorage(): Promise<void> {
     }
     await writeLocal(LOCAL_STORAGE_SCHEMA_VERSION_KEY, 2);
   }
+
+  if (version < 3) {
+    // Os "Avisos do Taq" deixaram de existir (18/10/2026). O que já estava
+    // guardado não tem mais tela que o leia: sai, para não ficar ocupando o
+    // storage da pessoa para sempre.
+    await removeLocal('taq:avisos');
+    await writeLocal(LOCAL_STORAGE_SCHEMA_VERSION_KEY, 3);
+  }
+
+  if (version < 4) {
+    // O perfil do assistente virou contextos (22/10/2026): missão, o que
+    // observar, intervenção, contexto e preferências passam a ser contextos da
+    // pessoa, com o modo e "ler ao encerrar" preservados. O que não couber fica
+    // guardado como estava (`perfilV1`). Ver `features/conducao/store.ts`.
+    await migrarConducao();
+    await writeLocal(LOCAL_STORAGE_SCHEMA_VERSION_KEY, 4);
+  }
+
+  if (version < 5) {
+    // Três coisas saíram em 23/11/2026 e o que elas guardavam não tem mais
+    // tela nem código que o leia — sai, como os avisos na versão 3:
+    //   - as sugestões automáticas durante a reunião (`taq:apoio`: sugestões,
+    //     retorno, pausas, medições): o assistente só age quando chamado;
+    //   - as automações após reuniões (preferências e fila).
+    // As reuniões importadas antes continuam no histórico: são reuniões.
+    await removeLocal('taq:apoio');
+    await removeLocal('taqciti:automacoes:v1');
+    await removeLocal('taqciti:automacoes:fila:v1');
+    await writeLocal(LOCAL_STORAGE_SCHEMA_VERSION_KEY, 5);
+  }
 }
 
 /** Era "CITi Flow Companion" (`cfc:*`) → chaves TaqCITi (`taq:*`). */
@@ -46,14 +77,14 @@ async function migrateCompanionKeys(): Promise<void> {
     await writeLocal(STORAGE_KEYS.history, legacyHistory);
   }
 
-  for (const key of ['outbox', 'metrics'] as const) {
-    const [current, legacy] = await Promise.all([
-      readLocal(STORAGE_KEYS[key]),
-      readLocal(LEGACY_STORAGE_KEYS[key]),
-    ]);
-    if (current === null && legacy !== null) {
-      await writeLocal(STORAGE_KEYS[key], legacy);
-    }
+  // O `outbox` da era Companion não é copiado: nada nesta versão o lê. Ele
+  // só é apagado, junto com as outras chaves antigas, no fim.
+  const [metricas, metricasAntigas] = await Promise.all([
+    readLocal(STORAGE_KEYS.metrics),
+    readLocal(LEGACY_STORAGE_KEYS.metrics),
+  ]);
+  if (metricas === null && metricasAntigas !== null) {
+    await writeLocal(STORAGE_KEYS.metrics, metricasAntigas);
   }
 
   const snapshot = await readLocal<MeetingState>(LEGACY_STORAGE_KEYS.activeSnapshot);
