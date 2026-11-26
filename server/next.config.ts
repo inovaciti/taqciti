@@ -27,6 +27,19 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['pdfkit'],
 
   /**
+   * O `next build` confere tipos com `tsconfig.build.json`, que deixa os testes
+   * de fora. O Railway constrói só a pasta `server/` (root directory), e há
+   * teste que importa código da extensão (`../../../src/...`, ex.
+   * `lib/templates/catalogo.test.ts`): lá o arquivo não existe e o build caía
+   * em "Cannot find module" (26/11/2026), embora passasse na máquina, onde o
+   * repositório inteiro está presente. `npm run typecheck` continua usando o
+   * `tsconfig.json` completo, com os testes.
+   */
+  typescript: {
+    tsconfigPath: 'tsconfig.build.json',
+  },
+
+  /**
    * Cabeçalhos de segurança em toda resposta.
    *
    * `Referrer-Policy: no-referrer` é o que importa de verdade aqui: existem
