@@ -27,7 +27,7 @@ export async function revisarTranscricao(
       async (lote) => {
         const resposta = await modelo.turno(
           {
-            instrucoes: 'transcricao-v2',
+            instrucoes: 'transcricao-v3',
             contexto: JSON.stringify(lote),
             mensagens: [{ papel: 'pessoa', texto: 'Revise as falas de `falas` e devolva o JSON completo.' }],
             ferramentas: [],

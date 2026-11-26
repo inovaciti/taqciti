@@ -71,7 +71,7 @@ describe('reparar', () => {
     expect(data.participants![0]!.quotes).toHaveLength(2);
   });
 
-  it('encaminhamento não se reescreve (dono e prazo); retirar e sem resposta não mudam nada', async () => {
+  it('encaminhamento: a ação se reescreve, o dono não (nem enfiado no texto); retirar e sem resposta não mudam nada', async () => {
     complete.mockResolvedValue(
       resposta([
         { id: 'r1', acao: 'reescrever', texto: 'Enviar o relatório; Rui assumiu', quotes: ['Perfeito, mando sim.'] },
@@ -88,9 +88,12 @@ describe('reparar', () => {
       ],
       transcript,
     );
+    // Desde 26/11/2026 a ação se reescreve (ata impessoal), mas "Rui assumiu"
+    // dentro do texto é dono contrabandeado: sai, e o campo responsável não muda.
     expect(data.actionItems![0]!.acao).toBe('Enviar o relatório');
-    expect(r.aConferir.size).toBe(0);
-    expect(complete.mock.calls[0]![1].messages[0].content).toContain('Pode reescrever: não');
+    expect(data.actionItems![0]!.responsavel).toBeUndefined();
+    expect([...r.aConferir]).toEqual(['actionItems[0]']);
+    expect(complete.mock.calls[0]![1].messages[0].content).toContain('Pode reescrever: sim');
   });
 
   it('nada a reparar: nenhuma chamada', async () => {

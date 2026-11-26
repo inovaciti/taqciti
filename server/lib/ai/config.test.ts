@@ -191,9 +191,9 @@ describe('política de dados', () => {
     expect(emProducao({ VERCEL_ENV: 'preview' } as unknown as NodeJS.ProcessEnv)).toBe(false);
   });
 
-  it('matrixEntryForModel encontra a entrada do modelo ativo do Auditor', () => {
-    const { provider, model } = DEFAULT_AGENT_CONFIG.auditor;
-    // Auditor na Anthropic desde 23/11/2026 (era google-barato).
+  it('matrixEntryForModel encontra a entrada do modelo ativo do Leitor', () => {
+    const { provider, model } = DEFAULT_AGENT_CONFIG.leitor;
+    // Leitor no Haiku desde 26/11/2026 (o piso da Anthropic na matriz).
     expect(matrixEntryForModel(provider, model)?.id).toBe('anthropic-barato');
   });
 
@@ -231,19 +231,14 @@ describe('defaults de produção', () => {
     }
   });
 
-  it('o Auditor não é mais caro que os agentes de raciocínio', () => {
-    // O Auditor é a chamada mais frequente do pipeline. Se um dia ele ficar
-    // no modelo mais caro, é engano, não decisão.
-    const auditor = priceFor(
-      DEFAULT_AGENT_CONFIG.auditor.provider,
-      DEFAULT_AGENT_CONFIG.auditor.model,
-    )!;
-    const pensante = priceFor(
-      DEFAULT_AGENT_CONFIG.leitor.provider,
-      DEFAULT_AGENT_CONFIG.leitor.model,
-    )!;
-    expect(auditor.inputPerMTok).toBeLessThanOrEqual(pensante.inputPerMTok);
-    expect(auditor.outputPerMTok).toBeLessThanOrEqual(pensante.outputPerMTok);
+  it('Leitor no Haiku e Auditor no Sonnet — invertido de propósito desde 26/11/2026', () => {
+    // Até 25/11 este teste exigia o Auditor mais barato que o Leitor ("a chamada
+    // mais frequente"). Deixou de ser: são 1 ou 2 conferências por documento. E
+    // medido numa reunião real, o Haiku como Auditor inventava motivo para
+    // reprovar e derrubou a decisão principal; com a transcrição revisada pelo
+    // Sonnet, o Haiku como Leitor passou no gabarito. Decisão do usuário.
+    expect(DEFAULT_AGENT_CONFIG.leitor.model).toBe('claude-haiku-5-5');
+    expect(DEFAULT_AGENT_CONFIG.auditor.model).toBe('claude-sonnet-5-5');
   });
 });
 

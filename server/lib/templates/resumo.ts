@@ -1,4 +1,5 @@
 import type { DocumentTemplate } from './types';
+import { REDACAO_IMPESSOAL } from './estilo';
 
 /**
  * Resumo completo — a reunião inteira contada por trechos, na ordem em que
@@ -17,6 +18,10 @@ import type { DocumentTemplate } from './types';
  * RESUMO EXECUTIVO no topo (as mesmas frases com citação da Ata) e os PONTOS DE
  * ATENÇÃO no fim, com o que alguém levantou e ficou sem resposta. Os trechos
  * por horário continuam sendo o corpo e a âncora de navegação.
+ *
+ * 26/11/2026 — redação impessoal nas três seções, como na Ata (pedido do
+ * usuário; ver `estilo.ts`). O resumo por período dizia "quem trouxe o quê";
+ * agora diz de que LADO veio, quando importa ("o cliente", "a equipe").
  */
 export const resumo: DocumentTemplate = {
   documentType: 'resumo',
@@ -25,6 +30,7 @@ export const resumo: DocumentTemplate = {
   sections: [
     {
       id: 'resumo_executivo',
+      impessoal: true,
       title: 'Resumo executivo',
       order: 1,
       required: true,
@@ -32,6 +38,7 @@ export const resumo: DocumentTemplate = {
       omitWhenEmpty: true,
       needs: ['o que aconteceu de mais importante na reunião'],
       guidance: [
+        REDACAO_IMPESSOAL,
         'Duas ou três frases que dizem, a quem tem dois minutos, o que aconteceu na',
         'reunião: o assunto, o que se resolveu e o que ficou em aberto.',
         'Cada frase é um item separado, com as citações literais que a sustentam; a',
@@ -44,6 +51,7 @@ export const resumo: DocumentTemplate = {
 
     {
       id: 'resumo_por_periodo',
+      impessoal: true,
       title: 'Resumo por período',
       order: 2,
       required: true,
@@ -51,6 +59,7 @@ export const resumo: DocumentTemplate = {
       omitWhenEmpty: true,
       needs: ['os assuntos tratados, trecho a trecho, do começo ao fim da reunião'],
       guidance: [
+        REDACAO_IMPESSOAL,
         'Escreva o resumo COMPLETO da reunião dividido em trechos de tempo, em ordem',
         'cronológica: o primeiro trecho cobre o começo, o último cobre o fim, e nenhuma',
         'parte relevante da reunião pode ficar sem trecho.',
@@ -64,9 +73,10 @@ export const resumo: DocumentTemplate = {
         'do seguinte; o do último é o último carimbo da reunião) — omita os dois se a',
         'transcrição não tiver carimbos, e nunca calcule nem invente um horário; e um',
         'resumo em prosa corrida (um a três parágrafos curtos) do que foi dito: contexto,',
-        'quem trouxe o quê, argumentos, dúvidas, números e nomes citados, o que ficou',
-        'combinado ou em aberto naquele momento.',
-        'Escreva em terceira pessoa e no passado, com suas próprias palavras, sem copiar',
+        'de que lado veio cada ponto quando importar (o cliente, a equipe do projeto),',
+        'argumentos, dúvidas, números e sistemas citados, o que ficou combinado ou em',
+        'aberto naquele momento.',
+        'Escreva no passado, impessoal, com suas próprias palavras, sem copiar',
         'a conversa. Seja fiel: não acrescente interpretação, decisão ou conclusão que',
         'não tenha sido dita, e não transforme proposta em decisão.',
         'Cada trecho precisa de citações LITERAIS da transcrição que o sustentem — as',
@@ -80,6 +90,7 @@ export const resumo: DocumentTemplate = {
 
     {
       id: 'pontos_de_atencao',
+      impessoal: true,
       title: 'Pontos de atenção',
       order: 3,
       required: false,
@@ -87,9 +98,10 @@ export const resumo: DocumentTemplate = {
       omitWhenEmpty: true,
       needs: ['dúvidas, preocupações e riscos levantados e não resolvidos'],
       guidance: [
-        'O que alguém levantou na reunião e ficou SEM resposta ou sem encaminhamento:',
+        REDACAO_IMPESSOAL,
+        'O que foi levantado na reunião e ficou SEM resposta ou sem encaminhamento:',
         'dúvida, preocupação, risco, pendência reconhecida.',
-        'Uma frase por item, com a citação de quem levantou. Só o que foi dito: não',
+        'Uma frase por item, com a citação da fala que levantou. Só o que foi dito: não',
         'aponte risco por conta própria, e não liste o que foi resolvido na conversa.',
       ].join(' '),
       askWhenMissing: [],

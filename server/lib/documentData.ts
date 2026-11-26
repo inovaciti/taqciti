@@ -45,14 +45,53 @@ export interface AnchoredQuote {
 }
 
 /** Localizador de citação. Vem de `createLocator(transcript)`. */
-export type Locate = (quote: string) => LocatedAnchor | null;
+/** `perto`: escolher a ocorrência mais próxima desta posição (ver `Locator.locate`). */
+export type Locate = (quote: string, perto?: number) => LocatedAnchor | null;
 
-/** Citação bruta do modelo → citação ancorada. Descarta string vazia. */
-export function anchorQuotes(raw: unknown, locate: Locate): AnchoredQuote[] {
+/**
+ * Citação bruta do modelo → citação ancorada. Descarta string vazia.
+ *
+ * Da segunda citação em diante, a âncora é a ocorrência mais próxima da
+ * anterior JÁ ancorada (`perto`): as citações de uma afirmação são o mesmo
+ * momento da reunião, e "Perfeito." solto apontava para o primeiro "Perfeito"
+ * da transcrição. `perto` também pode vir de fora (o reparo passa a posição
+ * das citações que o item já tinha).
+ */
+export function anchorQuotes(raw: unknown, locate: Locate, perto?: number): AnchoredQuote[] {
   if (!Array.isArray(raw)) return [];
+  let referencia = perto;
   return raw
     .filter((quote): quote is string => typeof quote === 'string' && quote.trim().length > 0)
-    .map((quote) => ({ quote, anchor: locate(quote) }));
+    .map((quote) => {
+      const anchor = locate(quote, referencia);
+      if (anchor) referencia = anchor.start;
+      return { quote, anchor };
+    });
+}
+
+/**
+ * Item de lista começa com maiúscula. O Haiku como Leitor (26/11/2026) devolve
+ * às vezes "entregar o design system…", e o item ia assim para o PDF.
+ */
+export function comMaiuscula(texto: string): string {
+  const t = texto.trim();
+  return t.charAt(0).toLocaleUpperCase('pt-BR') + t.slice(1);
+}
+
+/**
+ * A atuação vem depois do nome ("Rafael: pediu…"); começando pelo nome, saía
+ * "Rafael (Ana Souza) – …: Rafael pediu…" (26/11/2026). Tira o nome, inteiro ou
+ * só o primeiro, do começo.
+ */
+export function atuacaoSemONome(atuacao: string | undefined, nome: string): string {
+  let t = (atuacao ?? '').trim();
+  for (const parte of [nome, nome.replace(/\s*\([^)]*\)\s*$/, ''), nome.split(/\s+/)[0] ?? '']) {
+    if (parte && t.toLowerCase().startsWith(`${parte.toLowerCase()} `)) {
+      t = t.slice(parte.length).trim();
+      break;
+    }
+  }
+  return t;
 }
 
 /** As âncoras que realmente se localizaram. É o que o Auditor pode recortar. */
@@ -422,7 +461,7 @@ function listSpec(
     merge(data, payload, _sectionId, locate) {
       data[key] = ((payload as { items?: { text?: string; quotes?: unknown }[] })?.items ?? [])
         .filter((i) => i?.text)
-        .map((i) => ({ text: i.text!, quotes: anchorQuotes(i.quotes, locate) }));
+        .map((i) => ({ text: comMaiuscula(i.text!), quotes: anchorQuotes(i.quotes, locate) }));
     },
     claims(data) {
       return (data[key] ?? []).map((item, index) => ({
@@ -659,7 +698,7 @@ export const SECTION_DATA_SPECS: Record<string, SectionDataSpec> = {
           name: limparRotuloDeSelf(p.name),
           ...(p.role ? { role: p.role } : {}),
           roleSource: p.role ? (p.roleSource ?? 'meeting') : 'unknown',
-          ...(p.atuacao?.trim() ? { atuacao: p.atuacao.trim() } : {}),
+          ...(atuacaoSemONome(p.atuacao, p.name) ? { atuacao: atuacaoSemONome(p.atuacao, p.name) } : {}),
           quotes: anchorQuotes(p.quotes, locate),
         }));
     },
@@ -667,16 +706,24 @@ export const SECTION_DATA_SPECS: Record<string, SectionDataSpec> = {
       return (data.participants ?? []).flatMap((p, index) => [
         {
           path: `participants[${index}]`,
-          // O que se audita é a afirmação inteira: quem participou E qual o
-          // cargo. Auditar só o nome deixaria o cargo passar sem conferência,
-          // e cargo inventado é o erro que a Ata mais precisa evitar.
-          text: p.role
-            ? `${p.name} participou da reunião e tem o cargo/papel de ${p.role}.`
-            : `${p.name} participou da reunião.`,
+          text: `${p.name} participou da reunião.`,
           anchors: located(p.quotes),
-          // Só presença, sem cargo: o rótulo da fala basta (ver AuditableClaim).
-          ...(p.role ? {} : { presencaDe: p.name }),
+          // Presença: o rótulo da fala basta (ver AuditableClaim).
+          presencaDe: p.name,
         },
+        // O cargo é conferido SEMPRE, e à parte desde 26/11/2026: reprovado, cai
+        // só ele e a pessoa fica. Junto com a presença, um cargo sem citação
+        // tirava da ata quem tinha participado — numa reunião real, quem a
+        // conduziu. Cargo inventado continua sendo o erro mais caro da Ata.
+        ...(p.role
+          ? [
+              {
+                path: `participants[${index}].role`,
+                text: `${p.name} tem o cargo/papel de ${p.role}.`,
+                anchors: located(p.quotes),
+              },
+            ]
+          : []),
         // A atuação é outra afirmação: reprovada, cai só ela, e a pessoa fica.
         ...(p.atuacao
           ? [
@@ -692,9 +739,16 @@ export const SECTION_DATA_SPECS: Record<string, SectionDataSpec> = {
     drop(data, paths) {
       data.participants = (data.participants ?? [])
         .map((p, index) => {
-          if (!paths.has(`participants[${index}].atuacao`)) return p;
-          const { atuacao: _fora, ...resto } = p;
-          return resto;
+          let atual: Participant = p;
+          if (paths.has(`participants[${index}].role`)) {
+            const { role: _cargo, ...resto } = atual;
+            atual = { ...resto, roleSource: 'unknown' };
+          }
+          if (paths.has(`participants[${index}].atuacao`)) {
+            const { atuacao: _fora, ...resto } = atual;
+            atual = resto;
+          }
+          return atual;
         })
         .filter((_, index) => !paths.has(`participants[${index}]`));
     },
@@ -755,7 +809,7 @@ export const SECTION_DATA_SPECS: Record<string, SectionDataSpec> = {
       )
         .filter((i) => i?.acao?.trim())
         .map((i) => ({
-          acao: i.acao!.trim(),
+          acao: comMaiuscula(i.acao!.trim()),
           ...(i.responsavel?.trim() && !ehRotuloDeSelf(i.responsavel) ? { responsavel: limparRotuloDeSelf(i.responsavel.trim()) } : {}),
           ...(i.prazo?.trim() ? { prazo: i.prazo.trim() } : {}),
           quotes: anchorQuotes(i.quotes, locate),
@@ -901,14 +955,18 @@ export const SECTION_DATA_SPECS: Record<string, SectionDataSpec> = {
         .filter((d) => d?.text)
         .map((d) => {
           const agreementQuote = typeof d.agreementQuote === 'string' ? d.agreementQuote : '';
+          // A proposta primeiro; a concordância é a ocorrência mais perto DELA
+          // ("Perfeito." do aceite, e não o primeiro "Perfeito" da reunião).
+          const quotes = anchorQuotes(d.quotes, locate);
+          const ultima = quotes.map((q) => q.anchor?.start).filter((n): n is number => n !== undefined).pop();
           return {
-            text: d.text!,
+            text: comMaiuscula(d.text!),
             agreement: {
               quote: agreementQuote,
-              anchor: agreementQuote.trim() ? locate(agreementQuote) : null,
+              anchor: agreementQuote.trim() ? locate(agreementQuote, ultima) : null,
             },
             confidence: d.confidence ?? 'low',
-            quotes: anchorQuotes(d.quotes, locate),
+            quotes,
           };
         });
     },

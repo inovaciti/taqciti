@@ -34,6 +34,12 @@ const ARQUIVO_POR_VERSAO: Record<string, string> = {
    * real de 26 minutos levou 42 s e estourou a saída — nunca chegou a revisar.
    */
   'transcricao-v2': 'transcricao-v2.md',
+  /**
+   * v3 (26/11/2026): `anteriores` passa a ser meia hora de conversa, e o que foi
+   * dito antes pode tornar uma palavra inequívoca ("aí data de reunião", depois
+   * de um pedido de ata, é "a ata da reunião").
+   */
+  'transcricao-v3': 'transcricao-v3.md',
   'taq-v1': 'v1.md',
   /** v2: o fluxo de documentos pelo catálogo e os pedidos fora dele. */
   'taq-v2': 'v2.md',

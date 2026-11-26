@@ -130,7 +130,17 @@ export function buildExcerpt(
 
   const ordered = [...anchors].sort((a, b) => a.start - b.start);
 
-  return merged.map((range) => renderRange(transcript, range, ordered)).join('\n\n[...]\n\n');
+  // Recorte que começa no meio de uma fala perde o rótulo de quem fala — e numa
+  // fala longa a folga não alcança o cabeçalho. Em 26/11/2026 o Auditor
+  // reprovou "Fulano é gerente" porque não via que a fala "sou gerente" era
+  // dele. O rótulo vai na frente, fora das marcas: é contexto, não citação.
+  return merged
+    .map((range) => {
+      const meioDaFala = range.start > 0 && transcript[range.start - 1] !== '\n';
+      const quem = meioDaFala ? falanteEm(transcript, range.start) : null;
+      return (quem ? `[fala de ${quem}] …` : '') + renderRange(transcript, range, ordered);
+    })
+    .join('\n\n[...]\n\n');
 }
 
 /** Recorta o intervalo marcando, dentro dele, o que foi de fato citado. */
@@ -178,6 +188,10 @@ export function falanteEm(transcript: string, pos: number): string | null {
  * próprio nome, ou começar fora de uma palavra. "Ana" não casa com "Anabela".
  */
 export function rotuloEhDe(rotulo: string, nome: string): boolean {
+  // "Rafael (Ana Souza)": nome dito e conta do Meet, que a extensão junta desde
+  // 26/11/2026 (`fonteDoDocumento.ts`). Qualquer um dos dois identifica a pessoa.
+  const conta = /\(([^)]+)\)\s*$/.exec(rotulo)?.[1];
+  if (conta && (rotuloEhDe(conta, nome) || rotuloEhDe(rotulo.slice(0, rotulo.lastIndexOf('(')), nome))) return true;
   const r = normalizarNome(rotulo);
   const n = normalizarNome(nome);
   if (!n || !r.startsWith(n)) return false;

@@ -39,6 +39,8 @@ export type { DocumentData, Gap };
 import { detectGaps, ler, type SecaoLida } from './agents/leitor';
 import { auditar, type AuditVerdict } from './agents/auditor';
 import { reparar, type ReparoAplicado } from './agents/reparo';
+import { completar } from './agents/completude';
+import { ehRotuloDeSelf } from './rotuloDeSelf';
 import { assertSemVazamento, confidenceFor, marcadorDeLacuna } from './vazamento';
 import type { CompletionUsage } from './ai';
 
@@ -94,7 +96,7 @@ export interface DiscardedClaim {
 /** O que a geração gastou e como as citações se saíram. Para o relatório. */
 export interface GenerateStepReport {
   usage: Required<CompletionUsage>;
-  /** Chamadas a modelo nesta passada: 0, 1 (só Leitor), 2, ou 4 com reparo. */
+  /** Chamadas a modelo nesta passada: Leitor, completude (se o tipo tem decisões/encaminhamentos/pendências), Auditor, e +2 por rodada de reparo (até `RODADAS_DE_REPARO`). */
   calls: number;
   porSecao: SecaoLida[];
   /** O veredito FINAL de cada afirmação (o da segunda conferência, se houve reparo). */
@@ -102,6 +104,8 @@ export interface GenerateStepReport {
   discarded: DiscardedClaim[];
   /** O que o reparo fez com as reprovadas. Vazio quando nada foi reprovado. */
   reparos?: ReparoAplicado[];
+  /** Quantos itens a passada de completude acrescentou, por lista. */
+  completados?: Partial<Record<'decisions' | 'actionItems' | 'openPoints', number>>;
 }
 
 export interface GenerateStepResult {
@@ -164,6 +168,34 @@ function comLacunas(texto: string, gaps: Gap[]): string {
   return `${texto}\n\n${faltando.map(marcadorDeLacuna).join('\n\n')}`.trim();
 }
 
+const MOTIVO_IMPESSOAL =
+  'Redação: a ata é impessoal e esta frase traz nome de pessoa. Use `reescrever`: a mesma ' +
+  'informação, sem o nome e com o mesmo grau de certeza ("considerou-se possível", "foi ' +
+  'solicitado", "foi informado que"; "o cliente" ou "a equipe" quando o lado importar). ' +
+  'Não retire, e dê de novo as citações que sustentam a frase.';
+
+/**
+ * Os nomes de quem estava na reunião — os participantes do documento e os
+ * rótulos de fala da transcrição (o Resumo não tem lista de participantes) —,
+ * para achar frase pessoal numa seção impessoal.
+ */
+function regexDosNomes(data: DocumentData, transcript: string): RegExp | null {
+  const PARTICULAS = new Set(['de', 'da', 'do', 'das', 'dos', 'e']);
+  const partes = new Set<string>();
+  const rotulos = [...transcript.matchAll(/^\[\d{1,2}:\d{2}(?::\d{2})?\]\s+([^:\n]+?):\s/gm)].map((m) => m[1]!);
+  for (const nome of [...(data.participants ?? []).map((p) => p.name), ...rotulos]) {
+    for (const parte of nome.replace(/[()]/g, ' ').split(/\s+/)) {
+      if (parte.length >= 3 && !PARTICULAS.has(parte.toLowerCase()) && !ehRotuloDeSelf(parte)) partes.add(parte);
+    }
+  }
+  if (partes.size === 0) return null;
+  const escapar = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?<![\\p{L}])(${[...partes].map(escapar).join('|')})(?![\\p{L}])`, 'u');
+}
+
+/** Rodadas de reparo + reconferência. Cada uma custa 2 chamadas, e só acontece se sobrou reprovada mexível. */
+export const RODADAS_DE_REPARO = 2;
+
 export interface ApurarInput {
   transcript: string;
   /** Em ordem. */
@@ -205,6 +237,13 @@ export async function apurar(input: ApurarInput): Promise<ApurarResult> {
   if (lido.meta) calls += 1;
   const data = lido.data;
 
+  // 1b. "O que falta?" — decisões, encaminhamentos e pendências que a leitura
+  // esqueceu. Só acrescenta; o acrescentado passa pelas mesmas guardas e pelo
+  // Auditor. Ver `agents/completude.ts`.
+  const completude = await completar({ transcript: input.transcript, sections: pendentes, data });
+  somar(completude.usage);
+  if (completude.meta) calls += 1;
+
   // Antes do Auditor e sem chamar modelo: frase com cargo ou gravidade que a
   // reunião não traz, ou que afirma como certo o que foi hipótese, sai daqui.
   // Ver `guardaDeFidelidade.ts` para o porquê de cada regra.
@@ -225,33 +264,66 @@ export async function apurar(input: ApurarInput): Promise<ApurarResult> {
   somar(audit.usage);
   calls += audit.calls.length;
 
-  // 3b. Reparo: a reprovada volta uma vez ao Leitor com o motivo (cita o que
-  // faltou, diz menos, ou retira), e o que ele mexeu volta ao Auditor. O que o
-  // código reprovou (`blocker`) não entra. Ver `agents/reparo.ts`.
+  // 3b. Reparo: a reprovada volta ao Leitor com o motivo (cita o que faltou,
+  // diz menos, ou retira), e o que ele mexeu volta ao Auditor. O que o código
+  // reprovou (`blocker`) não entra. Ver `agents/reparo.ts`.
+  //
+  // Até `RODADAS_DE_REPARO` rodadas, e só com o que AINDA está reprovado e foi
+  // mexido na rodada anterior (26/11/2026): numa reunião real, uma decisão
+  // correta caía porque a releitura do Auditor errava — "tal parte não está
+  // marcada", e estava — e uma segunda resposta ao motivo novo a salvava.
   const porPath = new Map(audit.verdicts.map((v) => [v.path, v]));
-  const aReparar = afirmacoes
-    .filter(({ claim }) => !claim.blocker && porPath.get(claim.path)?.supported === false)
-    .map(({ claim }) => ({ path: claim.path, texto: claim.text, motivo: porPath.get(claim.path)!.reason }));
+
+  // 3a. Estilo: frase APROVADA de seção impessoal que traz nome de participante
+  // vai ao reparo para perder o nome (26/11/2026: a instrução sozinha deixava
+  // escapar "Fulano disse acreditar ser possível"). É só redação — se o reparo
+  // não reescrever, ou a reescrita não passar no Auditor, volta a frase original.
+  const nomes = regexDosNomes(data, input.transcript);
+  const soEstilo = new Map<string, AuditVerdict>();
+  if (nomes) {
+    for (const { section, claim } of afirmacoes) {
+      const v = porPath.get(claim.path);
+      if (!section.impessoal || claim.blocker || !v?.supported) continue;
+      if (!nomes.test(claim.text.replace(/; [^;]+ assumiu a tarefa/, ''))) continue;
+      soEstilo.set(claim.path, v);
+      porPath.set(claim.path, { ...v, supported: false, reason: MOTIVO_IMPESSOAL });
+    }
+  }
+  const antesDoEstilo: DocumentData = soEstilo.size ? structuredClone(data) : {};
+
   let reparos: ReparoAplicado[] = [];
-  if (aReparar.length > 0) {
+  let candidatas = new Set(afirmacoes.filter(({ claim }) => !claim.blocker).map(({ claim }) => claim.path));
+  for (let rodada = 0; rodada < RODADAS_DE_REPARO; rodada += 1) {
+    const aReparar = afirmacoes
+      .filter(({ claim }) => candidatas.has(claim.path) && porPath.get(claim.path)?.supported === false)
+      .map(({ claim }) => ({ path: claim.path, texto: claim.text, motivo: porPath.get(claim.path)!.reason }));
+    if (aReparar.length === 0) break;
     const reparo = await reparar(data, aReparar, input.transcript);
     somar(reparo.usage);
     if (reparo.meta) calls += 1;
-    reparos = reparo.aplicados;
-    if (reparo.aConferir.size > 0) {
-      const deNovo = strict
-        .flatMap((section) => specForSection(section).claims(data, section.id))
-        .filter((claim) => reparo.aConferir.has(claim.path));
-      const segunda = await auditar({ claims: deNovo, transcript: input.transcript });
-      somar(segunda.usage);
-      calls += segunda.calls.length;
-      for (const v of segunda.verdicts) porPath.set(v.path, v);
-      // O texto reescrito é o que vai para o documento e para a conferência.
-      for (const a of afirmacoes) {
-        const nova = deNovo.find((c) => c.path === a.claim.path);
-        if (nova) a.claim = nova;
-      }
+    reparos = [...reparos, ...reparo.aplicados];
+    if (reparo.aConferir.size === 0) break;
+    const deNovo = strict
+      .flatMap((section) => specForSection(section).claims(data, section.id))
+      .filter((claim) => reparo.aConferir.has(claim.path));
+    const conferencia = await auditar({ claims: deNovo, transcript: input.transcript });
+    somar(conferencia.usage);
+    calls += conferencia.calls.length;
+    for (const v of conferencia.verdicts) porPath.set(v.path, v);
+    // O texto reescrito é o que vai para o documento e para a conferência.
+    for (const a of afirmacoes) {
+      const nova = deNovo.find((c) => c.path === a.claim.path);
+      if (nova) a.claim = nova;
     }
+    candidatas = reparo.aConferir;
+  }
+  // Estilo que não se resolveu: a frase original, aprovada, volta como estava.
+  for (const [path, original] of soEstilo) {
+    if (porPath.get(path)?.supported) continue;
+    const m = /^(\w+)\[(\d+)\]$/.exec(path);
+    const lista = m ? (antesDoEstilo as Record<string, unknown[]>)[m[1]!] : undefined;
+    if (m && lista?.[Number(m[2])] !== undefined) (data as Record<string, unknown[]>)[m[1]!]![Number(m[2])] = lista[Number(m[2])];
+    porPath.set(path, original);
   }
   const vereditosFinais = audit.verdicts.map((v) => porPath.get(v.path) ?? v);
 
@@ -311,7 +383,7 @@ export async function apurar(input: ApurarInput): Promise<ApurarResult> {
   return {
     data,
     gapsPorSecao,
-    report: { usage, calls, porSecao: lido.porSecao, verdicts, discarded, reparos },
+    report: { usage, calls, porSecao: lido.porSecao, verdicts, discarded, reparos, completados: completude.acrescentados },
   };
 }
 

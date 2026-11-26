@@ -77,8 +77,35 @@ export interface LocatedAnchor {
 }
 
 export interface Locator {
-  /** Localiza `quote`, ou devolve `null` quando não existe na transcrição. */
-  locate(quote: string): LocatedAnchor | null;
+  /**
+   * Localiza `quote`, ou devolve `null` quando não existe na transcrição.
+   *
+   * Com `perto`, escolhe a ocorrência mais PRÓXIMA dessa posição. É o que se
+   * usa para a segunda citação em diante de uma mesma afirmação: "Perfeito."
+   * aparece dezenas de vezes numa reunião, e o aceite de um pedido é o que vem
+   * junto do pedido. Sem isso (até 26/11/2026), o "Perfeito" do fechamento era
+   * ancorado no primeiro "Perfeito" da reunião, o Auditor via a marca no lugar
+   * errado e reprovava — com razão — o combinado de enviar a ata.
+   */
+  locate(quote: string, perto?: number): LocatedAnchor | null;
+}
+
+/** Todas as ocorrências, no texto original, de `quote` (literal, depois normalizada). */
+function todasAsOcorrencias(transcript: string, normalized: NormalizedIndex, quote: string): LocatedAnchor[] {
+  const achadas: LocatedAnchor[] = [];
+  for (let i = transcript.indexOf(quote); i !== -1; i = transcript.indexOf(quote, i + 1)) {
+    achadas.push({ start: i, end: i + quote.length, exact: true });
+  }
+  if (achadas.length > 0) return achadas;
+  const needle = normalizeQuery(quote);
+  if (!needle) return achadas;
+  for (let i = normalized.text.indexOf(needle); i !== -1; i = normalized.text.indexOf(needle, i + 1)) {
+    const start = normalized.originalOffset[i]!;
+    const last = i + needle.length - 1;
+    const end = normalized.originalOffset[last + 1] ?? (normalized.originalOffset[last] ?? start) + 1;
+    achadas.push({ start, end, exact: false });
+  }
+  return achadas;
 }
 
 /**
@@ -98,8 +125,16 @@ export function createLocator(transcript: string): Locator {
   let cursor = 0;
 
   return {
-    locate(quote: string): LocatedAnchor | null {
+    locate(quote: string, perto?: number): LocatedAnchor | null {
       if (!quote || !quote.trim()) return null;
+
+      if (perto !== undefined) {
+        const maisPerto = todasAsOcorrencias(transcript, normalized, quote).sort(
+          (a, b) => Math.abs(a.start - perto) - Math.abs(b.start - perto),
+        )[0];
+        if (maisPerto) cursor = maisPerto.end;
+        return maisPerto ?? null;
+      }
 
       const exact = findExact(transcript, quote, cursor);
       if (exact) {

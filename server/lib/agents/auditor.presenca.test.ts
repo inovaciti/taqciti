@@ -45,6 +45,13 @@ describe('quem fala', () => {
     expect(rotuloEhDe('Anabela', 'Ana')).toBe(false);
     expect(rotuloEhDe('Carlos Lima', 'Ana Souza')).toBe(false);
   });
+
+  it('"Rafael (Ana Souza)" — nome dito e conta do Meet — é de quem for chamado por qualquer dos dois', () => {
+    expect(rotuloEhDe('Rafael (Ana Souza)', 'Rafael (Ana Souza)')).toBe(true);
+    expect(rotuloEhDe('Rafael (Ana Souza)', 'Rafael')).toBe(true);
+    expect(rotuloEhDe('Rafael (Ana Souza)', 'Ana Souza')).toBe(true);
+    expect(rotuloEhDe('Rafael (Ana Souza)', 'Carlos Lima')).toBe(false);
+  });
 });
 
 describe('auditar com presencaDe', () => {

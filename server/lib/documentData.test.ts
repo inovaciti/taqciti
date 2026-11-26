@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  atuacaoSemONome,
   SECTION_DATA_SPECS,
   specForSection,
   type DocumentData,
@@ -160,9 +161,18 @@ describe('participantes', () => {
     expect(data.participants![0]!.role).toBeUndefined();
   });
 
-  it('a afirmação auditável inclui o cargo quando há cargo', () => {
+  it('a atuação não repete o nome da pessoa no começo', () => {
+    // 26/11/2026: "Rafael (Ana Souza) – …: Rafael pediu a confirmação…".
+    expect(atuacaoSemONome('Rafael pediu a confirmação', 'Rafael (Ana Souza)')).toBe('pediu a confirmação');
+    expect(atuacaoSemONome('Ana Souza apresentou o cronograma', 'Ana Souza')).toBe('apresentou o cronograma');
+    expect(atuacaoSemONome('apresentou o cronograma', 'Ana Souza')).toBe('apresentou o cronograma');
+    expect(atuacaoSemONome('Anatomia do sistema explicada', 'Ana')).toBe('Anatomia do sistema explicada');
+  });
+
+  it('o cargo é uma afirmação auditável própria, ao lado da presença', () => {
     // Auditar só o nome deixaria o cargo passar sem conferência, e cargo
-    // inventado é o erro que a Ata mais precisa evitar.
+    // inventado é o erro que a Ata mais precisa evitar. Desde 26/11/2026 ele é
+    // conferido À PARTE: reprovado, cai só o cargo, e a pessoa fica na ata.
     const data: DocumentData = {};
     spec.merge(
       data,
@@ -179,10 +189,19 @@ describe('participantes', () => {
       'participantes',
       locator(),
     );
-    const claim = spec.claims(data, 'participantes')[0]!;
-    expect(claim.text).toContain('Maria');
-    expect(claim.text).toContain('Gerente de Dados');
+    const [presenca, cargo] = spec.claims(data, 'participantes');
+    expect(presenca!.text).toBe('Maria participou da reunião.');
+    expect(presenca!.presencaDe).toBe('Maria');
+    expect(cargo!.path).toBe('participants[0].role');
+    expect(cargo!.text).toContain('Gerente de Dados');
+    expect(cargo!.presencaDe).toBeUndefined();
+    const claim = cargo!;
     expect(claim.anchors).toHaveLength(1);
+
+    // Cargo reprovado: sai o cargo, fica a pessoa.
+    spec.drop(data, new Set(['participants[0].role']), 'participantes');
+    expect(data.participants).toEqual([expect.objectContaining({ name: 'Maria', roleSource: 'unknown' })]);
+    expect(data.participants![0]!.role).toBeUndefined();
   });
 
   it('drop remove exatamente a afirmação rejeitada', () => {

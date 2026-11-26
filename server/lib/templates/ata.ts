@@ -1,4 +1,5 @@
 import type { DocumentTemplate } from './types';
+import { REDACAO_IMPESSOAL } from './estilo';
 
 /**
  * As nove seções vêm do `Modelo_Ata_de_Reunião.pdf` e da especificação do
@@ -40,6 +41,9 @@ import type { DocumentTemplate } from './types';
  * Campo ausente continua não entrando (sem `[A preencher]`): ação sem dono vai
  * para "Sem responsável definido", que é informação, não lacuna.
  */
+/** Redação impessoal nas seções de texto (26/11/2026) — ver `estilo.ts`. */
+const IMPESSOAL = REDACAO_IMPESSOAL;
+
 export const ata: DocumentTemplate = {
   documentType: 'ata',
   label: 'Ata de Reunião',
@@ -70,6 +74,7 @@ export const ata: DocumentTemplate = {
 
     {
       id: 'resumo_executivo',
+      impessoal: true,
       title: 'Resumo executivo',
       order: 2,
       required: true,
@@ -77,6 +82,7 @@ export const ata: DocumentTemplate = {
       omitWhenEmpty: true,
       needs: ['o que aconteceu de mais importante, para quem não esteve na reunião'],
       guidance: [
+        IMPESSOAL,
         'Duas ou três frases que contam a quem NÃO esteve na reunião o que importa:',
         'o assunto, o que foi decidido ou combinado e o que ficou em aberto.',
         'Cada frase é um item separado, com as citações literais que a sustentam; a',
@@ -92,6 +98,7 @@ export const ata: DocumentTemplate = {
 
     {
       id: 'topico_geral',
+      impessoal: true,
       title: 'Tópico geral',
       order: 3,
       required: true,
@@ -99,6 +106,7 @@ export const ata: DocumentTemplate = {
       omitWhenEmpty: false,
       needs: ['tema central da reunião', 'estado geral do assunto tratado'],
       guidance: [
+        IMPESSOAL,
         'TÓPICO: nome do tema central da reunião.',
         'Exemplo: "Alinhamento de Cronograma e Validação do Tratamento".',
         'ANDAMENTO: descrever de forma objetiva o estado geral do assunto tratado.',
@@ -150,18 +158,18 @@ export const ata: DocumentTemplate = {
         'nome e sem tentar adivinhar quem é a partir do assunto. O código transforma esse',
         'rótulo em pergunta ao usuário. Quando o nome vier decorado ("Ana Souza (Você)"),',
         'use só o nome real: "Ana Souza".',
-        'O rótulo da fala é o nome da CONTA no Meet, e às vezes não é o de quem fala',
-        '(alguém entra pela conta de outra pessoa e se apresenta como "Rafael"). Nesse',
-        'caso, use o nome do rótulo no documento INTEIRO (o rótulo é o que prova quem',
-        'falou), e registre uma vez, na atuação, "apresentou-se como Rafael", citando a',
-        'fala da apresentação. O rótulo da transcrição às vezes vem',
-        'com o nome repetido ("Ana Souzaana Souza"): use o nome uma vez só.',
+        'Rótulo no formato "Rafael (Ana Souza)" quer dizer: a pessoa se apresentou e foi',
+        'chamada de Rafael, mas entrou pela conta do Meet de Ana Souza. Liste-a como',
+        '"Rafael (Ana Souza)" em Participantes; no responsável de um encaminhamento, Rafael.',
+        'O rótulo às vezes vem com o nome repetido ("Ana Souzaana Souza"): use o nome uma',
+        'vez só.',
       ].join(' '),
       askWhenMissing: ['Qual é o cargo/papel de {nome}?'],
     },
 
     {
       id: 'topicos_discutidos',
+      impessoal: true,
       title: 'Tópicos discutidos',
       order: 5,
       required: true,
@@ -173,6 +181,7 @@ export const ata: DocumentTemplate = {
         'problemas identificados e alternativas consideradas',
       ],
       guidance: [
+        IMPESSOAL,
         'Identificar os principais tópicos reais da reunião e separá-los semanticamente.',
         'Formato: [Nome do Tópico]: [resumo da discussão], numerados para facilitar',
         'referência futura.',
@@ -190,6 +199,7 @@ export const ata: DocumentTemplate = {
 
     {
       id: 'decisoes',
+      impessoal: true,
       title: 'Decisões tomadas',
       order: 6,
       required: true,
@@ -201,6 +211,7 @@ export const ata: DocumentTemplate = {
         'concordância explícita do cliente, quando houver',
       ],
       guidance: [
+        IMPESSOAL,
         'Identificar somente aquilo que efetivamente foi decidido, acordado ou aprovado',
         'durante a reunião. É o veredito: o que foi batido o martelo.',
         'Usar verbos no infinitivo ou imperativo: Manter, Iniciar, Cancelar, Adiar.',
@@ -208,6 +219,8 @@ export const ata: DocumentTemplate = {
         '"Iniciar a integração após a validação da API."',
         'Distinguir discussão de proposta, de possibilidade e de decisão. Frases como',
         '"podemos fazer", "talvez seja melhor" e "vamos pensar nisso" NÃO são decisões.',
+        'Um compromisso de entrega aceito na reunião (o que será entregue e quando) é',
+        'decisão: registre-o aqui E, como ação, em Encaminhamentos.',
         'Se houve concordância explícita do cliente, preservar essa informação — por',
         'exemplo, "O cliente concordou com o adiamento da entrega."',
         'Seção de alta importância jurídica e processual. Nunca criar uma decisão que',
@@ -218,6 +231,7 @@ export const ata: DocumentTemplate = {
 
     {
       id: 'encaminhamentos',
+      impessoal: true,
       title: 'Encaminhamentos',
       order: 7,
       required: false,
@@ -225,6 +239,9 @@ export const ata: DocumentTemplate = {
       omitWhenEmpty: true,
       needs: ['ações combinadas', 'quem assumiu cada ação', 'prazos ditos'],
       guidance: [
+        IMPESSOAL,
+        'No texto da AÇÃO, nenhum nome: quem faz vai só no campo responsável ("Mapear com',
+        'o cliente os horários", não "Mapear com a Ana os horários").',
         'As ações que ficaram combinadas para depois da reunião, com verbo no infinitivo',
         '("Enviar a lista de acessos ao cliente").',
         'RESPONSÁVEL só quando a pessoa ASSUMIU a ação ("eu faço", "deixa comigo", "vou',
@@ -236,6 +253,9 @@ export const ata: DocumentTemplate = {
         'texto da ação.',
         'Cite a fala que combina a ação e, quando houver, a que a assume e a do prazo.',
         'Uma decisão não precisa ser repetida aqui se não houver ação a fazer depois dela.',
+        'Percorra a reunião INTEIRA, do começo ao fechamento: todo pedido de envio ou de',
+        'tarefa que alguém aceitou ("pode mandar a ata?" — "perfeito"; "eu vou mapear os',
+        'horários") é um encaminhamento, e o fechamento costuma repetir os combinados.',
         'Não invente ação para preencher a seção.',
       ].join(' '),
       askWhenMissing: [],
@@ -243,6 +263,7 @@ export const ata: DocumentTemplate = {
 
     {
       id: 'outcomes',
+      impessoal: true,
       title: 'Outcomes da reunião',
       order: 8,
       required: false,
@@ -250,6 +271,7 @@ export const ata: DocumentTemplate = {
       omitWhenEmpty: true,
       needs: ['alinhamentos e entendimentos compartilhados produzidos pela conversa'],
       guidance: [
+        IMPESSOAL,
         'Resultados estratégicos ou alinhamentos produzidos pela conversa — o que foi',
         'conquistado com ela.',
         'Representam: alinhamentos, entendimento compartilhado, clareza obtida,',
@@ -267,6 +289,7 @@ export const ata: DocumentTemplate = {
 
     {
       id: 'outputs',
+      impessoal: true,
       title: 'Outputs da reunião',
       order: 9,
       required: false,
@@ -274,6 +297,7 @@ export const ata: DocumentTemplate = {
       omitWhenEmpty: true,
       needs: ['artefatos e resultados concretos produzidos ou estabelecidos na reunião'],
       guidance: [
+        IMPESSOAL,
         'Resultados concretos produzidos ou estabelecidos durante a reunião — coisas que',
         'se pode apontar e que agora existem ou estão claras.',
         'Exemplos: novo cronograma atualizado; lista de acessos pendentes enviada ao',
@@ -288,6 +312,7 @@ export const ata: DocumentTemplate = {
 
     {
       id: 'em_aberto',
+      impessoal: true,
       title: 'Em aberto',
       order: 10,
       required: false,
@@ -295,6 +320,7 @@ export const ata: DocumentTemplate = {
       omitWhenEmpty: true,
       needs: ['perguntas sem resposta, pendências sem encaminhamento, assuntos adiados'],
       guidance: [
+        IMPESSOAL,
         'O que a reunião deixou EXPLICITAMENTE sem resposta: pergunta feita e não',
         'respondida, pendência reconhecida sem encaminhamento, assunto adiado sem data.',
         'Uma frase por item, com a citação de onde ficou em aberto.',

@@ -23,7 +23,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-export type PromptAgent = 'leitor' | 'auditor' | 'reparo' | 'taq' | 'redator';
+export type PromptAgent = 'leitor' | 'auditor' | 'reparo' | 'completude' | 'taq' | 'redator';
 export type PromptVersion = `v${number}`;
 
 /** Cache por arquivo. Prompt não muda em runtime; ler a cada chamada seria
@@ -115,7 +115,7 @@ export function renderPrompt(
  * ficam para comparação: `DOCCITI_PROMPTS=anteriores` volta a elas sem deploy
  * de código, e é assim que o teste ao vivo de injeção mede as duas.
  */
-export type PapelDoPrompt = 'leitor' | 'auditor' | 'reparo' | 'redatorGeracao' | 'redatorEdicao';
+export type PapelDoPrompt = 'leitor' | 'auditor' | 'reparo' | 'completude' | 'redatorGeracao' | 'redatorEdicao';
 
 /**
  * O redator está na versão nova desde 21/10/2026, medida com
@@ -148,11 +148,23 @@ export type PapelDoPrompt = 'leitor' | 'auditor' | 'reparo' | 'redatorGeracao' |
  *   atuação e o pedido sem o aceite para provar o combinado).
  * - `reparo/v1`: a passada de reparo (`agents/reparo.ts`).
  * Decisão, cargo e grau de certeza não afrouxaram.
+ *
+ * 26/11/2026 — `auditor/v8` e `reparo/v2`, com Leitor Haiku e Auditor Sonnet
+ * sobre a transcrição revisada. No Resumo, três de seis trechos caíam por um
+ * detalhe cada ("ícones", "a marca da empresa") fora das marcas: a `v8` deixa a
+ * vizinhança valer para DETALHE de resumo de trecho (o ponto principal, decisão,
+ * combinado, prazo e cargo seguem exigindo marca) e explica o `[fala de Nome]`
+ * que o recorte ganhou; a `reparo/v2` prefere reescrever sem o detalhe a
+ * insistir em citá-lo.
+ *
+ * `completude/v1` (26/11/2026): a passada que pergunta "o que falta?" depois
+ * da leitura (`agents/completude.ts`).
  */
 const EM_USO: Record<PapelDoPrompt, PromptVersion> = {
   leitor: 'v4',
-  auditor: 'v7',
-  reparo: 'v1',
+  auditor: 'v8',
+  reparo: 'v2',
+  completude: 'v1',
   redatorGeracao: 'v5',
   redatorEdicao: 'v6',
 };
@@ -161,6 +173,7 @@ const ANTERIORES: Record<PapelDoPrompt, PromptVersion> = {
   leitor: 'v2',
   auditor: 'v4',
   reparo: 'v1',
+  completude: 'v1',
   redatorGeracao: 'v3',
   redatorEdicao: 'v4',
 };
