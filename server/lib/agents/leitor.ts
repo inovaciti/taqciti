@@ -112,9 +112,9 @@ function countingLocator(locator: Locator): {
   let exact = 0;
   let normalized = 0;
 
-  const locate: Locate = (quote) => {
+  const locate: Locate = (quote, perto) => {
     total += 1;
-    const anchor: LocatedAnchor | null = locator.locate(quote);
+    const anchor: LocatedAnchor | null = locator.locate(quote, perto);
     if (!anchor) unlocatable.push(quote);
     else if (anchor.exact) exact += 1;
     else normalized += 1;

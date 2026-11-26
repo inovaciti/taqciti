@@ -265,7 +265,7 @@ desconhecida".
 | documents | `documents-v4` | v1 a v3 |
 | app_assistant | `app-assistant-v5` | v1 a v4 |
 | communication / scheduling | `communication-v3` / `scheduling-v3` | v1, v2 |
-| Revisão da transcrição (`features/transcription/revisao.ts` + `lotesDeRevisao.ts`, fora do Taq; em lotes de ~4 mil caracteres com as falas anteriores como contexto, guarda de número/negação/tamanho em código; modelo próprio `TAQ_REVISAO`, Sonnet por padrão, enquanto o Taq segue em `TAQ_ORQUESTRADOR`; o documento é gerado DESTA versão, via `prepararFonte.ts`, que roda a revisão antes quando ela ainda não existe) | `transcricao-v2` | — |
+| Revisão da transcrição (`features/transcription/revisao.ts` + `lotesDeRevisao.ts`, fora do Taq; em lotes de ~4 mil caracteres com até ~12 mil caracteres da conversa anterior como contexto (o que foi dito antes desfaz palavra ambígua), guarda de número/negação/tamanho em código; modelo próprio `TAQ_REVISAO`, Sonnet por padrão, enquanto o Taq segue em `TAQ_ORQUESTRADOR`; o documento é gerado DESTA versão, via `prepararFonte.ts`, que roda a revisão antes quando ela ainda não existe) | `transcricao-v3` | — |
 | meeting_copilot | `copilot-v2` | v1 |
 | analyst, commitments, continuity, handoff, memory, context | `analyst-v1`, `commitments-v1`, `continuity-v1`, `handoff-v1`, `memory-v1`, `context-v1` | — |
 | Subsistemas | `estado-v1`, `acompanhamento-v1`; `conducao-v1` (só o servidor mapeia; a extensão não pede desde `6df3da6`) | — |

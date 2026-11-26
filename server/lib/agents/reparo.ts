@@ -19,7 +19,7 @@
  */
 import { complete, type CompletionResult, type JsonSchema } from '../ai';
 import { renderPrompt, versaoDoPrompt } from '../prompts';
-import { anchorQuotes, type AnchoredQuote, type DocumentData } from '../documentData';
+import { anchorQuotes, comMaiuscula, type AnchoredQuote, type DocumentData } from '../documentData';
 import { createLocator } from './anchoring';
 
 export type AcaoDeReparo = 'citar' | 'reescrever' | 'retirar';
@@ -56,7 +56,7 @@ function alvoDoPath(data: DocumentData, path: string): Alvo | null {
   let m = /^(executiveSummary|outcomes|outputs|openPoints|decisions)\[(\d+)\]$/.exec(path);
   if (m) {
     const item = (data[m[1] as 'executiveSummary'] ?? [])[Number(m[2])];
-    return item ? { quotes: item.quotes, trocarTexto: (novo) => (item.text = novo) } : null;
+    return item ? { quotes: item.quotes, trocarTexto: (novo) => (item.text = comMaiuscula(novo)) } : null;
   }
   m = /^participants\[(\d+)\](\.atuacao|\.role)?$/.exec(path);
   if (m) {
@@ -180,7 +180,11 @@ export async function reparar(
     const acao = r?.acao;
     if (acao !== 'citar' && acao !== 'reescrever') continue;
     const locate = createLocator(transcript);
-    const novas = anchorQuotes(r?.quotes, (q) => locate.locate(q)).filter((q) => q.anchor !== null);
+    // Perto das citações que o item já tinha: o "Perfeito." que faltava é o
+    // daquele pedido, não o primeiro da reunião.
+    const jaAncoradas = alvo.quotes.map((q) => q.anchor?.start).filter((n): n is number => n !== undefined);
+    const perto = jaAncoradas.length ? Math.max(...jaAncoradas) : undefined;
+    const novas = anchorQuotes(r?.quotes, (q, p) => locate.locate(q, p), perto).filter((q) => q.anchor !== null);
 
     if (acao === 'reescrever') {
       // A etiqueta é do sistema (`claims` a acrescenta); devolvida junto, sairia dobrada.

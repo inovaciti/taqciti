@@ -207,6 +207,8 @@ export const ata: DocumentTemplate = {
         '"Iniciar a integração após a validação da API."',
         'Distinguir discussão de proposta, de possibilidade e de decisão. Frases como',
         '"podemos fazer", "talvez seja melhor" e "vamos pensar nisso" NÃO são decisões.',
+        'Um compromisso de entrega aceito na reunião (o que será entregue e quando) é',
+        'decisão: registre-o aqui E, como ação, em Encaminhamentos.',
         'Se houve concordância explícita do cliente, preservar essa informação — por',
         'exemplo, "O cliente concordou com o adiamento da entrega."',
         'Seção de alta importância jurídica e processual. Nunca criar uma decisão que',

@@ -30,8 +30,14 @@ export interface LoteDeRevisao {
 
 /** ~4 mil caracteres de fala por lote: saída de ~1,5 mil tokens, ~10 s no Haiku. */
 export const CHARS_POR_LOTE = 4_000;
-/** Falas anteriores mandadas como contexto de cada lote. */
-export const FALAS_DE_CONTEXTO = 3;
+/**
+ * Quanto da reunião ANTERIOR vai como contexto de cada lote. Eram 3 falas; em
+ * 26/11/2026 isso não bastou: no fechamento, a legenda disse "fico no aguardo
+ * aí data de reunião", e só quem leu o pedido de "uma ata com um resumo", 13
+ * minutos antes, sabe que é "a ata da reunião". ~12 mil caracteres cobrem meia
+ * hora de conversa e cabem com folga no teto de contexto do servidor.
+ */
+export const CHARS_DE_CONTEXTO = 12_000;
 /** Fala maior que isto fica como veio: sozinha já estouraria o lote. */
 export const MAX_CHARS_DA_FALA = 12_000;
 /** Lotes ao mesmo tempo. Mais que isso esbarra na cota por minuto do provedor. */
@@ -45,12 +51,16 @@ export function montarLotes(falas: readonly FalaParaRevisar[]): LoteDeRevisao[] 
 
   const fechar = (fim: number) => {
     if (atual.length === 0) return;
-    lotes.push({
-      anteriores: falas
-        .slice(Math.max(0, inicio - FALAS_DE_CONTEXTO), inicio)
-        .map(({ pessoa, texto }) => ({ ...(pessoa ? { pessoa } : {}), texto })),
-      falas: atual,
-    });
+    const anteriores: LoteDeRevisao['anteriores'] = [];
+    let chars = 0;
+    for (let j = inicio - 1; j >= 0; j -= 1) {
+      const { pessoa, texto } = falas[j]!;
+      if (texto.length > MAX_CHARS_DA_FALA) continue;
+      if (chars + texto.length > CHARS_DE_CONTEXTO) break;
+      anteriores.unshift({ ...(pessoa ? { pessoa } : {}), texto });
+      chars += texto.length;
+    }
+    lotes.push({ anteriores, falas: atual });
     atual = [];
     tamanho = 0;
     inicio = fim;

@@ -91,14 +91,41 @@ const chamadasDe = (agent: string) => complete.mock.calls.filter(([a]) => a === 
 afterEach(() => complete.mockReset());
 
 describe('custo da Ata', () => {
-  it('uma leitura e uma conferência — duas chamadas, e só', async () => {
+  it('uma leitura, uma pergunta de completude e uma conferência — três chamadas, e só', async () => {
     mockPipeline();
     const { report } = await run();
 
-    expect(chamadasDe('leitor')).toHaveLength(1);
+    // Desde 26/11/2026 a segunda chamada do Leitor pergunta só "o que falta?"
+    // (encaminhamentos, em aberto) — ver `agents/completude.ts`. DECISÕES não:
+    // com elas, uma decisão revertida no fim da reunião voltava (gabarito).
+    expect(chamadasDe('leitor')).toHaveLength(2);
+    expect(Object.keys(chamadasDe('leitor')[1]![1].jsonSchema.properties).sort()).toEqual(['em_aberto', 'encaminhamentos']);
     expect(chamadasDe('auditor')).toHaveLength(1);
-    expect(complete).toHaveBeenCalledTimes(2);
-    expect(report.calls).toBe(2);
+    expect(complete).toHaveBeenCalledTimes(3);
+    expect(report.calls).toBe(3);
+  });
+
+  it('completude: o que já está registrado não volta; o que falta entra e vai ao Auditor', async () => {
+    complete.mockImplementation(async (agent: string, req: { system: string; messages: { content: string }[] }) => {
+      if (agent === 'auditor') {
+        const blocos = req.messages[0]!.content.split('\n\n---\n\n');
+        return reply({ verdicts: blocos.map((b) => ({ id: /^# Afirmação (\S+)/.exec(b)![1], reason: 'ok', supported: true })) });
+      }
+      if (req.messages[0]!.content.startsWith('# O que o documento já registra')) {
+        return reply({
+          decisoes: { decisions: [{ ...DOCUMENTO.decisoes.decisions[0], text: 'Adiar a entrega para a sexta-feira' }] },
+          encaminhamentos: { items: [{ acao: 'Revisar o pipeline', quotes: ['Joao explicou o pipeline.'] }] },
+          em_aberto: { items: [] },
+        });
+      }
+      return reply(DOCUMENTO);
+    });
+    const { documentData, report } = await run();
+
+    expect(documentData.decisions?.map((d) => d.text)).toEqual(['Adiar a entrega para sexta-feira']);
+    expect(documentData.actionItems?.map((a) => a.acao)).toContain('Revisar o pipeline');
+    expect(report.completados).toEqual({ actionItems: 1 });
+    expect(report.verdicts.map((v) => v.path)).toContain(`actionItems[${documentData.actionItems!.length - 1}]`);
   });
 
   it('a leitura pede todas as seções de uma vez, menos a Assinatura', async () => {
@@ -285,9 +312,40 @@ describe('o que o Auditor rejeita', () => {
     ]);
     // Desde 25/11/2026 a reprovada volta UMA vez ao Leitor, com o motivo
     // (`agents/reparo.ts`). Sem reparo aproveitável, não há segunda conferência.
-    expect(chamadasDe('leitor')).toHaveLength(2);
-    expect(chamadasDe('leitor')[1]![1].messages[0].content).toContain('Motivo da reprovação: motivo do auditor');
+    // Leitura, completude e o reparo.
+    expect(chamadasDe('leitor')).toHaveLength(3);
+    expect(chamadasDe('leitor')[2]![1].messages[0].content).toContain('Motivo da reprovação: motivo do auditor');
     expect(chamadasDe('auditor')).toHaveLength(1);
+  });
+
+  it('segunda rodada: o que segue reprovado depois do reparo tem mais UMA chance, e só ele', async () => {
+    // 26/11/2026: uma decisão correta caía porque a releitura do Auditor errava
+    // ("não está marcado", e estava). Uma segunda resposta ao motivo novo a salvou.
+    let conferencias = 0;
+    complete.mockImplementation(async (agent: string, req: { messages: { content: string }[]; jsonSchema?: { properties?: Record<string, unknown> } }) => {
+      if (agent === 'auditor') {
+        conferencias += 1;
+        const blocos = req.messages[0]!.content.split('\n\n---\n\n');
+        return reply({
+          verdicts: blocos.map((bloco) => ({
+            id: /^# Afirmação (\S+)/.exec(bloco)![1],
+            supported: conferencias > 2 || !bloco.includes('Adiar a entrega'),
+            reason: `releitura ${conferencias}`,
+          })),
+        });
+      }
+      if (req.jsonSchema?.properties?.itens) {
+        return reply({ itens: [{ id: 'r1', acao: 'citar', texto: '', quotes: ['Joao explicou o pipeline.'] }] });
+      }
+      return reply(DOCUMENTO);
+    });
+    const { documentData, report } = await run();
+
+    expect(documentData.decisions?.map((d) => d.text)).toEqual(['Adiar a entrega para sexta-feira']);
+    expect(chamadasDe('auditor')).toHaveLength(3);
+    // O segundo reparo recebe o motivo NOVO, e não o primeiro.
+    expect(chamadasDe('leitor')[3]![1].messages[0].content).toContain('Motivo da reprovação: releitura 2');
+    expect(report.calls).toBe(7);
   });
 
   it('reparo que cita a fala que faltou volta ao Auditor, e a afirmação fica', async () => {
@@ -317,7 +375,7 @@ describe('o que o Auditor rejeita', () => {
     expect(chamadasDe('auditor')).toHaveLength(2);
     // A segunda conferência leva só o que o reparo mexeu.
     expect(chamadasDe('auditor')[1]![1].messages[0].content.split('\n\n---\n\n')).toHaveLength(1);
-    expect(report.calls).toBe(4);
+    expect(report.calls).toBe(5);
   });
 
   it('participante rejeitado não deixa pergunta de cargo para trás', async () => {

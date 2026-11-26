@@ -63,7 +63,7 @@ export function nomeDoSelf(fonte: Fonte, emailDaConta?: string | null): string |
 
 // Sem a flag `i`: ela faria `\p{Lu}` aceitar minúscula, e "meu nome é disso" viraria nome.
 const APRESENTACAO = /(?:^|[^\p{L}])(?:[Mm]eu nome [ée]|[Mm]e chamo|[Pp]ode me chamar de)\s+(\p{Lu}[\p{L}'-]+)/u;
-/** "Matheus"/"Mateus", "Thiago"/"Tiago": a mesma pessoa, grafada diferente. */
+/** "Thiago"/"Tiago", "Thaís"/"Taís": a mesma pessoa, grafada diferente. */
 const semH = (p: string) => identityKey(p).replace(/h/g, '');
 
 /**

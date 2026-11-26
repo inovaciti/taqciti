@@ -45,14 +45,28 @@ export interface AnchoredQuote {
 }
 
 /** Localizador de citação. Vem de `createLocator(transcript)`. */
-export type Locate = (quote: string) => LocatedAnchor | null;
+/** `perto`: escolher a ocorrência mais próxima desta posição (ver `Locator.locate`). */
+export type Locate = (quote: string, perto?: number) => LocatedAnchor | null;
 
-/** Citação bruta do modelo → citação ancorada. Descarta string vazia. */
-export function anchorQuotes(raw: unknown, locate: Locate): AnchoredQuote[] {
+/**
+ * Citação bruta do modelo → citação ancorada. Descarta string vazia.
+ *
+ * Da segunda citação em diante, a âncora é a ocorrência mais próxima da
+ * anterior JÁ ancorada (`perto`): as citações de uma afirmação são o mesmo
+ * momento da reunião, e "Perfeito." solto apontava para o primeiro "Perfeito"
+ * da transcrição. `perto` também pode vir de fora (o reparo passa a posição
+ * das citações que o item já tinha).
+ */
+export function anchorQuotes(raw: unknown, locate: Locate, perto?: number): AnchoredQuote[] {
   if (!Array.isArray(raw)) return [];
+  let referencia = perto;
   return raw
     .filter((quote): quote is string => typeof quote === 'string' && quote.trim().length > 0)
-    .map((quote) => ({ quote, anchor: locate(quote) }));
+    .map((quote) => {
+      const anchor = locate(quote, referencia);
+      if (anchor) referencia = anchor.start;
+      return { quote, anchor };
+    });
 }
 
 /**
@@ -925,14 +939,18 @@ export const SECTION_DATA_SPECS: Record<string, SectionDataSpec> = {
         .filter((d) => d?.text)
         .map((d) => {
           const agreementQuote = typeof d.agreementQuote === 'string' ? d.agreementQuote : '';
+          // A proposta primeiro; a concordância é a ocorrência mais perto DELA
+          // ("Perfeito." do aceite, e não o primeiro "Perfeito" da reunião).
+          const quotes = anchorQuotes(d.quotes, locate);
+          const ultima = quotes.map((q) => q.anchor?.start).filter((n): n is number => n !== undefined).pop();
           return {
             text: comMaiuscula(d.text!),
             agreement: {
               quote: agreementQuote,
-              anchor: agreementQuote.trim() ? locate(agreementQuote) : null,
+              anchor: agreementQuote.trim() ? locate(agreementQuote, ultima) : null,
             },
             confidence: d.confidence ?? 'low',
-            quotes: anchorQuotes(d.quotes, locate),
+            quotes,
           };
         });
     },

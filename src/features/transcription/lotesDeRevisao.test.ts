@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  CHARS_DE_CONTEXTO,
   CHARS_POR_LOTE,
-  FALAS_DE_CONTEXTO,
   MAX_CHARS_DA_FALA,
   lerRespostaDoLote,
   montarLotes,
@@ -29,8 +29,19 @@ describe('montarLotes', () => {
     // Todas as falas, uma vez, na ordem.
     expect(lotes.flatMap((l) => l.falas.map((f) => f.id))).toEqual(falas.map((f) => f.id));
     expect(lotes[0]!.anteriores).toEqual([]);
-    expect(lotes[1]!.anteriores).toHaveLength(FALAS_DE_CONTEXTO);
+    // Todas as falas anteriores ao lote, em ordem, enquanto couberem.
+    expect(lotes[1]!.anteriores).toHaveLength(lotes[0]!.falas.length);
     expect(lotes[1]!.anteriores.at(-1)!.texto).toBe(falas[lotes[0]!.falas.length - 1]!.texto);
+  });
+
+  it('o contexto anterior para no teto de caracteres, guardando as mais recentes', () => {
+    const falas = Array.from({ length: 40 }, (_, i) => fala(i, `${i} ${'x'.repeat(995)}`));
+    const ultimo = montarLotes(falas).at(-1)!;
+    const chars = ultimo.anteriores.reduce((n, f) => n + f.texto.length, 0);
+    expect(chars).toBeLessThanOrEqual(CHARS_DE_CONTEXTO);
+    expect(ultimo.anteriores.length).toBeGreaterThan(5);
+    const primeiraDoLote = Number(ultimo.falas[0]!.id.slice(1));
+    expect(ultimo.anteriores.at(-1)!.texto.startsWith(`${primeiraDoLote - 1} `)).toBe(true);
   });
 
   it('fala gigante ou vazia fica de fora (continua como veio)', () => {
