@@ -40,6 +40,7 @@ import { detectGaps, ler, type SecaoLida } from './agents/leitor';
 import { auditar, type AuditVerdict } from './agents/auditor';
 import { reparar, type ReparoAplicado } from './agents/reparo';
 import { completar } from './agents/completude';
+import { ehRotuloDeSelf } from './rotuloDeSelf';
 import { assertSemVazamento, confidenceFor, marcadorDeLacuna } from './vazamento';
 import type { CompletionUsage } from './ai';
 
@@ -167,6 +168,26 @@ function comLacunas(texto: string, gaps: Gap[]): string {
   return `${texto}\n\n${faltando.map(marcadorDeLacuna).join('\n\n')}`.trim();
 }
 
+const MOTIVO_IMPESSOAL =
+  'Redação: a ata é impessoal e esta frase traz nome de pessoa. Use `reescrever`: a mesma ' +
+  'informação, sem o nome e com o mesmo grau de certeza ("considerou-se possível", "foi ' +
+  'solicitado", "foi informado que"; "o cliente" ou "a equipe" quando o lado importar). ' +
+  'Não retire, e dê de novo as citações que sustentam a frase.';
+
+/** Os nomes dos participantes, para achar frase pessoal numa seção impessoal. */
+function regexDosNomes(data: DocumentData): RegExp | null {
+  const PARTICULAS = new Set(['de', 'da', 'do', 'das', 'dos', 'e']);
+  const partes = new Set<string>();
+  for (const p of data.participants ?? []) {
+    for (const parte of p.name.replace(/[()]/g, ' ').split(/\s+/)) {
+      if (parte.length >= 3 && !PARTICULAS.has(parte.toLowerCase()) && !ehRotuloDeSelf(parte)) partes.add(parte);
+    }
+  }
+  if (partes.size === 0) return null;
+  const escapar = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?<![\\p{L}])(${[...partes].map(escapar).join('|')})(?![\\p{L}])`, 'u');
+}
+
 /** Rodadas de reparo + reconferência. Cada uma custa 2 chamadas, e só acontece se sobrou reprovada mexível. */
 export const RODADAS_DE_REPARO = 2;
 
@@ -247,6 +268,24 @@ export async function apurar(input: ApurarInput): Promise<ApurarResult> {
   // correta caía porque a releitura do Auditor errava — "tal parte não está
   // marcada", e estava — e uma segunda resposta ao motivo novo a salvava.
   const porPath = new Map(audit.verdicts.map((v) => [v.path, v]));
+
+  // 3a. Estilo: frase APROVADA de seção impessoal que traz nome de participante
+  // vai ao reparo para perder o nome (26/11/2026: a instrução sozinha deixava
+  // escapar "Fulano disse acreditar ser possível"). É só redação — se o reparo
+  // não reescrever, ou a reescrita não passar no Auditor, volta a frase original.
+  const nomes = regexDosNomes(data);
+  const soEstilo = new Map<string, AuditVerdict>();
+  if (nomes) {
+    for (const { section, claim } of afirmacoes) {
+      const v = porPath.get(claim.path);
+      if (!section.impessoal || claim.blocker || !v?.supported) continue;
+      if (!nomes.test(claim.text.replace(/; [^;]+ assumiu a tarefa/, ''))) continue;
+      soEstilo.set(claim.path, v);
+      porPath.set(claim.path, { ...v, supported: false, reason: MOTIVO_IMPESSOAL });
+    }
+  }
+  const antesDoEstilo: DocumentData = soEstilo.size ? structuredClone(data) : {};
+
   let reparos: ReparoAplicado[] = [];
   let candidatas = new Set(afirmacoes.filter(({ claim }) => !claim.blocker).map(({ claim }) => claim.path));
   for (let rodada = 0; rodada < RODADAS_DE_REPARO; rodada += 1) {
@@ -272,6 +311,14 @@ export async function apurar(input: ApurarInput): Promise<ApurarResult> {
       if (nova) a.claim = nova;
     }
     candidatas = reparo.aConferir;
+  }
+  // Estilo que não se resolveu: a frase original, aprovada, volta como estava.
+  for (const [path, original] of soEstilo) {
+    if (porPath.get(path)?.supported) continue;
+    const m = /^(\w+)\[(\d+)\]$/.exec(path);
+    const lista = m ? (antesDoEstilo as Record<string, unknown[]>)[m[1]!] : undefined;
+    if (m && lista?.[Number(m[2])] !== undefined) (data as Record<string, unknown[]>)[m[1]!]![Number(m[2])] = lista[Number(m[2])];
+    porPath.set(path, original);
   }
   const vereditosFinais = audit.verdicts.map((v) => porPath.get(v.path) ?? v);
 

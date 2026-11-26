@@ -34,6 +34,12 @@ export interface SectionSpec {
    * mais). As lacunas saem direto de `detectGaps` e viram pergunta.
    */
   fromUserOnly?: boolean;
+  /**
+   * Redação impessoal: o texto desta seção não leva nome de pessoa. A regra
+   * está no `guidance`; o que escapa (frase auditada com nome de participante)
+   * é mandado ao reparo para ser reescrito sem o nome — ver `apurar`.
+   */
+  impessoal?: boolean;
 }
 
 export interface DocumentTemplate {

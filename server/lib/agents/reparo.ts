@@ -76,10 +76,14 @@ function alvoDoPath(data: DocumentData, path: string): Alvo | null {
       ? { quotes: p.quotes, compartilhadas: true, trocarTexto: (novo) => (p.atuacao = semNome(novo)) }
       : { quotes: p.quotes, compartilhadas: true };
   }
+  // A AÇÃO se reescreve (desde 26/11/2026, para a ata impessoal tirar o nome de
+  // "Mapear com Fulano…"); dono e prazo, não.
   m = /^actionItems\[(\d+)\]$/.exec(path);
   if (m) {
     const item = (data.actionItems ?? [])[Number(m[1])];
-    return item ? { quotes: item.quotes } : null;
+    return item
+      ? { quotes: item.quotes, trocarTexto: (novo) => (item.acao = comMaiuscula(novo.replace(/;\s*[^;]*\bassumiu\b.*$/i, '').replace(/;\s*prazo dito:.*$/i, '').replace(/\.$/, ''))) }
+      : null;
   }
   // Trecho do Resumo: reescrever tira o detalhe sem fala e salva o resto do
   // trecho (26/11/2026: três de seis trechos caíam por um detalhe cada).

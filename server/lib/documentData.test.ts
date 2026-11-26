@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  atuacaoSemONome,
   SECTION_DATA_SPECS,
   specForSection,
   type DocumentData,
@@ -158,6 +159,14 @@ describe('participantes', () => {
     );
     expect(data.participants![0]).toMatchObject({ name: 'João', roleSource: 'unknown' });
     expect(data.participants![0]!.role).toBeUndefined();
+  });
+
+  it('a atuação não repete o nome da pessoa no começo', () => {
+    // 26/11/2026: "Rafael (Ana Souza) – …: Rafael pediu a confirmação…".
+    expect(atuacaoSemONome('Rafael pediu a confirmação', 'Rafael (Ana Souza)')).toBe('pediu a confirmação');
+    expect(atuacaoSemONome('Ana Souza apresentou o cronograma', 'Ana Souza')).toBe('apresentou o cronograma');
+    expect(atuacaoSemONome('apresentou o cronograma', 'Ana Souza')).toBe('apresentou o cronograma');
+    expect(atuacaoSemONome('Anatomia do sistema explicada', 'Ana')).toBe('Anatomia do sistema explicada');
   });
 
   it('o cargo é uma afirmação auditável própria, ao lado da presença', () => {

@@ -78,6 +78,22 @@ export function comMaiuscula(texto: string): string {
   return t.charAt(0).toLocaleUpperCase('pt-BR') + t.slice(1);
 }
 
+/**
+ * A atuação vem depois do nome ("Rafael: pediu…"); começando pelo nome, saía
+ * "Rafael (Ana Souza) – …: Rafael pediu…" (26/11/2026). Tira o nome, inteiro ou
+ * só o primeiro, do começo.
+ */
+export function atuacaoSemONome(atuacao: string | undefined, nome: string): string {
+  let t = (atuacao ?? '').trim();
+  for (const parte of [nome, nome.replace(/\s*\([^)]*\)\s*$/, ''), nome.split(/\s+/)[0] ?? '']) {
+    if (parte && t.toLowerCase().startsWith(`${parte.toLowerCase()} `)) {
+      t = t.slice(parte.length).trim();
+      break;
+    }
+  }
+  return t;
+}
+
 /** As âncoras que realmente se localizaram. É o que o Auditor pode recortar. */
 export function located(quotes: AnchoredQuote[] | undefined): LocatedAnchor[] {
   return (quotes ?? [])
@@ -682,7 +698,7 @@ export const SECTION_DATA_SPECS: Record<string, SectionDataSpec> = {
           name: limparRotuloDeSelf(p.name),
           ...(p.role ? { role: p.role } : {}),
           roleSource: p.role ? (p.roleSource ?? 'meeting') : 'unknown',
-          ...(p.atuacao?.trim() ? { atuacao: p.atuacao.trim() } : {}),
+          ...(atuacaoSemONome(p.atuacao, p.name) ? { atuacao: atuacaoSemONome(p.atuacao, p.name) } : {}),
           quotes: anchorQuotes(p.quotes, locate),
         }));
     },

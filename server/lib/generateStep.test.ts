@@ -348,6 +348,34 @@ describe('o que o Auditor rejeita', () => {
     expect(report.calls).toBe(7);
   });
 
+  describe('ata impessoal (26/11/2026)', () => {
+    const comNome = { decisoes: { decisions: [{ ...DOCUMENTO.decisoes.decisions[0], text: 'Joao propôs e ficou decidido adiar a entrega para sexta-feira' }] } };
+    const pipeline = (respostaDoReparo: unknown) =>
+      complete.mockImplementation(async (agent: string, req: { messages: { content: string }[]; jsonSchema?: { properties?: Record<string, unknown> } }) => {
+        if (agent === 'auditor') {
+          const blocos = req.messages[0]!.content.split('\n\n---\n\n');
+          return reply({ verdicts: blocos.map((b) => ({ id: /^# Afirmação (\S+)/.exec(b)![1], reason: 'ok', supported: true })) });
+        }
+        if (req.jsonSchema?.properties?.itens) return reply(respostaDoReparo);
+        return reply({ ...DOCUMENTO, ...comNome });
+      });
+
+    it('frase aprovada com nome de participante é reescrita sem o nome e reconferida', async () => {
+      pipeline({ itens: [{ id: 'r1', acao: 'reescrever', texto: 'Adiar a entrega para sexta-feira', quotes: ['Entao adiamos a entrega para sexta-feira.'] }] });
+      const { documentData } = await run();
+      expect(documentData.decisions?.map((d) => d.text)).toEqual(['Adiar a entrega para sexta-feira']);
+      expect(chamadasDe('leitor').at(-1)![1].messages[0].content).toContain('Redação: a ata é impessoal');
+      expect(chamadasDe('auditor')).toHaveLength(2);
+    });
+
+    it('estilo nunca derruba conteúdo: sem reescrita, a frase original fica', async () => {
+      pipeline({ itens: [{ id: 'r1', acao: 'retirar', texto: '', quotes: [] }] });
+      const { documentData, report } = await run();
+      expect(documentData.decisions?.map((d) => d.text)).toEqual(['Joao propôs e ficou decidido adiar a entrega para sexta-feira']);
+      expect(report.discarded).toEqual([]);
+    });
+  });
+
   it('reparo que cita a fala que faltou volta ao Auditor, e a afirmação fica', async () => {
     let conferencias = 0;
     complete.mockImplementation(async (agent: string, req: { messages: { content: string }[]; jsonSchema?: { properties?: Record<string, unknown> } }) => {
