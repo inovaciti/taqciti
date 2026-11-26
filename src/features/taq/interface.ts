@@ -77,6 +77,9 @@ export function _definirTaq(novo: {
   if ('orquestrador' in novo) orquestrador = novo.orquestrador ?? null;
 }
 
+/** O servidor só aceita a IA com a conta do CITi (ponte do segredo desligada). */
+const ENTRAR_COM_A_CONTA = 'Entre com a sua conta do CITi em Conexões para usar o assistente.';
+
 export async function verificarTaq(sinal?: AbortSignal): Promise<DisponibilidadeDoTaq> {
   try {
     const estado = await obterAdaptador().estado(sinal);
@@ -103,6 +106,9 @@ export async function verificarTaq(sinal?: AbortSignal): Promise<Disponibilidade
     }
     return { fase: 'pronto', provedor: estado.provedor, modelo: estado.modelo };
   } catch (e) {
+    if (e instanceof ErroDoModelo && e.codigo === 'entrar_com_conta') {
+      return { fase: 'pendente', motivos: [ENTRAR_COM_A_CONTA] };
+    }
     if (e instanceof ErroDoModelo && e.codigo === 'nao_autorizado') {
       return {
         fase: 'pendente',
@@ -269,6 +275,11 @@ export function mensagemDoDesfecho(r: ExecucaoDoTaq): string {
       return 'Não consegui responder: o provedor de IA demorou demais. Tente de novo.';
     case 'contexto_grande_demais':
       return 'Não consegui responder: esta conversa ficou longa demais. Comece uma conversa nova para continuar.';
+    case 'cota_do_dia':
+      // A cota é da PESSOA (server/lib/guardaDeIa.ts), não do provedor.
+      return 'Não consegui responder: você atingiu o limite diário de uso da IA. Ele volta amanhã.';
+    case 'entrar_com_conta':
+      return 'Não consegui responder: falta entrar com a sua conta do CITi em Conexões.';
     case 'nao_autorizado':
       return `Não consegui responder: o servidor não reconheceu esta versão da extensão. Atualize o TaqCiti. ${AVISE}`;
     case 'pedido_invalido':

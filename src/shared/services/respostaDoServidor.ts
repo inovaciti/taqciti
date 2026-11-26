@@ -57,11 +57,16 @@ const AVISE = 'Se continuar, avise quem cuida do TaqCiti.';
 
 /** Lê o corpo da resposta recusada e devolve a frase para a tela. */
 export async function mensagemDeRecusa(resposta: Response, rota: string): Promise<string> {
-  const corpo = (await resposta.json().catch(() => ({}))) as { error?: unknown; aviso?: unknown };
+  const corpo = (await resposta.json().catch(() => ({}))) as { error?: unknown; aviso?: unknown; codigo?: unknown };
   const doServidor = typeof corpo.error === 'string' && corpo.error.trim() ? corpo.error : undefined;
   const status = resposta.status;
   logger.warn(`servidor recusou ${rota}`, { status });
 
+  // 401 com `entrar_com_conta` (server/lib/guardaDeIa.ts): o servidor desligou a
+  // ponte do segredo e falta a conta do CITi. Não é extensão desatualizada.
+  if (status === 401 && corpo.codigo === 'entrar_com_conta') {
+    return 'Entre com a sua conta do CITi em Conexões para usar a IA.';
+  }
   if (status === 401) {
     return `O servidor do TaqCiti não reconheceu esta versão da extensão. Atualize o TaqCiti. ${AVISE}`;
   }

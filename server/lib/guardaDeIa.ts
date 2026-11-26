@@ -21,6 +21,13 @@
  *    `recusar`, o segredo é rotacionado e esta ponte cai — nessa ordem, porque
  *    rotacionar antes quebra todo mundo que ainda não atualizou.
  *
+ * As duas recusas que dependem de quem usa levam um `codigo` ao lado do
+ * `error`: `cota_do_dia` (429) e `entrar_com_conta` (401 com a ponte
+ * desligada). Sem ele, o Taq lia o 429 como "tente de novo" — e tentar de novo
+ * não adianta até amanhã — e o 401 como "atualize a extensão", quando o que
+ * falta é entrar com a conta do CITi. O 401 da chave errada (`apiGuard`) não
+ * tem código: aquele, sim, é extensão desatualizada.
+ *
  * A cota falha ABERTA quando o banco não responde (tabela ainda não criada,
  * pooler fora): a identidade já foi conferida, e travar a geração de ata por
  * não conseguir CONTAR seria o remédio pior que a doença. O teto de gasto no
@@ -112,7 +119,7 @@ export async function autorizarIa(
         return {
           ok: false,
           resposta: NextResponse.json(
-            { error: 'Você atingiu o limite diário de uso da IA. Ele volta amanhã.' },
+            { error: 'Você atingiu o limite diário de uso da IA. Ele volta amanhã.', codigo: 'cota_do_dia' },
             { status: 429, headers },
           ),
         };
@@ -127,7 +134,10 @@ export async function autorizarIa(
     return {
       ok: false,
       resposta: NextResponse.json(
-        { error: 'Entre com a conta do CITi para usar a IA (falta `Authorization: Bearer`).' },
+        {
+          error: 'Entre com a conta do CITi para usar a IA (falta `Authorization: Bearer`).',
+          codigo: 'entrar_com_conta',
+        },
         { status: 401, headers },
       ),
     };

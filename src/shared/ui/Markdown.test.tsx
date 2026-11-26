@@ -1,7 +1,7 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { Markdown, blocosDoMarkdown } from './Markdown';
+import { Markdown, blocosDoMarkdown, destinoSeguro } from './Markdown';
 
 let host: HTMLDivElement;
 let root: Root;
@@ -56,6 +56,31 @@ it('link só com http(s); o resto fica texto', () => {
   expect(links).toHaveLength(1);
   expect(links[0]!.getAttribute('href')).toBe('https://citi.org.br');
   expect(links[0]!.getAttribute('rel')).toContain('noopener');
+});
+
+/**
+ * Uma fala injetada pode fazer o modelo escrever um link que leva a conversa na
+ * query. Só os hosts do próprio trabalho a mantêm; `script.google.com` e
+ * `sites.google.com` hospedam página de qualquer um, e formulário do Google
+ * recebe resposta pela query — os três perdem query e fragmento.
+ */
+it('destinoSeguro só mantém a query nos hosts do trabalho', () => {
+  const agenda = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=Reuniao';
+  expect(destinoSeguro(agenda)?.href).toBe(agenda);
+  expect(destinoSeguro('https://docs.google.com/document/d/abc/edit?tab=t.0')?.href).toContain('?tab=t.0');
+  expect(destinoSeguro('https://intranet.citi.org.br/p?x=1')?.href).toContain('?x=1');
+
+  for (const fora of [
+    'https://script.google.com/macros/s/X/exec?d=segredo',
+    'https://sites.google.com/view/x?d=segredo',
+    'https://docs.google.com/forms/d/e/X/formResponse?entry.1=segredo',
+    'http://docs.google.com/document/d/abc?d=segredo',
+    'https://exemplo.com/p?d=segredo#frag',
+  ]) {
+    const r = destinoSeguro(fora);
+    expect(r?.href).not.toContain('segredo');
+    expect(r?.href).not.toContain('#frag');
+  }
 });
 
 it('títulos, lista numerada, sublista, código e itálico', () => {

@@ -260,7 +260,12 @@ export default defineManifest({
   // do produto, não como uma segunda tela de histórico. Nenhuma destas aparece
   // na tela de instalação: o aviso que o usuário vê vem do acesso ao Meet
   // (`host_permissions` e `content_scripts`, abaixo).
-  permissions: ['storage', 'sidePanel', 'scripting', 'identity', 'alarms'],
+  //
+  // `unlimitedStorage` (25/11/2026): sem ela, `storage.local` tem teto de ~10 MB,
+  // e o histórico (reescrito inteiro a cada salvamento) mais os prints de uma
+  // reunião longa o estouravam — a gravação falhava em silêncio no meio da
+  // reunião. Também não gera aviso na instalação nem na atualização.
+  permissions: ['storage', 'unlimitedStorage', 'sidePanel', 'scripting', 'identity', 'alarms'],
 
   /*
    * `<all_urls>` por causa do PRINT (decisão do usuário, 23/11/2026).

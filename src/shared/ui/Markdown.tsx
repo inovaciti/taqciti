@@ -132,8 +132,31 @@ export function blocosDoMarkdown(texto: string): Bloco[] {
 const EM_LINHA =
   /(`[^`\n]+`)|(\*\*[^*\n]+?\*\*|__[^_\n]+?__)|(\[r\d+(?:\s*[,;]\s*r\d+)*\])|(\[[^\]\n]+\]\(https?:\/\/[^\s)]+\))|((?<![\p{L}\p{N}])\*[^*\s][^*\n]*?\*(?![\p{L}\p{N}])|(?<![\p{L}\p{N}])_[^_\s][^_\n]*?_(?![\p{L}\p{N}]))/gu;
 
-/** Domínios cujos links chegam inteiros: os do próprio trabalho (Docs, Drive, Agenda, CITi). */
-const DOMINIOS_DE_CONFIANCA = ['google.com', 'citi.org.br'];
+/**
+ * Hosts cujos links chegam inteiros: os do próprio trabalho (Docs, Drive,
+ * Agenda, Gmail, Meet) e o CITi com seus subdomínios. Antes era qualquer
+ * `*.google.com` — o que incluía `script.google.com` e `sites.google.com`,
+ * onde qualquer um publica uma página que recebe a query: o canal de
+ * exfiltração que este filtro existe para fechar.
+ */
+const HOSTS_DO_GOOGLE_DE_CONFIANCA = new Set([
+  'docs.google.com',
+  'drive.google.com',
+  'calendar.google.com',
+  'mail.google.com',
+  'meet.google.com',
+]);
+const DOMINIOS_DE_CONFIANCA = ['citi.org.br'];
+
+/** Formulário do Google recebe resposta pela query (`formResponse?entry.N=…`): mesmo em docs, ela cai. */
+const CAMINHO_DE_FORMULARIO = /^\/forms\//;
+
+function deConfianca(url: URL): boolean {
+  if (url.protocol !== 'https:') return false;
+  const host = url.hostname.toLowerCase();
+  if (HOSTS_DO_GOOGLE_DE_CONFIANCA.has(host)) return !CAMINHO_DE_FORMULARIO.test(url.pathname);
+  return DOMINIOS_DE_CONFIANCA.some((d) => host === d || host.endsWith(`.${d}`));
+}
 
 /**
  * O link que o modelo escreveu, pronto para clicar — ou `null`.
@@ -154,8 +177,7 @@ export function destinoSeguro(bruto: string): { href: string; dominio: string } 
   }
   if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
   const dominio = url.hostname.toLowerCase();
-  const deConfianca = DOMINIOS_DE_CONFIANCA.some((d) => dominio === d || dominio.endsWith(`.${d}`));
-  if (deConfianca) return { href: bruto, dominio };
+  if (deConfianca(url)) return { href: bruto, dominio };
   url.search = '';
   url.hash = '';
   return { href: url.toString(), dominio };

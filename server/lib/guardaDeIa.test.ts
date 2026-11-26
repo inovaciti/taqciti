@@ -74,7 +74,11 @@ describe('autorizarIa', () => {
     process.env.TAQCITI_IA_CHAMADAS_DIA = '1';
     const r = await autorizarIa(pedido({ authorization: 'Bearer bom' }), {});
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.resposta.status).toBe(429);
+    if (!r.ok) {
+      expect(r.resposta.status).toBe(429);
+      // O código é o que faz a extensão dizer "volta amanhã" em vez de "tente de novo".
+      expect(await r.resposta.json()).toMatchObject({ codigo: 'cota_do_dia' });
+    }
   });
 
   it('rota que não chama modelo não gasta cota', async () => {
@@ -91,6 +95,10 @@ describe('autorizarIa', () => {
     process.env.DOCCITI_CHAVE_LEGADA = 'recusar';
     const r = await autorizarIa(pedido({ 'x-docciti-key': 'segredo' }), {});
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.resposta.status).toBe(401);
+    if (!r.ok) {
+      expect(r.resposta.status).toBe(401);
+      // Distingue "entre com a conta" de "chave da extensão recusada" (extensão velha).
+      expect(await r.resposta.json()).toMatchObject({ codigo: 'entrar_com_conta' });
+    }
   });
 });

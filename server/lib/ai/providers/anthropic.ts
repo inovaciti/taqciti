@@ -66,6 +66,22 @@ const CONTEXT_WINDOWS: Record<string, number> = {
  *  faz estourar contexto em produção. */
 const FALLBACK_CONTEXT_TOKENS = 200_000;
 
+/**
+ * Folga para o raciocínio adaptativo. Com `thinking` ligado, `max_tokens`
+ * conta o raciocínio E a resposta; os agentes dimensionam `maxTokens` só pela
+ * resposta (o Auditor pede 2000 + 500 por afirmação). Um raciocínio longo
+ * comia o orçamento e o JSON saía cortado — e JSON cortado não tem reparo:
+ * a segunda tentativa cortava igual e a geração inteira caía. `max_tokens` é
+ * teto, não custo: a folga só é gasta se o modelo de fato raciocinar.
+ * 8000 mantém o Leitor (48 000) abaixo de 64 000.
+ */
+export const FOLGA_DE_RACIOCINIO = 8_000;
+
+/** O `max_tokens` que vai à API: o pedido pelo agente, mais a folga quando há raciocínio. */
+export function orcamentoDeSaida(model: string, maxTokens: number): number {
+  return ADAPTIVE_THINKING_MODELS.has(model) ? maxTokens + FOLGA_DE_RACIOCINIO : maxTokens;
+}
+
 let cached: Anthropic | undefined;
 
 function client(): Anthropic {
@@ -186,7 +202,7 @@ export const anthropicProvider: Provider = {
         // 23/11/2026. `finalMessage()` devolve a mensagem inteira, como o `create`.
         const response = await client().messages.stream({
           model,
-          max_tokens: invocation.maxTokens,
+          max_tokens: orcamentoDeSaida(model, invocation.maxTokens),
           system: invocation.system,
           messages: buildMessages(invocation),
           ...(supportsAdaptive ? { thinking: { type: 'adaptive' as const } } : {}),
@@ -212,6 +228,18 @@ export const anthropicProvider: Provider = {
 
         if (response.stop_reason === 'refusal') {
           throw new ProviderError('anthropic', model, 'requisição recusada pelos classificadores.');
+        }
+
+        // Saída estruturada cortada pelo teto nunca é JSON válido, e o reparo
+        // (providers/shared.ts) pediria de novo com o mesmo teto. Melhor falhar
+        // já, dizendo o motivo, do que gastar outra chamada e acusar "schema".
+        if (response.stop_reason === 'max_tokens' && invocation.jsonSchema) {
+          throw new ProviderError(
+            'anthropic',
+            model,
+            `resposta cortada pelo limite de ${orcamentoDeSaida(model, invocation.maxTokens)} tokens de saída ` +
+              `(${response.usage.output_tokens} gerados, raciocínio incluso).`,
+          );
         }
 
         const text = response.content

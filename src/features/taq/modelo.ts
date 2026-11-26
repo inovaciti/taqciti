@@ -82,6 +82,16 @@ const erroSchema = z.object({
   }),
 });
 
+/**
+ * A recusa de `autorizarIa` (server/lib/guardaDeIa.ts), que vem ANTES do Taq e
+ * por isso no formato das rotas de geração: `{ error, codigo? }`. Sem lê-la, a
+ * cota do dia virava "tente de novo" e faltar a conta virava "atualize a extensão".
+ */
+const recusaDaGuardaSchema = z.object({
+  error: z.string().optional(),
+  codigo: z.enum(['cota_do_dia', 'entrar_com_conta']),
+});
+
 export const estadoDoTaqSchema = z.object({
   pronto: z.boolean(),
   provedor: z.string().nullable(),
@@ -189,6 +199,14 @@ export function criarAdaptadorHttp(
           lido.data.erro.mensagem,
           lido.data.erro.transitorio,
           lido.data.erro.esperarMs,
+        );
+      }
+      const guarda = recusaDaGuardaSchema.safeParse(corpo);
+      if (guarda.success) {
+        throw new ErroDoModelo(
+          guarda.data.codigo,
+          guarda.data.error ?? `O servidor respondeu ${resposta.status}.`,
+          false,
         );
       }
       if (resposta.status === 401) {
