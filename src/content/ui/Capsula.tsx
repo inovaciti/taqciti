@@ -85,11 +85,6 @@ interface Props {
   /** Quantas falas já foram capturadas. */
   falas?: number;
   prefs: PanelPrefs;
-  /**
-   * O botão do TaqCiti está na barra de baixo do Meet: é ele que representa a
-   * captura, e a cápsula flutuante sai da frente. A pergunta continua aqui.
-   */
-  barraAtiva?: boolean;
   callbacks: CapsulaCallbacks;
 }
 
@@ -112,7 +107,6 @@ export function Capsula({
   ultimoTrechoEm = null,
   falas = 0,
   prefs,
-  barraAtiva = false,
   callbacks,
 }: Props) {
   const [dica, setDica] = useState(false);
@@ -187,9 +181,10 @@ export function Capsula({
   // nova — uma pergunta pendente reacende a cápsula, senão ela seria invisível
   // justamente no momento em que tem algo a dizer.
   if (prefs.presence === 'closed' && !perguntando) return null;
-  // O botão da barra do Meet já mostra o estado e abre a sidebar: a cápsula
-  // flutuante só aparece quando há uma pergunta a fazer.
-  if (barraAtiva && !perguntando) return null;
+  // Houve um botão do TaqCiti DENTRO da barra do Meet, e com ele a cápsula saía
+  // da frente. O Meet de 11/2026 apaga qualquer nó estranho na barra em ~20 ms;
+  // recolocá-lo fazia a barra piscar e deixava a pessoa sem controle na tela.
+  // Retirado em 26/11/2026 (decisão do usuário): a cápsula é o único controle.
 
   const estado = derivarEstadoDaCaptura(
     { phase, captureHealthy: saudavel, startedAt, lastChunkAt: ultimoTrechoEm, falas },
@@ -241,20 +236,18 @@ export function Capsula({
       window.innerWidth - larguraDaPergunta - MARGEM_DA_PERGUNTA,
     ),
   );
-  const posicaoDaPergunta = barraAtiva
-    ? { right: 20, bottom: 88, maxHeight: 'calc(100dvh - 108px)' }
-    : {
-        left: esquerdaDaPergunta,
-        ...(paraBaixo
-          ? { top: floating.geometry.capsule.top + 64,
-              maxHeight: window.innerHeight - floating.geometry.capsule.top - 76 }
-          : { bottom: window.innerHeight - floating.geometry.capsule.top + 12,
-              maxHeight: floating.geometry.capsule.top - 24 }),
-      };
+  const posicaoDaPergunta = {
+    left: esquerdaDaPergunta,
+    ...(paraBaixo
+      ? { top: floating.geometry.capsule.top + 64,
+          maxHeight: window.innerHeight - floating.geometry.capsule.top - 76 }
+      : { bottom: window.innerHeight - floating.geometry.capsule.top + 12,
+          maxHeight: floating.geometry.capsule.top - 24 }),
+  };
 
   return (
     <>
-      {!barraAtiva && <button
+      <button
         ref={floating.capsuleRef as RefObject<HTMLButtonElement>}
         type="button"
         title="TaqCiti — clique para abrir o painel, arraste para mover"
@@ -296,7 +289,7 @@ export function Capsula({
         )}
         {/* Só a MUDANÇA de estado é anunciada: o relógio, que muda a cada segundo, fica de fora. */}
         <span className="sr-only" role="status">{perguntando ? '' : LEITURA_DO_ESTADO[estado]}</span>
-      </button>}
+      </button>
 
       {/* ---------- a solicitação, na própria página ---------- */}
       {perguntando && (
