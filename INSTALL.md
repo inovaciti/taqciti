@@ -24,7 +24,7 @@ Diga ao assistente algo como:
 
 > Instale a extensão TaqCiti no meu Chrome (ou Edge): baixe o
 > `taqciti-vX.Y.Z.zip` da última release em
-> https://github.com/lupusbit-coder/taqciti/releases, extraia numa pasta
+> https://github.com/inovaciti/taqciti/releases/latest, extraia numa pasta
 > fixa que eu não vá apagar, e carregue essa pasta em `chrome://extensions`
 > com o Modo do desenvolvedor e "Carregar sem compactação".
 
@@ -42,7 +42,7 @@ endereço da página de extensões.
 ### 1. Baixe e descompacte
 
 Baixe o `taqciti-vX.Y.Z.zip` da [última
-release](https://github.com/lupusbit-coder/taqciti/releases) (ou gere com
+release](https://github.com/inovaciti/taqciti/releases/latest) (ou gere com
 `npm run package`), salve numa pasta fixa do computador (ex.: área de
 trabalho) e extraia. **Não apague nem mova essa pasta depois** — é dela
 que o navegador vai ler os arquivos direto; movê-la ou apagá-la quebra a
@@ -92,12 +92,15 @@ da loja oficial) e não indica nenhum problema com a TaqCiti.
 
 **O navegador avisa que a extensão pode "ler e alterar todos os seus dados
 nos sites que você visita". Por quê?**
-Porque a extensão atua dentro de uma página (o Google Meet), e o navegador usa
-esse texto geral para qualquer extensão que lê uma página. O acesso declarado é
-**só a `meet.google.com`** (desde 13/11/2026; antes cobria todos os sites): é lá
-que o TaqCiti desenha a **cápsula** e lê as legendas da reunião. Nenhuma outra
-página recebe a cápsula nem é lida. Ao atualizar, o navegador não pede nova
-aprovação, porque o acesso só diminuiu.
+Porque o TaqCiti tira **prints** da aba que você está vendo quando você pede, e o
+navegador só permite isso a uma extensão com acesso declarado a todos os sites.
+A leitura de página, porém, acontece **só em `meet.google.com`**: é lá que o
+TaqCiti desenha a **cápsula** e lê as legendas da reunião. Nenhuma outra página
+recebe a cápsula nem tem o conteúdo lido.
+
+**Depois de instalar, o que faço?**
+Abra o TaqCiti, vá em **Conexões** e entre com a sua conta do CITi. É com ela
+que o assistente (Taq) e a sincronização funcionam.
 
 **O que sai do meu computador?**
 Por padrão, nada: a transcrição, as notas, as marcações e os prints ficam no
