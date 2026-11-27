@@ -13,6 +13,21 @@
  * O Meet redesenha a barra sem avisar e leva embora o que não é dele, então a
  * posição é CONFERIDA a cada passada (`sincronizar`), e o botão volta ao lugar.
  *
+ * ── Quando o Meet RECUSA o botão (26/11/2026) ──────────────────────────────
+ *
+ * O Meet de 11/2026 apaga em ~20 ms QUALQUER nó estranho na barra (testado ao
+ * vivo: no fim da barra, antes do "sair" e como irmão dela — os três sumiam).
+ * Recolocar a cada passada virou um pisca-pisca: o botão aparecia por um
+ * quadro a cada 1,5 s e a barra inteira pulava 176 px — a "barra bugando"
+ * relatada em 26/11/2026. Pior: `sincronizar` dizia "montado" logo depois de
+ * inserir, então o controller escondia a cápsula flutuante e a pessoa ficava
+ * sem controle nenhum na tela.
+ *
+ * Agora conta-se a RECUSA: o botão inserido que já sumiu na passada seguinte.
+ * Depois de `RECUSAS_PARA_DESISTIR` seguidas, desiste-se de vez nesta página
+ * e a cápsula flutuante assume. Um redesenho ocasional (o caso antigo) não
+ * desiste: se o botão sobrevive a uma passada, a contagem zera.
+ *
  * Marca e estado por escrito: a cor sozinha não distingue pausa de início.
  * Vanilla de propósito: é um botão. Nada de React dentro da barra do Meet.
  */
@@ -23,6 +38,8 @@ import { registrarFonteDaCapsula } from '@/content/ui/fonte';
 const ID = 'taqciti-botao-na-barra';
 const ID_ESTILO = 'taqciti-botao-na-barra-estilo';
 const ATRIBUTO = 'data-taqciti-estado';
+/** Recusas seguidas (inserido e já apagado na passada seguinte) até desistir da barra. */
+export const RECUSAS_PARA_DESISTIR = 3;
 
 export type TomDoBotao = 'verde' | 'ambar' | 'vermelho' | 'neutro';
 
@@ -135,6 +152,9 @@ function icone(): string {
 export class BotaoNaBarra {
   private el: HTMLButtonElement | null = null;
   private ultimo = '';
+  /** Fomos nós que o pusemos na barra (e não o tiramos de propósito)? */
+  private inserido = false;
+  private recusas = 0;
 
   constructor(private readonly aoClicar: () => void) {}
 
@@ -143,8 +163,21 @@ export class BotaoNaBarra {
     return this.el !== null && this.el.isConnected;
   }
 
+  /** O Meet recusou o botão vezes demais: a cápsula flutuante assume nesta página. */
+  desistiu(): boolean {
+    return this.recusas >= RECUSAS_PARA_DESISTIR;
+  }
+
   /** Cria, recoloca e atualiza. Devolve se o botão está na barra depois disto. */
   sincronizar(estado: EstadoDoBotao): boolean {
+    if (this.inserido && this.el) {
+      // Sumiu desde a passada anterior sem que nós o tirássemos: recusa.
+      this.recusas = this.el.isConnected ? 0 : this.recusas + 1;
+    }
+    if (this.desistiu()) {
+      this.remover();
+      return false;
+    }
     const barra = acharBarra();
     if (!barra) {
       this.remover();
@@ -156,6 +189,7 @@ export class BotaoNaBarra {
     if (this.el.parentElement !== barra.pai || this.el.nextElementSibling !== barra.antes) {
       barra.pai.insertBefore(this.el, barra.antes);
     }
+    this.inserido = true;
     const chave = `${estado.tom}|${estado.pulsando}|${estado.rotulo}|${estado.texto}`;
     if (chave !== this.ultimo) {
       this.ultimo = chave;
@@ -168,9 +202,11 @@ export class BotaoNaBarra {
     return true;
   }
 
+  /** Tira o botão. Não conta como recusa, e não zera a contagem: desistir vale para a página. */
   remover(): void {
     this.el?.remove();
     this.el = null;
+    this.inserido = false;
     this.ultimo = '';
     document.getElementById(ID_ESTILO)?.remove();
   }

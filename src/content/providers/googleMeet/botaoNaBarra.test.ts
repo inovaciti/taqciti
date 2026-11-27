@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { BotaoNaBarra, type EstadoDoBotao } from './botaoNaBarra';
+import { BotaoNaBarra, RECUSAS_PARA_DESISTIR, type EstadoDoBotao } from './botaoNaBarra';
 
 const ESTADO: EstadoDoBotao = { tom: 'neutro', pulsando: false, rotulo: 'Gravar esta reunião' };
 
@@ -46,6 +46,45 @@ describe('BotaoNaBarra', () => {
     document.getElementById('taqciti-botao-na-barra')!.remove();
     expect(botao.sincronizar(ESTADO)).toBe(true);
     expect(document.querySelectorAll('#taqciti-botao-na-barra')).toHaveLength(1);
+  });
+
+  it('o Meet apaga o botão a cada passada: desiste e deixa a cápsula assumir', () => {
+    // Meet de 11/2026: todo nó estranho na barra some em ~20 ms. Recolocar a
+    // cada 1,5 s fazia a barra piscar e escondia a cápsula (relato de 26/11/2026).
+    barraDoMeet();
+    const botao = new BotaoNaBarra(() => undefined);
+    for (let i = 0; i < RECUSAS_PARA_DESISTIR; i += 1) {
+      expect(botao.sincronizar(ESTADO)).toBe(true);
+      document.getElementById('taqciti-botao-na-barra')!.remove();
+    }
+    expect(botao.sincronizar(ESTADO)).toBe(false);
+    expect(botao.desistiu()).toBe(true);
+    expect(document.getElementById('taqciti-botao-na-barra')).toBeNull();
+    // E não volta a tentar nas passadas seguintes.
+    expect(botao.sincronizar(ESTADO)).toBe(false);
+    expect(document.getElementById('taqciti-botao-na-barra')).toBeNull();
+  });
+
+  it('um redesenho de vez em quando não é recusa: sobreviver a uma passada zera a conta', () => {
+    barraDoMeet();
+    const botao = new BotaoNaBarra(() => undefined);
+    for (let i = 0; i < RECUSAS_PARA_DESISTIR * 2; i += 1) {
+      botao.sincronizar(ESTADO);
+      if (i % 2 === 0) document.getElementById('taqciti-botao-na-barra')!.remove();
+    }
+    expect(botao.desistiu()).toBe(false);
+    expect(botao.sincronizar(ESTADO)).toBe(true);
+  });
+
+  it('remover de propósito não conta como recusa', () => {
+    barraDoMeet();
+    const botao = new BotaoNaBarra(() => undefined);
+    for (let i = 0; i < RECUSAS_PARA_DESISTIR + 1; i += 1) {
+      botao.sincronizar(ESTADO);
+      botao.remover();
+    }
+    expect(botao.desistiu()).toBe(false);
+    expect(botao.sincronizar(ESTADO)).toBe(true);
   });
 
   it('o estado muda o rótulo e o clique chama o tratador', () => {
