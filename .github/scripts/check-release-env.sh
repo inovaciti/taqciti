@@ -30,6 +30,10 @@ exigir "VITE_DOCCITI_SERVER_URL" "${VITE_DOCCITI_SERVER_URL:-}" \
   "Settings -> Secrets and variables -> Actions -> Variables -> DOCCITI_SERVER_URL"
 exigir "VITE_DOCCITI_SHARED_KEY" "${VITE_DOCCITI_SHARED_KEY:-}" \
   "Settings -> Secrets and variables -> Actions -> Secrets -> DOCCITI_SHARED_KEY"
+# Sem o cliente web, ninguem entra com a conta do Google na extensao publicada:
+# sem cota por pessoa, sem sincronizacao (faltava ate 26/11/2026).
+exigir "VITE_GOOGLE_OAUTH_WEB_CLIENT_ID" "${VITE_GOOGLE_OAUTH_WEB_CLIENT_ID:-}" \
+  "Settings -> Secrets and variables -> Actions -> Variables -> GOOGLE_OAUTH_WEB_CLIENT_ID"
 
 url="${VITE_DOCCITI_SERVER_URL:-}"
 
