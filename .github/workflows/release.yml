@@ -28,12 +28,22 @@ on:
 # Configurar em Settings → Secrets and variables → Actions:
 #   Variables → DOCCITI_SERVER_URL   (a URL base do servidor em produção, sem "/" no fim)
 #   Secrets   → DOCCITI_SHARED_KEY   (o mesmo valor da variável no servidor)
+#   Variables → GOOGLE_OAUTH_WEB_CLIENT_ID  (o mesmo valor da variável no servidor)
+#   Variables → GOOGLE_OAUTH_CLIENT_ID      (opcional: cliente "Extensão do Chrome",
+#                                            só para enviar ao Google Docs)
+#
+# O cliente web faltava aqui até 26/11/2026: a extensão publicada não deixava
+# entrar com a conta do Google, e a IA só funcionava pela ponte do segredo
+# compartilhado — sem cota por pessoa e sem sincronização. Com
+# `DOCCITI_CHAVE_LEGADA=recusar` no servidor, ela pararia de vez.
 #
 # Ver docs/publicar-release.md. O deploy do servidor é MANUAL: nada aqui o
 # atualiza, então publique-o antes de cortar a tag.
 env:
   VITE_DOCCITI_SERVER_URL: ${{ vars.DOCCITI_SERVER_URL }}
   VITE_DOCCITI_SHARED_KEY: ${{ secrets.DOCCITI_SHARED_KEY }}
+  VITE_GOOGLE_OAUTH_WEB_CLIENT_ID: ${{ vars.GOOGLE_OAUTH_WEB_CLIENT_ID }}
+  VITE_GOOGLE_OAUTH_CLIENT_ID: ${{ vars.GOOGLE_OAUTH_CLIENT_ID }}
 
 # Só leitura por padrão; o passo de publicar pede escrita no próprio job.
 permissions:
