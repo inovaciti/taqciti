@@ -1,6 +1,6 @@
 {
   "name": "taqciti",
-  "version": "2.1.2",
+  "version": "3.0.0",
   "description": "TaqCiti — extensão Chrome/Edge de transcrição automática do Google Meet, com histórico local e geração de ata.",
   "private": true,
   "type": "module",

@@ -39,10 +39,15 @@ const DO_ARQUIVO = loadEnv(process.env.NODE_ENV ?? 'production', process.cwd(), 
  * indisponíveis, cada um com mensagem dizendo o que fazer. Um `client_id`
  * ausente faria o Chrome recusar a extensão inteira, o que é um modo de
  * falhar muito pior. Ver `docs/google-oauth-setup.md`.
+ *
+ * `||`, não `??`: no CI uma variável não cadastrada chega como string VAZIA
+ * (`${{ vars.X }}`), e com `??` o manifesto saía com `client_id: ""` — o
+ * Chrome recusou a extensão inteira ("Invalid value for 'oauth2.client_id'",
+ * 26/11/2026).
  */
 const OAUTH_CLIENT_ID =
-  process.env.VITE_GOOGLE_OAUTH_CLIENT_ID ??
-  DO_ARQUIVO.VITE_GOOGLE_OAUTH_CLIENT_ID ??
+  process.env.VITE_GOOGLE_OAUTH_CLIENT_ID?.trim() ||
+  DO_ARQUIVO.VITE_GOOGLE_OAUTH_CLIENT_ID?.trim() ||
   'CLIENT_ID_NAO_CONFIGURADO.apps.googleusercontent.com';
 
 export default defineManifest({
@@ -59,7 +64,7 @@ export default defineManifest({
   name: 'TaqCiti',
   description:
     'Transcrição automática de reuniões do Google Meet — captura invisível, histórico local e geração de ata a partir do que foi dito.',
-  version: '2.1.2',
+  version: '3.0.0',
   minimum_chrome_version: '116',
 
   /*
